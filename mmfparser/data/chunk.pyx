@@ -20,6 +20,10 @@ from mmfparser.data import zlibdata
 from mmfparser.data import onepointfive
 from mmfparser.loader cimport DataLoader
 
+cdef extern from "chunk_cm.cpp":
+    cdef void prepare_transform(unsigned char * trans, int size)
+    cdef void transform(unsigned char * data, int size, unsigned char * trans)
+
 def makeValueChunk(klass, value):
     newLoader = klass()
     newLoader.value = value
@@ -40,13 +44,19 @@ cdef class Chunk(DataLoader):
         self.flags = flags
         cdef int size = reader.readInt()
         cdef ByteReader data = reader.readReader(size)
-        if flags == 1:
+        if (flags & 1) != 0:
+            if (flags & 2) != 0:
+                transform(&data.buffer[data.pos] + 4, data.size() - 4,
+                          self.settings['trans'])
             if old:
                 data = onepointfive.decompress(data)
             else:
                 data = zlibdata.decompress(data)
-        elif flags != 0:
-            raise Exception('unsupported compression flag!')
+        elif (flags & 2) != 0:
+            transform(&data.buffer[data.pos], data.size(),
+                      self.settings['trans'])
+        if (flags & (~3)) != 0:
+            raise Exception('unsupported compression flag: %s' % flags)
         cdef type loaderClass
         try:
             if old:
@@ -71,6 +81,49 @@ cdef class Chunk(DataLoader):
         reader.writeInt(len(data))
         reader.writeReader(data)
 
+cdef bytes create_transform_part(bytes data):
+    cdef unsigned char * c = data
+    cdef unsigned short * v = <unsigned short*>c
+
+    cdef unsigned int l = len(data) / 2
+    cdef unsigned int i
+    cdef unsigned short vv
+
+    cdef bytes ret = b''
+
+    for i in xrange(l):
+        vv = v[i]
+        if vv & 0xFF:
+            ret += chr(vv & 0xFF)
+        vv = vv >> 8
+        if vv:
+            ret += chr(vv)
+
+    return ret
+
+cpdef bytes create_transform(bytes editor, bytes name, bytes copyright,
+                             bint is_ascii):
+    cdef bytes ret
+    if is_ascii:
+        ret = (editor + name + copyright)
+    else:
+        editor = editor.decode('utf-8').encode('utf-16-le')
+        name = name.decode('utf-8').encode('utf-16-le')
+        copyright = copyright.decode('utf-8').encode('utf-16-le')
+        ret = b''
+        ret += create_transform_part(editor)
+        ret += create_transform_part(name)
+        ret += create_transform_part(copyright)
+
+    ret = ret[:128]
+    cdef unsigned int l = len(ret)
+    ret += '\x00' * max(0, 256 - len(ret))
+
+    cdef bytearray ret_arr = bytearray(ret)
+    cdef unsigned char * ret_c = ret_arr
+    prepare_transform(ret_arr, l)
+    return bytes(ret_arr)
+
 cdef class ChunkList(DataLoader):
     cdef public:
         list items
@@ -83,13 +136,28 @@ cdef class ChunkList(DataLoader):
         cdef list items = self.items
         # cdef int checksumStart = -1
         parent = self.parent
-        cdef Chunk newChunk
+        cdef Chunk newChunk, copyright
+        cdef bytes copyright_text
         # cdef int chunkPosition
         while 1:
             # chunkPosition = reader.tell()
             newChunk = parent.new(Chunk, reader)
             if newChunk.id == LAST:
                 break
+            elif newChunk.id == 8750 and self.settings.get('newobj', False):
+                # EditorFilename
+                editor = newChunk.loader.value
+                name = self.getId(8740).loader.value
+                copyright = self.getId(8763)
+                if copyright is None:
+                    copyright_text = b''
+                else:
+                    copyright_text = copyright.loader.value
+                trans = create_transform(editor, name, copyright_text,
+                                         not self.settings.get('unicode',
+                                                               False))
+                parent.settings['trans'] = trans
+
             # elif newChunk.id == APPTARGETFILENAME:
                 # checksumStart = chunkPosition
             # elif False and newChunk.id == PROTECTION and checksumStart != -1:
@@ -113,6 +181,14 @@ cdef class ChunkList(DataLoader):
         self.items.append(newChunk)
         return newChunk
     
+    cdef Chunk getId(self, unsigned int typ):
+        cdef Chunk chunk
+        cdef Chunk foundChunk = None
+        for chunk in self.items:
+            if chunk.id == typ:
+                return chunk
+        return None
+
     def popChunk(self, chunkType, bint returnNone = False):
         cdef Chunk chunk
         cdef Chunk foundChunk = None

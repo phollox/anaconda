@@ -90,6 +90,9 @@ class GameData(DataLoader):
         self.productVersion = reader.readInt()
         self.productBuild = reader.readInt()
 
+        if self.productBuild >= 284:
+            self.settings['newobj'] = True
+
         productName = self.getProduct()
 
         if productName == 'MMF1.5':
