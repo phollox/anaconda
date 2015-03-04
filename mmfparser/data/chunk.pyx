@@ -52,14 +52,10 @@ cdef class Chunk(DataLoader):
                 data = onepointfive.decompress(data)
             else:
                 data = zlibdata.decompress(data)
-<<<<<<< HEAD
         elif (flags & 2) != 0:
             transform(&data.buffer[data.pos], data.size(),
                       self.settings['trans'])
         if (flags & (~3)) != 0:
-=======
-        elif flags != 0:
->>>>>>> master
             raise Exception('unsupported compression flag: %s' % flags)
         cdef type loaderClass
         try:
