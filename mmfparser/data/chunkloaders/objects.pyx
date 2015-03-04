@@ -901,10 +901,10 @@ cdef class ObjectCommon(DataLoader):
         cdef bint newobj = self.settings['build'] >= 284
         if newobj:
             counterOffset = reader.readShort()
-            extensionOffset = reader.readShort()
+            self.version = reader.readShort()
             reader.skipBytes(2) # "free"
             movementsOffset = reader.readShort()
-            self.version = reader.readShort()
+            extensionOffset = reader.readShort()
             animationsOffset = reader.readShort()
 
             self.flags.setFlags(reader.readInt(True))
