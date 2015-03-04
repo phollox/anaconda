@@ -40,7 +40,6 @@ cdef class Chunk(DataLoader):
         cdef bint old = self.settings.get('old', False)
         self.id = reader.readShort()
         cdef short flags = reader.readShort()
-        # print 'reading %s' % self.getName(), self.id, flags
         self.flags = flags
         cdef int size = reader.readInt()
         cdef ByteReader data = reader.readReader(size)
@@ -144,7 +143,7 @@ cdef class ChunkList(DataLoader):
             newChunk = parent.new(Chunk, reader)
             if newChunk.id == LAST:
                 break
-            elif newChunk.id == 8750 and self.settings.get('newobj', False):
+            elif newChunk.id == 8750 and self.settings['build'] >= 284:
                 # EditorFilename
                 editor = newChunk.loader.value
                 name = self.getId(8740).loader.value

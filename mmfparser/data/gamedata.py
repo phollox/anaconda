@@ -90,8 +90,7 @@ class GameData(DataLoader):
         self.productVersion = reader.readInt()
         self.productBuild = reader.readInt()
 
-        if self.productBuild >= 284:
-            self.settings['newobj'] = True
+        self.settings['build'] = self.productBuild
 
         productName = self.getProduct()
 

@@ -898,7 +898,7 @@ cdef class ObjectCommon(DataLoader):
         cdef short qualifier
         cdef unsigned int end
 
-        cdef bint newobj = self.settings.get('newobj', False)
+        cdef bint newobj = self.settings['build'] >= 284
         if newobj:
             counterOffset = reader.readShort()
             extensionOffset = reader.readShort()
