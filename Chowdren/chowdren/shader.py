@@ -19,116 +19,64 @@ INK_EFFECTS = {
 }
 
 NATIVE_SHADERS = {
-    None : 'NULL',
-    'Sub' : 'subtract_shader',
-    'Add' : 'additive_shader',
-    'ColorMixer.fx' : 'mixer_shader',
-    'Looki Offset.fx' : 'offset_shader',
-    'CS_Hue.fx' : 'hue_shader',
-    'DodgeBlur.fx' : 'dodgeblur_shader',
-    'Mono' : 'monochrome_shader',
-    'Monochrome' : 'monochrome_shader',
-    'Blend' : 'blend_shader',
-    'Subtract' : 'subtract_shader',
-    'MonoExample.fx' : 'monochrome_shader',
-    'HardMix.fx' : 'dummy_shader',
-    'Overlay.fx' : 'dummy_shader',
-    'Lens.fx' : 'lens_shader',
-    'LinearDodge.fx' : 'dummy_shader',
-    'SoftLight.fx' : 'dummy_shader',
-    'PinLight.fx' : 'dummy_shader',
-    'Invert' : 'invert_shader',
-    'GrainPS2.fx' : 'grain_shader',
-    'Multiply.fx' : 'multiply_shader',
-    'HardLight.fx' : 'hardlight_shader',
-    'CS_Tint.fx' : 'tint_shader',
-    'ChannelBlur.fx' : 'channelblur_shader',
-    'BgBloom.fx' : 'bgbloom_shader',
-    'CS_UnderWater.fx' : 'underwater_shader',
-    'RotateSub.fx' : 'rotatesub_shader',
-    'SimpleMask.fx' : 'simplemask_shader',
-    'Offsetstationary.fx' : 'offsetstationary_shader',
-    'Pattern Overlay alonso.fx' : 'patternoverlay_shader',
-    'SubPx.fx' : 'subpx_shader',
-    'ColDirBlur alonso.fx' : 'coldirblur_shader',
-    'OverlayAlpha.fx' : 'overlayalpha_shader',
-    'Gradient.fx' : 'gradient_shader',
-    'CS_ZoomOffset.fx' : 'zoomoffset_shader',
-    '9G.fx' : 'ninepatch_shader',
-    'PixelOutline_alphacoef support.fx' : 'pixeloutline_shader',
-    'BrightnessSaturationBg.fx' : 'brightsatbg_shader',
-    'BgBlur.fx' : 'bgblur_shader',
+    None : None,
+    'Sub' : 'subtract',
+    'Add' : 'additive',
+    'ColorMixer.fx' : 'mixer',
+    'Looki Offset.fx' : 'offset',
+    'CS_Hue.fx' : 'hue',
+    'DodgeBlur.fx' : 'dodgeblur',
+    'Mono' : 'monochrome',
+    'Monochrome' : 'monochrome',
+    'Blend' : None,
+    'Subtract' : 'subtract',
+    'MonoExample.fx' : 'monochrome',
+    'HardMix.fx' : None,
+    'Overlay.fx' : None,
+    'Lens.fx' : 'lens',
+    'LinearDodge.fx' : None,
+    'SoftLight.fx' : None,
+    'PinLight.fx' : None,
+    'Invert' : 'invert',
+    'GrainPS2.fx' : 'grain',
+    'Multiply.fx' : 'multiply',
+    'HardLight.fx' : 'hardlight',
+    'CS_Tint.fx' : 'tint',
+    'ChannelBlur.fx' : 'channelblur',
+    'BgBloom.fx' : 'bgbloom',
+    'CS_UnderWater.fx' : 'underwater',
+    'RotateSub.fx' : 'rotatesub',
+    'SimpleMask.fx' : 'simplemask',
+    'Offsetstationary.fx' : 'offsetstationary',
+    'Pattern Overlay alonso.fx' : 'patternoverlay',
+    'SubPx.fx' : 'subpx',
+    'ColDirBlur alonso.fx' : 'coldirblur',
+    'OverlayAlpha.fx' : 'overlayalpha',
+    'Gradient.fx' : 'gradient',
+    'CS_ZoomOffset.fx' : 'zoomoffset',
+    '9G.fx' : 'ninepatch',
+    'PixelOutline_alphacoef support.fx' : 'pixeloutline',
+    'BrightnessSaturationBg.fx' : 'brightsatbg',
+    'BgBlur.fx' : 'bgblur',
 
     # missing effects
-    'CRT.fx' : 'dummy_shader',
-    'FlipY.fx' : 'dummy_shader',
-    'ChannelBlurAdd.fx' : 'dummy_shader',
-    'DualGlow.fx' : 'dummy_shader',
-    'DropShadow.fx' : 'dummy_shader',
+    'CRT.fx' : None,
+    'FlipY.fx' : None,
+    'ChannelBlurAdd.fx' : None,
+    'DualGlow.fx' : None,
+    'DropShadow.fx' : None,
 
     # unsupported in HWA
-    'XOR' : 'dummy_shader',
-    'AND' : 'dummy_shader',
-    'OR' : 'dummy_shader'
+    'XOR' : None,
+    'AND' : None,
+    'OR' : None
 }
 
-PARAMETERS = set([
-    # mixer_shader
-    'r', 'g', 'b',
-    # hue_shader
-    'fHue',
-    # offset_shader
-    'width', 'height',
-    # dodgeblur_shader
-    'vertical', 'radius',
-    # grain_shader
-    'fStrength', 'fSeed', 'iInvert', 'iR', 'iG', 'iB', 'iA',
-    # tint_shader
-    'fTintColor', 'fTintPower', 'fOriginalPower',
-    # channelblur_shader
-    'fCoeff', 'iR', 'iG', 'iB', 'iA',
-    # bgbloom_shader
-    'coeff', 'exponent', 'radius',
-    # underwater_shader
-    'fBlur', 'fAmplitudeX', 'fPeriodsX', 'fFreqX', 'fAmplitudeY', 'fPeriodsY',
-    'fFreqY',
-    # rotatesub_shader
-    'fA', 'fX', 'fY', 'fSx', 'fSy',
-    # simplemask_shader
-    'fFade', 'fC',
-    # offsetstationary_shader
-    'width', 'height', 'xoff', 'yoff',
-    # patternoverlay_shader
-    'pattern', 'width', 'height', 'x', 'y', 'alpha',
-    # subpx_shader
-    'x', 'y', 'limit',
-    # zoomoffset_shader
-    'fX', 'fY', 'fZoomX', 'fZoomY', 'fWidth', 'fHeight',
-    # gradient_shader
-    'fArgb', 'fAa', 'fBrgb', 'fBa', 'fCoeff', 'fOffset', 'fFade', 'iT', 'iF',
-    'iR', 'iMask',
-    # overlayalpha_shader
-    'bgA',
-    # lens_shader
-    'fCoeff', 'fBase',
-    # coldirblur_shader
-    'rr', 'rg', 'rb', 'gr', 'gg', 'gb', 'br', 'bg', 'bb', 'fAngle', 'fCoeff',
-    # perspective_shader
-    'effect', 'direction', 'zoom', 'offset', 'sine_waves',
-    # 'perspective_dir',
-    # ninepatch_shader
-    'xScale', 'yScale', 'fArgb', 'fAa', 'fBrgb', 'fBa', 'fCoeff', 'fOffset',
-    'fFade',
-    # pixeloutline_shader
-    'color',
-    # brightsatbg_shader
-    'Brightness', 'Saturation',
-    # bgblur_shader
-    'fX', 'fY', 'fA'
-])
-
 def get_name(name):
-    return NATIVE_SHADERS[name]
+    name = NATIVE_SHADERS[name]
+    if name is None:
+        name = 'NONE'
+    return 'Render::%s' % name.upper()
 
 VERTEX_REPLACEMENTS = {
     'gl_MultiTexCoord0': 'in_tex_coord1',

@@ -2749,7 +2749,7 @@ class Converter(object):
         for item in expressions:
             name = item.getName()
             if name == 'String':
-                out += item.loader.value
+                out += self.config.get_string(item.loader.value)
             elif name == 'Long':
                 out += str(item.loader.value)
             elif name == 'Plus':
@@ -2770,7 +2770,7 @@ class Converter(object):
         for item in loader.items:
             if item.getName() != 'String':
                 continue
-            strings.append(item.loader.value)
+            strings.append(self.config.get_string(item.loader.value))
         return strings
 
     def convert_parameter(self, container):
@@ -2920,6 +2920,7 @@ class Converter(object):
         return out
 
     def intern_string(self, value):
+        value = self.config.get_string(value)
         if value == '':
             return 'empty_string'
         try:

@@ -2,6 +2,7 @@
 #include "include_gl.h"
 #include "collision.h"
 #include <iostream>
+#include "render.h"
 
 SystemBox::SystemBox(int x, int y, int type_id)
 : FrameObject(x, y, type_id)
@@ -19,24 +20,24 @@ void SystemBox::draw()
     int xx, yy;
     switch (type) {
         case PATTERN_IMAGE:
-            glEnable(GL_SCISSOR_TEST);
-            glc_scissor_world(x, y, width, height);
-            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            Render::enable_scissor(x, y, width, height);
             for (xx = x; xx < x + width; xx += image->width)
             for (yy = y; yy < y + height; yy += image->height) {
                 draw_image(image, xx + image->hotspot_x,
-                           yy + image->hotspot_y);
+                           yy + image->hotspot_y, Color());
             }
-            glDisable(GL_SCISSOR_TEST);
+			Render::disable_scissor();
             break;
         case CENTER_IMAGE:
             glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
             xx = x + width / 2 - image->width / 2;
             yy = y + height / 2 - image->height / 2;
-            draw_image(image, xx + image->hotspot_x, yy + image->hotspot_y);
+            draw_image(image, xx + image->hotspot_x, yy + image->hotspot_y,
+                       Color());
             break;
         case TOPLEFT_IMAGE:
-            draw_image(image, x + image->hotspot_x, y + image->hotspot_y);
+            draw_image(image, x + image->hotspot_x, y + image->hotspot_y,
+                       Color());
             break;
         default:
             break;

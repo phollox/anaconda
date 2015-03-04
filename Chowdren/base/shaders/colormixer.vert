@@ -6,6 +6,6 @@ varying float alpha;
 void main()
 {
     alpha = gl_Color.a;
-    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+    gl_Position = gl_Vertex;
     texture_coordinate = vec2(gl_MultiTexCoord0);
 }

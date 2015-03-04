@@ -18,6 +18,7 @@
 #include <time.h>
 #include <boost/cstdint.hpp>
 #include "path.h"
+#include "render.h"
 
 #define CHOWDREN_EXTRA_BILINEAR
 
@@ -40,7 +41,7 @@ PFNGLBLENDEQUATIONSEPARATEEXTPROC __glBlendEquationSeparateEXT;
 PFNGLBLENDEQUATIONEXTPROC __glBlendEquationEXT;
 PFNGLBLENDFUNCSEPARATEEXTPROC __glBlendFuncSeparateEXT;
 PFNGLACTIVETEXTUREARBPROC __glActiveTextureARB;
-PFNGLMULTITEXCOORD2FARBPROC __glMultiTexCoord2fARB;
+PFNGLCLIENTACTIVETEXTUREARBPROC __glClientActiveTextureARB;
 PFNGLGENFRAMEBUFFERSEXTPROC __glGenFramebuffersEXT;
 PFNGLFRAMEBUFFERTEXTURE2DEXTPROC __glFramebufferTexture2DEXT;
 PFNGLBINDFRAMEBUFFEREXTPROC __glBindFramebufferEXT;
@@ -280,6 +281,19 @@ void platform_get_mouse_pos(int * x, int * y)
     *y = (*y - draw_y_off) * (float(WINDOW_HEIGHT) / draw_y_size);
 }
 
+// #define CHOWDREN_USE_GL_DEBUG
+
+#ifndef NDEBUG
+static void APIENTRY on_debug_message(GLenum source, GLenum type, GLuint id,
+                                      GLenum severity, GLsizei length,
+                                      const GLchar * message,
+                                      GLvoid * param)
+{
+    std::cout << "OpenGL message (" << source << " " << type << " " << id <<
+        ")" << message << std::endl;
+}
+#endif
+
 void platform_create_display(bool fullscreen)
 {
     is_fullscreen = fullscreen;
@@ -298,6 +312,10 @@ void platform_create_display(bool fullscreen)
                         SDL_GL_CONTEXT_PROFILE_ES);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#endif
+
+#ifndef NDEBUG
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 #endif
 
     int flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
@@ -343,9 +361,9 @@ void platform_create_display(bool fullscreen)
     __glActiveTextureARB =
         (PFNGLACTIVETEXTUREARBPROC)
         SDL_GL_GetProcAddress("glActiveTextureARB");
-    __glMultiTexCoord2fARB =
-        (PFNGLMULTITEXCOORD2FARBPROC)
-        SDL_GL_GetProcAddress("glMultiTexCoord2fARB");
+    __glClientActiveTextureARB =
+        (PFNGLACTIVETEXTUREARBPROC)
+        SDL_GL_GetProcAddress("glClientActiveTextureARB");
 
     __glGenFramebuffersEXT =
         (PFNGLGENFRAMEBUFFERSEXTPROC)
@@ -409,6 +427,25 @@ void platform_create_display(bool fullscreen)
     __glGetUniformLocation =
         (PFNGLGETUNIFORMLOCATIONPROC)
         SDL_GL_GetProcAddress("glGetUniformLocation");
+#endif
+
+#if !defined(NDEBUG) && defined(CHOWDREN_USE_GL_DEBUG)
+#define GL_DEBUG_OUTPUT 0x92E0
+	std::cout << "OpenGL debug enabled" << std::endl;
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+
+    PFNGLDEBUGMESSAGECALLBACKARBPROC glDebugMessageCallback =
+        (PFNGLDEBUGMESSAGECALLBACKARBPROC)
+        SDL_GL_GetProcAddress("glDebugMessageCallback");
+
+    PFNGLDEBUGMESSAGECONTROLARBPROC glDebugMessageControl =
+        (PFNGLDEBUGMESSAGECONTROLARBPROC)
+        SDL_GL_GetProcAddress("glDebugMessageControl");
+
+	glDebugMessageCallback((GLDEBUGPROCARB)on_debug_message, NULL);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL,
+                          GL_TRUE);
 #endif
 
     // check extensions
@@ -499,6 +536,9 @@ void platform_begin_draw()
     screen_fbo.bind();
 }
 
+void set_scale_uniform(float width, float height,
+                       float x_scale, float y_scale);
+
 void platform_swap_buffers()
 {
     int window_width, window_height;
@@ -515,12 +555,7 @@ void platform_swap_buffers()
 
         real_aspect = std::min(aspect_width, aspect_height);
 
-#ifdef CHOWDREN_QUICK_SCALE
-        float aspect = std::max(std::min(1.0f, real_aspect),
-                                float(floor(real_aspect)));
-#else
         float aspect = real_aspect;
-#endif
         draw_x_size = aspect * WINDOW_WIDTH;
         draw_y_size = aspect * WINDOW_HEIGHT;
 
@@ -535,90 +570,34 @@ void platform_swap_buffers()
     screen_fbo.unbind();
 
     // resize the window contents if necessary (fullscreen mode)
-    glViewport(0, 0, window_width, window_height);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, window_width, window_height, 0, -1, 1);
-    glMatrixMode(GL_MODELVIEW);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glLoadIdentity();
+    Render::set_view(0, 0, window_width, window_height);
+    Render::set_offset(0, 0);
+    Render::clear(0, 0, 0, 255);
 
     int x2 = draw_x_off + draw_x_size;
     int y2 = draw_y_off + draw_y_size;
 
-    glColor4f(1.0, 1.0, 1.0, 1.0);
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, screen_fbo.get_tex());
-    glDisable(GL_BLEND);
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0, 1.0);
-    glVertex2i(draw_x_off, draw_y_off);
-    glTexCoord2f(1.0, 1.0);
-    glVertex2i(x2, draw_y_off);
-    glTexCoord2f(1.0, 0.0);
-    glVertex2i(x2, y2);
-    glTexCoord2f(0.0, 0.0);
-    glVertex2i(draw_x_off, y2);
-    glEnd();
-    glEnable(GL_BLEND);
-    glDisable(GL_TEXTURE_2D);
+#ifdef CHOWDREN_QUICK_SCALE
+    float x_scale = draw_x_size / float(WINDOW_WIDTH);
+    float y_scale = draw_y_size / float(WINDOW_WIDTH);
+    float use_effect = draw_x_size % WINDOW_WIDTH != 0 ||
+                       draw_y_size % WINDOW_HEIGHT != 0;
+    if (use_effect) {        
+        Render::set_effect(Render::PIXELSCALE);
+        set_scale_uniform(WINDOW_WIDTH, WINDOW_HEIGHT,
+                          draw_x_size / float(WINDOW_WIDTH),
+                          draw_y_size / float(WINDOW_HEIGHT));
+    }
+#endif
+
+    Render::disable_blend();
+	Render::draw_tex(draw_x_off, y2, x2, draw_y_off, Color(),
+                     screen_fbo.get_tex());
+    Render::enable_blend();
 
 #ifdef CHOWDREN_QUICK_SCALE
-    if (draw_x_off != 0 || draw_y_off != 0) {
-        int draw_x_size2 = real_aspect * WINDOW_WIDTH;
-        int draw_y_size2 = real_aspect * WINDOW_HEIGHT;
-
-        int draw_x_off2 = (window_width - draw_x_size2) / 2;
-        int draw_y_off2 = (window_height - draw_y_size2) / 2;
-
-        x2 = draw_x_off2 + draw_x_size2;
-        y2 = draw_y_off2 + draw_y_size2;
-
-        static bool init_bilinear = false;
-        static GLuint scaletex;
-        if (!init_bilinear) {
-            init_bilinear = true;
-            glGenTextures(1, &scaletex);
-            glBindTexture(GL_TEXTURE_2D, scaletex);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                            GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                            GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                            GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
-                            GL_CLAMP_TO_EDGE);
-        } else {
-            glBindTexture(GL_TEXTURE_2D, scaletex);
-        }
-        glEnable(GL_TEXTURE_2D);
-        static int last_x = -1;
-        static int last_y = -1;
-        if (last_x != draw_x_size || last_y != draw_y_size) {
-            last_x = draw_x_size;
-            last_y = draw_y_size;
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, draw_x_size, draw_y_size,
-                         0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-        }
-        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, draw_x_off, draw_y_off,
-                            draw_x_size, draw_y_size);
-
-        glColor4f(1.0, 1.0, 1.0, 1.0);
-        glDisable(GL_BLEND);
-        glBegin(GL_QUADS);
-        glTexCoord2f(0.0, 1.0);
-        glVertex2i(draw_x_off2, draw_y_off2);
-        glTexCoord2f(1.0, 1.0);
-        glVertex2i(x2, draw_y_off2);
-        glTexCoord2f(1.0, 0.0);
-        glVertex2i(x2, y2);
-        glTexCoord2f(0.0, 0.0);
-        glVertex2i(draw_x_off2, y2);
-        glEnd();
-        glEnable(GL_BLEND);
-        glDisable(GL_TEXTURE_2D);
-    }
+    if (use_effect)
+        Render::disable_effect();
 #endif
 
     SDL_GL_SwapWindow(global_window);
@@ -1116,16 +1095,16 @@ void open_url(const std::string & name)
 
 // file
 
-#ifdef CHOWDREN_ENABLE_STEAM
-#include "sdk/public/steam/steam_api.h"
-#include "sdk/public/steam/steamtypes.h"
+#ifdef CHOWDREN_AUTO_STEAMCLOUD
+#include "steam/steam_api.h"
+#include "steam/steamtypes.h"
 #include <sstream>
 #include "../path.h"
 #endif
 
 bool platform_remove_file(const std::string & file)
 {
-#ifdef CHOWDREN_ENABLE_STEAM
+#ifdef CHOWDREN_AUTO_STEAMCLOUD
     std::string base = get_path_filename(file);
     const char * base_c = base.c_str();
     if (SteamRemoteStorage()->FileExists(base_c)) {

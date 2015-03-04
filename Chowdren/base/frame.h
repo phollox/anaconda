@@ -13,10 +13,6 @@
 #include "color.h"
 #include "instancemap.h"
 
-#ifdef CHOWDREN_BACKGROUND_FBO
-#include "fbo.h"
-#endif
-
 class BackgroundItem;
 class CollisionBase;
 
@@ -44,12 +40,6 @@ typedef boost::intrusive::member_hook<FrameObject, LayerPos,
                                       &FrameObject::layer_pos> LayerHook;
 typedef boost::intrusive::list<FrameObject, LayerHook> LayerInstances;
 
-#ifdef CHOWDREN_BACKGROUND_FBO
-#define FBO_BORDER 32
-#define BACKGROUND_FBO_WIDTH (WINDOW_WIDTH + FBO_BORDER * 2)
-#define BACKGROUND_FBO_HEIGHT (WINDOW_HEIGHT + FBO_BORDER * 2)
-#endif
-
 class Layer
 {
 public:
@@ -69,13 +59,6 @@ public:
 
 #ifdef CHOWDREN_IS_3DS
     float depth;
-#endif
-
-#ifdef CHOWDREN_BACKGROUND_FBO
-    int background_count;
-    int fbo_pos[4];
-    bool background_fbo_init;
-    Framebuffer background_fbo;
 #endif
 
     Layer();

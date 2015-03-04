@@ -21,6 +21,7 @@ typedef enum
 #include "types.h"
 #include "datastream.h"
 #include <string>
+#include "color.h"
 
 
 class FTPoint
@@ -401,6 +402,7 @@ public:
     unsigned int remGlyphs;
     int xOffset;
     int yOffset;
+    static Color color;
 
     FTTextureFont(FileStream & stream);
     ~FTTextureFont();
@@ -411,7 +413,6 @@ public:
     inline FTPoint RenderI(const T* string, const int len,
                            FTPoint position, FTPoint spacing)
     {
-        glEnable(GL_TEXTURE_2D);
         FTGlyph::ResetActiveTexture();
         FTPoint tmp = FTFont::Render(string, len,
                                      position, spacing);

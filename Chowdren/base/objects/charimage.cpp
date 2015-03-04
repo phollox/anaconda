@@ -73,7 +73,7 @@ void CharacterImageObject::draw()
 
         int transparency = block.attribs.values[TRANSPARENT_ATTRIB];
         transparency = ((128 - transparency) * 255) / 128;
-        glColor4ub(255, 255, 255, transparency);
+        Color color(255, 255, 255, transparency);
 
         int alias_index = block.attribs.values[ALIAS_ATTRIB];
         CharacterImageAlias & alias = aliases[alias_index];
@@ -82,7 +82,7 @@ void CharacterImageObject::draw()
             unsigned char c = (unsigned char)block.text[i];
             CharacterImage & img = alias.charmap[c];
             if (img.image != NULL) {
-                img.image->draw(xx, yy);
+                img.image->draw(xx, yy, color);
             }
             xx += img.width + block.attribs.values[TRACKING_ATTRIB];
         }

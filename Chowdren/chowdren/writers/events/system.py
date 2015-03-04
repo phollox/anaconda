@@ -1701,9 +1701,8 @@ class SetInkEffect(ActionWriter):
                                            copy=False):
             obj = self.converter.get_object(self.get_object())
             if ink_effect in INK_EFFECTS:
-                name = NATIVE_SHADERS[INK_EFFECTS[ink_effect]]
-                if name is not None:
-                    writer.putlnc('%s->set_shader(%s);', obj, name)
+                writer.putlnc('%s->set_shader(%s);', obj,
+                              shader.get_name(INK_EFFECTS[ink_effect]))
             elif ink_effect == SEMITRANSPARENT_EFFECT:
                 writer.putlnc('%s->blend_color.set_semi_transparency(%s);',
                               obj, ink_value)

@@ -99,7 +99,7 @@ void GameManager::init()
 #elif defined(CHOWDREN_IS_FP)
     player_died = false;
     lives = 3;
-    set_frame(0);
+    set_frame(36);
 #else
     set_frame(0);
 #endif
@@ -129,10 +129,7 @@ void GameManager::set_window(bool fullscreen)
     platform_create_display(fullscreen);
 
     // OpenGL init
-    glc_init();
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    init_shaders();
+    Render::init();
 
 #ifdef CHOWDREN_VSYNC
     platform_set_vsync(true);
@@ -312,7 +309,7 @@ void GameManager::draw()
 #endif
     PROFILE_END();
 
-    glLoadIdentity();
+    Render::set_offset(0, 0);
 
 #ifdef CHOWDREN_IS_DEMO
     if (show_build_timer > 0.0) {
@@ -338,15 +335,10 @@ void GameManager::draw_fade()
 {
     if (fade_dir == 0.0f)
         return;
-    glLoadIdentity();
-    glBegin(GL_QUADS);
-    glColor4ub(fade_color.r, fade_color.g, fade_color.b,
-               int(fade_value * 255));
-    glVertex2f(0.0f, 0.0f);
-    glVertex2f(WINDOW_WIDTH, 0.0f);
-    glVertex2f(WINDOW_WIDTH, WINDOW_HEIGHT);
-    glVertex2f(0.0f, WINDOW_HEIGHT);
-    glEnd();
+    Render::set_offset(0, 0);
+    Color c = fade_color;
+    c.set_alpha(int(fade_value * 255));
+    Render::draw_quad(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, c);
 }
 
 void GameManager::set_frame(int index)
@@ -415,6 +407,7 @@ static InstanceCount counts[MAX_OBJECT_ID];
 
 static void print_instance_stats()
 {
+    return;
     int count = 0;
     for (int i = 0; i < MAX_OBJECT_ID; i++) {
         int instance_count = manager.frame->instances.items[i].size();
@@ -501,7 +494,7 @@ void GameManager::map_axis(int axis,
 
 #endif
 
-// #define SHOW_STATS
+#define SHOW_STATS
 
 bool GameManager::update()
 {

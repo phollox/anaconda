@@ -1,9 +1,9 @@
 #include "objects/textblitter.h"
 #include "include_gl.h"
 #include "collision.h"
-#include "shader.h"
 #include <iostream>
 #include "font.h"
+#include "render.h"
 
 // TextBlitter
 
@@ -340,10 +340,6 @@ void TextBlitter::draw()
 
     begin_draw();
 
-    blend_color.apply();
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, image->tex);
-
     int x_add = char_width + x_spacing;
     int y_add = char_height + y_spacing;
 
@@ -353,9 +349,6 @@ void TextBlitter::draw()
               - (lines.size() - 1) * y_spacing;
 
     int bottom_y = y + height;
-
-    // glEnable(GL_SCISSOR_TEST);
-    // glc_scissor_world(x, y, width, height);
 
     for (int line_index = 0; line_index < int(lines.size()); ++line_index) {
         if (yy <= y - y_add || yy >= bottom_y) {
@@ -388,6 +381,7 @@ void TextBlitter::draw()
             float t_y1 = float(img_y) / float(image->height);
             float t_y2 = float(img_y+char_height) / float(image->height);
 
+            Color color = blend_color;
             int yyy = yy;
             if (anim_type == BLITTER_ANIMATION_SINWAVE) {
                 double t = double(anim_frame / anim_speed + x_add * i);
@@ -399,30 +393,17 @@ void TextBlitter::draw()
                 callback_transparency = 0;
                 call_char_callback();
 
-                Color c = blend_color;
-                c.set_semi_transparency(callback_transparency);
-                c.apply();
+                color.set_semi_transparency(callback_transparency);
             }
 
-            glBegin(GL_QUADS);
-            glTexCoord2f(t_x1, t_y1);
-            glVertex2i(xx, yyy);
-            glTexCoord2f(t_x2, t_y1);
-            glVertex2i(xx + char_width, yyy);
-            glTexCoord2f(t_x2, t_y2);
-            glVertex2i(xx + char_width, yyy + char_height);
-            glTexCoord2f(t_x1, t_y2);
-            glVertex2i(xx, yyy + char_height);
-            glEnd();
+            Render::draw_tex(xx, yyy, xx + char_width, yyy + char_height,
+                             color, image->tex, t_x1, t_y1, t_x2, t_y2);
 
             xx += x_add;
         }
 
         yy += y_add;
     }
-
-    glDisable(GL_TEXTURE_2D);
-    // glDisable(GL_SCISSOR_TEST);
 
     end_draw();
 }

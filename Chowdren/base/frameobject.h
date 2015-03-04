@@ -279,8 +279,8 @@ public:
     int direction;
     int id;
     Color blend_color;
+	int effect;
     Frame * frame;
-    Shader * shader;
     ShaderParameters * shader_parameters;
     int movement_count;
     Movement ** movements;
@@ -316,11 +316,11 @@ public:
     void set_visible(bool value);
     void set_blend_color(int color);
     virtual void draw();
-#ifndef CHOWDREN_USE_DIRECT_RENDERER
-    void draw_image(Image * img, int x, int y, float angle = 0.0f,
-                    float scale_x = 1.0f, float scale_y = 1.0f,
-                    bool flip_x = false);
-#endif
+    void draw_image(Image * img, int x, int y, Color c);
+    void draw_image(Image * img, int x, int y, Color c, float angle,
+                    float x_scale, float y_scale);
+    void draw_image(Image * img, int x, int y, Color c, float angle,
+                    float x_scale, float y_scale, bool flip_x);
     void begin_draw(int width, int height);
     void begin_draw();
     void end_draw();
@@ -329,7 +329,7 @@ public:
     bool mouse_over();
     bool overlaps(FrameObject * other);
     void set_layer(int layer);
-    void set_shader(Shader * shader);
+    void set_shader(int effect);
     void set_shader_parameter(const std::string & name, double value);
     void set_shader_parameter(const std::string & name, Image & image);
     void set_shader_parameter(const std::string & name, const Color & color);
@@ -407,14 +407,6 @@ public:
             extra_alterables = new ExtraAlterables(flags);
         return *extra_alterables;
     }
-#endif
-
-#ifdef CHOWDREN_USE_DIRECT_RENDERER
-    void draw_image(Image * img, int x, int y);
-    void draw_image(Image * img, int x, int y, float angle,
-                    float x_scale, float y_scale);
-    void draw_image(Image * img, int x, int y, float angle,
-                    float x_scale, float y_scale, bool flip_x);
 #endif
 };
 

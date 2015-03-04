@@ -3,6 +3,8 @@ def init(converter):
     converter.add_define('CHOWDREN_QUICK_SCALE')
     converter.add_define('CHOWDREN_POINT_FILTER')
     converter.add_define('CHOWDREN_OBSTACLE_IMAGE')
+    converter.add_define('CHOWDREN_STEAM_APPID', 248310)
+    converter.add_define('CHOWDREN_JOYSTICK2_CONTROLLER')
 
     frameitems = converter.game.frameItems
     for item in frameitems.itemDict.itervalues():
@@ -190,5 +192,10 @@ def reorder_foreach(converter):
 def use_repeated_collisions(converter):
     return False
 
-# def use_condition_expression_iterator(converter):
-#     return False
+def use_condition_expression_iterator(converter):
+    return False
+
+def get_string(converter, value):
+    value = value.replace('gamepad.cfg', 'control_gamepad.cfg')
+    value = value.replace('keyboard.cfg', 'control_keyboard.cfg')
+    return value

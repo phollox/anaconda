@@ -9,6 +9,7 @@
 #include "types.h"
 #include "mathcommon.h"
 #include "assetfile.h"
+#include "render.h"
 
 #define STBI_NO_STDIO
 #define STBI_NO_HDR
@@ -189,15 +190,12 @@ void Image::upload_texture()
         return;
 
 #ifndef CHOWDREN_IS_WIIU
-    // std::cout << "creating alpha: " << (width * height) << std::endl;
     // create alpha mask
     alpha.resize(width * height);
-    // std::cout << "resized" << std::endl;
     for (int i = 0; i < width * height; i++) {
         unsigned char c = ((unsigned char*)(((unsigned int*)image) + i))[3];
         alpha.set(i, c != 0);
     }
-    // std::cout << "created alpha" << std::endl;
 #endif
 
     int gl_width, gl_height;
@@ -207,7 +205,6 @@ void Image::upload_texture()
     pot_h = std::max(8, round_pow2(height));
 
     if (pot_w >= 1024 || pot_h >= 1024) {
-        // std::cout << "Image size too large" << std::endl;
         pot_w = std::min<short>(1024, pot_w);
         pot_h = std::min<short>(1024, pot_h);
     }
@@ -216,7 +213,6 @@ void Image::upload_texture()
     gl_height = pot_h;
 
     if (pot_w != width || pot_h != height) {
-        // std::cout << "resize to pot" << std::endl;
         unsigned int * old_image =(unsigned int*)image;
         image = (unsigned char*)malloc(pot_w * pot_h * 4);
         unsigned int * image_arr = (unsigned int*)image;
@@ -231,30 +227,15 @@ void Image::upload_texture()
         }
 
         stbi_image_free(old_image);
-
-        // std::cout << "done" << std::endl;
     }
 #else
     gl_width = width;
     gl_height = height;
 #endif
 
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gl_width, gl_height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, image);
+    tex = Render::create_tex(image, Render::RGBA, gl_width, gl_height);
 
-    // std::cout << "texed" << std::endl;
-
-    if (flags & LINEAR_FILTER) {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    } else {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    }
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    Render::set_filter(tex, (flags & LINEAR_FILTER) != 0);
 
     if (flags & KEEP)
         return;
@@ -275,15 +256,8 @@ void Image::set_filter(bool linear)
         flags &= ~LINEAR_FILTER;
     if (tex == 0)
         return;
-    glBindTexture(GL_TEXTURE_2D, tex);
-    if (linear) {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    } else {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    }
 
+    Render::set_filter(tex, linear);
 }
 
 const float flipped_texcoords[8] = {
@@ -318,8 +292,8 @@ const float back_texcoords[8] = {
 };
 #endif
 
-void Image::draw(int x, int y, float angle, float scale_x, float scale_y,
-                 bool flip_x, GLuint background, bool has_tex_param)
+void Image::draw(int x, int y, Color color,
+                 float angle, float scale_x, float scale_y)
 {
     if (tex == 0) {
         upload_texture();
@@ -328,94 +302,85 @@ void Image::draw(int x, int y, float angle, float scale_x, float scale_y,
             return;
     }
 
-    glPushMatrix();
-    glTranslatef(x, y, 0.0);
-
-    if (angle != 0.0f)
-        glRotatef(-angle, 0.0, 0.0, 1.0);
-
-    if (scale_x != 1.0f || scale_y != 1.0f)
-        glScalef(scale_x, scale_y, 1.0);
-
-    if (background != 0)
-        glActiveTexture(GL_TEXTURE0);
-
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, tex);
-
-    if (background != 0) {
-        glActiveTexture(GL_TEXTURE1);
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, background);
-    }
-    if (has_tex_param) {
-        glActiveTexture(GL_TEXTURE2);
-        glEnable(GL_TEXTURE_2D);
+    if (angle == 0.0f && scale_x == 1.0f && scale_y == 1.0f) {
+        int xx = x - hotspot_x;
+        int yy = y - hotspot_y;
+        Render::draw_tex(xx, yy, xx + width, yy + height, color, tex);
+        return;
     }
 
-    glBegin(GL_QUADS);
+    float r = rad(angle);
+    float c = cos(r);
+    float s = sin(r);
 
-#ifdef CHOWDREN_NO_NPOT
-    const float * src_tc;
-    if (flip_x)
-        src_tc = flipped_texcoords;
-    else
-        src_tc = normal_texcoords;
-    float tex_coords[8];
-    float u = float(width) / float(pot_w);
-    float v = float(height) / float(pot_h);
-    for (int i = 0; i < 8; i += 2) {
-        tex_coords[i] = src_tc[i] * u;
-        tex_coords[i+1] = src_tc[i+1] * v;
-    }
-#else
-    const float * tex_coords;
-    if (flip_x) {
-        tex_coords = flipped_texcoords;
-    } else {
-        tex_coords = normal_texcoords;
-    }
-#endif
+    float x1 = -hotspot_x * scale_x;
+    float y1 = -hotspot_y * scale_y;
+    float x2 = (-hotspot_x + width) * scale_x;
+    float y2 = (-hotspot_y + height) * scale_y;
+    
+    float x1c = x1 * c;
+    float x1s = -x1 * s;
+    float y1c = y1 * c;
+    float y1s = y1 * s;
+    float x2c = x2 * c;
+    float x2s = -x2 * s;
+    float y2c = y2 * c;
+    float y2s = y2 * s;
 
-    glTexCoord2f(tex_coords[0], tex_coords[1]);
-    if (background != 0)
-        glMultiTexCoord2f(GL_TEXTURE1, back_texcoords[0], back_texcoords[1]);
-    glVertex2i(-hotspot_x, -hotspot_y);
-
-    glTexCoord2f(tex_coords[2], tex_coords[3]);
-    if (background != 0)
-        glMultiTexCoord2f(GL_TEXTURE1, back_texcoords[2], back_texcoords[3]);
-    glVertex2i(-hotspot_x + width, -hotspot_y);
-
-    glTexCoord2f(tex_coords[4], tex_coords[5]);
-    if (background != 0)
-        glMultiTexCoord2f(GL_TEXTURE1, back_texcoords[4], back_texcoords[5]);
-    glVertex2i(-hotspot_x + width, -hotspot_y + height);
-
-    glTexCoord2f(tex_coords[6], tex_coords[7]);
-    if (background != 0)
-        glMultiTexCoord2f(GL_TEXTURE1, back_texcoords[6], back_texcoords[7]);
-    glVertex2i(-hotspot_x, -hotspot_y + height);
-
-    glEnd();
-
-    if (has_tex_param) {
-        glDisable(GL_TEXTURE_2D);
-        if (background != 0)
-            glActiveTexture(GL_TEXTURE1);
-        else
-            glActiveTexture(GL_TEXTURE0);
-    }
-    if (background != 0) {
-        glDisable(GL_TEXTURE_2D);
-        glActiveTexture(GL_TEXTURE0);
-    }
-
-    glDisable(GL_TEXTURE_2D);
-    glPopMatrix();
+    float p[8] = {
+        x1c + y1s + x, x1s + y1c + y,
+        x2c + y1s + x, x2s + y1c + y,
+        x2c + y2s + x, x2s + y2c + y,
+        x1c + y2s + x, x1s + y2c + y
+    };
+    Render::draw_tex(&p[0], color, tex);
 }
 
-void Image::draw(int x, int y, int src_x, int src_y, int w, int h)
+void Image::draw_flip_x(int x, int y, Color color,
+                        float angle, float scale_x, float scale_y)
+{
+    if (tex == 0) {
+        upload_texture();
+
+        if (tex == 0)
+            return;
+    }
+
+    if (angle == 0.0f && scale_x == 1.0f && scale_y == 1.0f) {
+        int xx = x - hotspot_x;
+        int yy = y - hotspot_y;
+        Render::draw_tex(xx + width, yy, xx, yy + height, color, tex);
+        return;
+    }
+
+    float r = rad(angle);
+    float c = cos(r);
+    float s = sin(r);
+
+    float x2 = -hotspot_x * scale_x;
+    float y1 = -hotspot_y * scale_y;
+    float x1 = (-hotspot_x + width) * scale_x;
+    float y2 = (-hotspot_y + height) * scale_y;
+    
+    float x1c = x1 * c;
+    float x1s = -x1 * s;
+    float y1c = y1 * c;
+    float y1s = y1 * s;
+    float x2c = x2 * c;
+    float x2s = -x2 * s;
+    float y2c = y2 * c;
+    float y2s = y2 * s;
+
+    float p[8] = {
+        x1c + y1s + x, x1s + y1c + y,
+        x2c + y1s + x, x2s + y1c + y,
+        x2c + y2s + x, x2s + y2c + y,
+        x1c + y2s + x, x1s + y2c + y
+    };
+    Render::draw_tex(&p[0], color, tex);
+}
+
+void Image::draw(int x, int y, int src_x, int src_y, int w, int h, Color c)
 {
     if (tex == 0) {
         upload_texture();
@@ -427,23 +392,11 @@ void Image::draw(int x, int y, int src_x, int src_y, int w, int h)
     int x2 = x + w;
     int y2 = y + h;
 
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glBegin(GL_QUADS);
     float t_x1 = float(src_x) / float(width);
     float t_x2 = t_x1 + float(w) / float(width);
     float t_y1 = float(src_y) / float(height);
     float t_y2 = t_y1 + float(h) / float(height);
-    glTexCoord2f(t_x1, t_y1);
-    glVertex2i(x, y);
-    glTexCoord2f(t_x2, t_y1);
-    glVertex2i(x2, y);
-    glTexCoord2f(t_x2, t_y2);
-    glVertex2i(x2, y2);
-    glTexCoord2f(t_x1, t_y2);
-    glVertex2i(x, y2);
-    glEnd();
-    glDisable(GL_TEXTURE_2D);
+    Render::draw_tex(x, y, x2, y2, c, tex, t_x1, t_y1, t_x2, t_y2);
 }
 
 bool Image::is_valid()

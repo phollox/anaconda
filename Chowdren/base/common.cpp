@@ -271,12 +271,6 @@ void Layer::init(int index, double coeff_x, double coeff_y, bool visible,
         return;
 
     broadphase.init();
-
-#ifdef CHOWDREN_BACKGROUND_FBO
-    fbo_pos[0] = fbo_pos[1] = fbo_pos[2] = fbo_pos[3] = 0;
-    background_count = 0;
-    background_fbo_init = false;
-#endif
 }
 
 Layer::~Layer()
@@ -385,11 +379,6 @@ void Layer::add_background_object(FrameObject * instance)
     else
         instance->depth = background_instances.back()->depth + 1;
     background_instances.push_back(instance);
-
-#ifdef CHOWDREN_BACKGROUND_FBO
-    if (instance->id == BACKGROUND_TYPE)
-        background_count++;
-#endif
 }
 
 void Layer::remove_background_object(FrameObject * instance)
@@ -613,12 +602,6 @@ struct DrawCallback
     bool on_callback(void * data)
     {
         FrameObject * item = (FrameObject*)data;
-#ifdef CHOWDREN_BACKGROUND_FBO
-        // if (item->id == BACKGROUND_TYPE)
-        //     return true;
-        if (item->flags & BACKGROUND)
-            return true;
-#endif
         if (!(item->flags & VISIBLE) || item->flags & DESTROYING)
             return true;
         if (!collide_box(item, aabb))
@@ -627,34 +610,6 @@ struct DrawCallback
         return true;
     }
 };
-
-#ifdef CHOWDREN_BACKGROUND_FBO
-struct BackgroundDrawCallback
-{
-    FlatObjectList & list;
-    int * aabb;
-
-    BackgroundDrawCallback(FlatObjectList & list, int v[4])
-    : list(list), aabb(v)
-    {
-    }
-
-    bool on_callback(void * data)
-    {
-        FrameObject * item = (FrameObject*)data;
-        // if (item->id != BACKGROUND_TYPE)
-        //     return true;
-        if (!(item->flags & BACKGROUND))
-            return true;
-        if (!(item->flags & VISIBLE) || item->flags & DESTROYING)
-            return true;
-        if (!collide_box(item, aabb))
-            return true;
-        list.push_back(item);
-        return true;
-    }
-};
-#endif
 
 inline bool sort_depth_comp(FrameObject * obj1, FrameObject * obj2)
 {
@@ -670,16 +625,6 @@ inline void sort_depth(FlatObjectList & list)
     std::sort(list.begin(), list.end(), sort_depth_comp);
 }
 
-inline bool sort_back_comp(FrameObject * obj1, FrameObject * obj2)
-{
-    return obj1->depth < obj2->depth;
-}
-
-inline void sort_back(FlatObjectList & list)
-{
-    std::sort(list.begin(), list.end(), sort_back_comp);
-}
-
 void Layer::draw(int display_x, int display_y)
 {
     if (!visible)
@@ -690,9 +635,8 @@ void Layer::draw(int display_x, int display_y)
     x = y = 0;
 #endif
 
-    glLoadIdentity();
-    glTranslatef(-floor(display_x * coeff_x - x),
-                 -floor(display_y * coeff_y - y), 0.0);
+    Render::set_offset(-floor(display_x * coeff_x - x),
+                       -floor(display_y * coeff_y - y));
 
 #ifdef CHOWDREN_IS_3DS
     glc_set_global_depth(depth);
@@ -752,16 +696,10 @@ void Layer::draw(int display_x, int display_y)
     }
 
     if (blend_color.r != 255 || blend_color.g != 255 || blend_color.b != 255) {
-        glLoadIdentity();
-        blend_color.apply();
-        glBlendFunc(GL_ZERO, GL_SRC_COLOR);
-        glBegin(GL_QUADS);
-        glVertex2f(0.0f, 0.0f);
-        glVertex2f(WINDOW_WIDTH, 0.0f);
-        glVertex2f(WINDOW_WIDTH, WINDOW_HEIGHT);
-        glVertex2f(0.0f, WINDOW_HEIGHT);
-        glEnd();
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        Render::set_effect(Render::LAYERCOLOR);
+        Render::set_offset(0, 0);
+        Render::draw_quad(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, blend_color);
+        Render::disable_effect();
     }
 
     PROFILE_END();
@@ -1055,24 +993,14 @@ void Frame::draw(int remote)
 {
     PROFILE_BEGIN(frame_draw_start);
     // first, draw the actual window contents
-    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, -1, 1);
-    glMatrixMode(GL_MODELVIEW);
+    Render::set_view(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 #ifdef CHOWDREN_HAS_MRT
-    if (remote == CHOWDREN_REMOTE_TARGET)
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    else
+    if (remote == CHOWDREN_REMOTE_TARGET) {
+        Render::clear(Color(0, 0, 0, 255));
+    } else if (remote != CHOWDREN_REMOTE_ONLY)
 #endif
     {
-        background_color.apply_clear_color();
-    }
-#ifdef CHOWDREN_HAS_MRT
-    if (remote != CHOWDREN_REMOTE_ONLY)
-#endif
-    {
-        glClear(GL_COLOR_BUFFER_BIT);
+        Render::clear(background_color);
     }
 
     PROFILE_END();
@@ -1201,7 +1129,7 @@ void Frame::reset()
 // FrameObject
 
 FrameObject::FrameObject(int x, int y, int type_id)
-: x(x), y(y), id(type_id), flags(SCROLL | VISIBLE), shader(NULL),
+: x(x), y(y), id(type_id), flags(SCROLL | VISIBLE), effect(Render::NONE),
   alterables(NULL), shader_parameters(NULL), direction(0),
   movement(NULL), movements(NULL), movement_count(0), collision(NULL),
   collision_flags(0)
@@ -1235,41 +1163,70 @@ FrameObject::~FrameObject()
 }
 
 #ifndef CHOWDREN_USE_DIRECT_RENDERER
-void FrameObject::draw_image(Image * img, int x, int y, float angle,
+void FrameObject::draw_image(Image * img, int x, int y, Color c)
+{
+    img->upload_texture();
+    int x1 = x - img->hotspot_x;
+    int y1 = y - img->hotspot_y;
+    int x2 = x1 + img->width;
+    int y2 = y1 + img->height;
+    if (effect == Render::NONE) {
+        Render::draw_tex(x1, y1, x2, y2, c, img->tex);
+        return;
+    }
+    Render::set_effect(effect, this, img->width, img->height);
+    Render::draw_tex(x1, y1, x2, y2, c, img->tex);
+    Render::disable_effect();
+}
+
+void FrameObject::draw_image(Image * img, int x, int y, Color c, float angle,
+                             float x_scale, float y_scale)
+{
+    if (effect == Render::NONE) {
+        img->draw(x, y, c, angle, x_scale, y_scale);
+        return;
+    }
+    Render::set_effect(effect, this, img->width, img->height);
+    img->draw(x, y, c, angle, x_scale, y_scale);
+    Render::disable_effect();
+}
+
+void FrameObject::draw_image(Image * img, int x, int y, Color c, float angle,
                              float x_scale, float y_scale, bool flip_x)
 {
-    GLuint back_tex = 0;
-    bool has_tex_param = false;
-
-    if (shader != NULL) {
-        shader->begin(this, img);
-        back_tex = shader->get_background_texture();
-        has_tex_param = shader->has_texture_param();
+    if (!flip_x) {
+        draw_image(img, x, y, c, angle, x_scale, y_scale);
+        return;
     }
-
-    img->draw(x, y, angle, x_scale, y_scale, flip_x, back_tex,
-              has_tex_param);
-
-    if (shader != NULL)
-        shader->end(this);
+    if (effect == Render::NONE) {
+        img->draw_flip_x(x, y, c, angle, x_scale, y_scale);
+        return;
+    }
+    Render::set_effect(effect, this, img->width, img->height);
+    img->draw_flip_x(x, y, c, angle, x_scale, y_scale);
+    Render::disable_effect();
 }
 #endif
 
 void FrameObject::begin_draw(int width, int height)
 {
-    if (shader != NULL)
-        shader->begin(this, width, height);
+    if (effect == Render::NONE)
+        return;
+	Render::set_effect(effect, this, width, height);
 }
 
 void FrameObject::begin_draw()
 {
-    begin_draw(width, height);
+    if (effect == Render::NONE)
+        return;
+    Render::set_effect(effect, this, width, height);
 }
 
 void FrameObject::end_draw()
 {
-    if (shader != NULL)
-        shader->end(this);
+    if (effect == Render::NONE)
+        return;
+    Render::disable_effect();
 }
 
 void FrameObject::set_position(int new_x, int new_y)
@@ -1518,11 +1475,11 @@ int FrameObject::get_box_index(int index)
     return ret;
 }
 
-void FrameObject::set_shader(Shader * value)
+void FrameObject::set_shader(int value)
 {
     if (shader_parameters == NULL)
         shader_parameters = new ShaderParameters;
-    shader = value;
+    effect = value;
 }
 
 void FrameObject::set_shader_parameter(const std::string & name, double value)
@@ -1993,36 +1950,24 @@ FTTextureFont * get_font(int size)
 }
 
 void draw_gradient(int x1, int y1, int x2, int y2, int gradient_type,
-                   Color & color, Color & color2, int alpha)
+                   Color color, Color color2, int alpha)
 {
-    glDisable(GL_TEXTURE_2D);
-    glBegin(GL_QUADS);
     switch (gradient_type) {
         case NONE_GRADIENT:
-            glColor4ub(color.r, color.g, color.b, alpha);
-            glVertex2f(x1, y1);
-            glVertex2f(x2, y1);
-            glVertex2f(x2, y2);
-            glVertex2f(x1, y2);
+            color.set_alpha(alpha);
+            Render::draw_quad(x1, y1, x2, y2, color);
             break;
         case VERTICAL_GRADIENT:
-            glColor4ub(color.r, color.g, color.b, alpha);
-            glVertex2f(x1, y1);
-            glVertex2f(x2, y1);
-            glColor4ub(color2.r, color2.g, color2.b, alpha);
-            glVertex2f(x2, y2);
-            glVertex2f(x1, y2);
+            color.set_alpha(alpha);
+            color2.set_alpha(alpha);
+            Render::draw_vertical_gradient(x1, y1, x2, y2, color, color2);
             break;
         case HORIZONTAL_GRADIENT:
-            glColor4ub(color.r, color.g, color.b, alpha);
-            glVertex2f(x1, y2);
-            glVertex2f(x1, y1);
-            glColor4ub(color2.r, color2.g, color2.b, alpha);
-            glVertex2f(x2, y1);
-            glVertex2f(x2, y2);
+            color.set_alpha(alpha);
+            color2.set_alpha(alpha);
+            Render::draw_horizontal_gradient(x1, y1, x2, y2, color, color2);
             break;
     }
-    glEnd();
 }
 
 // File
@@ -2083,7 +2028,7 @@ MathHelper math_helper;
 
 int remap_button(int n)
 {
-#ifdef CHOWDREN_SNES_CONTROLLER
+#if defined(CHOWDREN_SNES_CONTROLLER)
     switch (n) {
         case CHOWDREN_BUTTON_X:
             return CHOWDREN_BUTTON_A;
@@ -2099,6 +2044,25 @@ int remap_button(int n)
             return n;
         default:
             return CHOWDREN_BUTTON_INVALID;
+    }
+#elif defined(CHOWDREN_JOYSTICK2_CONTROLLER)
+    switch (n) {
+        case CHOWDREN_BUTTON_BACK:
+            return CHOWDREN_BUTTON_LEFTSHOULDER;
+        case CHOWDREN_BUTTON_GUIDE:
+            return CHOWDREN_BUTTON_RIGHTSHOULDER;
+        case CHOWDREN_BUTTON_START:
+            return CHOWDREN_BUTTON_LEFTSTICK;
+        case CHOWDREN_BUTTON_LEFTSTICK:
+            return CHOWDREN_BUTTON_RIGHTSTICK;
+        case CHOWDREN_BUTTON_RIGHTSTICK:
+            return CHOWDREN_BUTTON_START;
+        case CHOWDREN_BUTTON_LEFTSHOULDER:
+            return CHOWDREN_BUTTON_BACK;
+        case CHOWDREN_BUTTON_RIGHTSHOULDER:
+            return CHOWDREN_BUTTON_GUIDE;
+        default:
+            return n;
     }
 #else
     return n;

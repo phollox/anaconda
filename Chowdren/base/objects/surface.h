@@ -28,7 +28,6 @@ struct SurfaceImage
     // Create blank image with specified size
     void reset(int w = 0, int h = 0);
     void set_image(Image * image);
-    void draw(FrameObject * instance, int x, int y);
 
     int get_display_width()
     {

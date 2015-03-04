@@ -1,4 +1,4 @@
-#ifdef CHOWDREN_ENABLE_STEAM
+#ifdef CHOWDREN_AUTO_STEAMCLOUD
 #define HANDLE_BASE FileHandle
 
 #include <stdio.h>
@@ -212,7 +212,7 @@ void BaseFile::open(const char * filename, const char * mode)
             is_read = false;
             break;
     }
-#ifdef CHOWDREN_ENABLE_STEAM
+#ifdef CHOWDREN_AUTO_STEAMCLOUD
     HANDLE_BASE * new_handle = NULL;
     std::string base = get_path_filename(filename);
     if (is_read) {

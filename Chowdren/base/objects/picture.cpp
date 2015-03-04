@@ -112,10 +112,10 @@ void ActivePicture::draw()
 {
     if (image == NULL)
         return;
-    blend_color.apply();
     image->hotspot_x = sprite_col.hotspot_x;
     image->hotspot_y = sprite_col.hotspot_y;
-    draw_image(image, x, y, angle, scale_x, scale_y, horizontal_flip);
+    draw_image(image, x, y, blend_color, angle, scale_x, scale_y,
+               horizontal_flip);
 }
 
 void ActivePicture::paste(int dest_x, int dest_y, int src_x, int src_y,

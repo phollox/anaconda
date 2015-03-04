@@ -6,6 +6,7 @@
 #include <iostream>
 #include "platform.h"
 #include "assetfile.h"
+#include "render.h"
 
 // front-end font loader
 
@@ -443,6 +444,8 @@ FTPoint FTFont::Render(const wchar_t * string, const int len,
 
 // FTTextureFont
 
+Color FTTextureFont::color;
+
 static inline GLuint ClampSize(GLuint in, GLuint maxTextureSize)
 {
     // Find next power of two
@@ -671,24 +674,12 @@ const FTPoint& FTGlyph::Render(const FTPoint& pen)
 {
     float dx, dy;
 
-    if (activeTextureID != glTextureID) {
-        glBindTexture(GL_TEXTURE_2D, (GLuint)glTextureID);
-        activeTextureID = glTextureID;
-    }
-
     dx = floor(pen.Xf() + corner.Xf());
     dy = floor(pen.Yf() + corner.Yf());
 
-    glBegin(GL_QUADS);
-    glTexCoord2f(uv[0].Xf(), uv[0].Yf());
-    glVertex3f(dx, dy, pen.Zf());
-    glTexCoord2f(uv[0].Xf(), uv[1].Yf());
-    glVertex3f(dx, dy - height, pen.Zf());
-    glTexCoord2f(uv[1].Xf(), uv[1].Yf());
-    glVertex3f(dx + width, dy - height, pen.Zf());
-    glTexCoord2f(uv[1].Xf(), uv[0].Yf());
-    glVertex3f(dx + width, dy, pen.Zf());
-    glEnd();
+    Render::draw_tex(dx, dy, dx + width, dy + height, FTTextureFont::color,
+                     glTextureID,
+                     uv[0].Xf(), uv[0].Yf(), uv[1].Xf(), uv[1].Yf());
 
     return advance;
 }
@@ -964,7 +955,7 @@ inline void FTSimpleLayout::WrapTextI(const T *buf, const int len,
             // Store the start of the next line
             lineStart = breakChar;
             // TODO: Is Height() the right value here?
-            pen -= FTPoint(0, currentFont->LineHeight() * currentSpacing);
+            pen += FTPoint(0, currentFont->LineHeight() * currentSpacing);
             // The current width is the width since the last break
             nextStart = wordLength + advance;
             wordLength += advance;

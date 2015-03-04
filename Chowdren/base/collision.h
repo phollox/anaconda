@@ -454,8 +454,7 @@ public:
 
     void draw()
     {
-        color.apply();
-        image->draw(dest_x, dest_y, src_x, src_y, src_width, src_height);
+        image->draw(dest_x, dest_y, src_x, src_y, src_width, src_height, color);
     }
 };
 

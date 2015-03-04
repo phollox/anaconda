@@ -7,6 +7,9 @@ def init(converter):
         converter.add_define('CHOWDREN_TEXT_JAPANESE')
         converter.add_define('CHOWDREN_BIG_FONT_OFFY 1')
 
+    if converter.platform_name == 'generic':
+        converter.add_define('CHOWDREN_AUTO_STEAMCLOUD')
+
 def use_simple_or(converter):
     return True
 

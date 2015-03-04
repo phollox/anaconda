@@ -63,7 +63,6 @@ endif()
 
 if (NOT CMAKE_CROSSCOMPILING OR EMSCRIPTEN)
     set(PLATFORM_SRCS
-        ${CHOWDREN_BASE_DIR}/glc/gl.cpp
         ${CHOWDREN_BASE_DIR}/desktop/glslshader.cpp
         ${CHOWDREN_BASE_DIR}/desktop/fbo.cpp
         ${PLATFORM_SRCS}
@@ -74,13 +73,13 @@ set(SRCS
     ${OBJECTSRCS}
     fonts.cpp
     lists.cpp
+    ${CHOWDREN_BASE_DIR}/render.cpp
     ${CHOWDREN_BASE_DIR}/run.cpp
     ${CHOWDREN_BASE_DIR}/keyconv.cpp
     ${CHOWDREN_BASE_DIR}/image.cpp
     ${PLATFORM_CPP}
     ${CHOWDREN_BASE_DIR}/assetfile.cpp
     ${CHOWDREN_BASE_DIR}/pools.cpp
-    ${CHOWDREN_BASE_DIR}/shader.cpp
     ${CHOWDREN_BASE_DIR}/font.cpp
     ${CHOWDREN_BASE_DIR}/movement.cpp
     ${CHOWDREN_BASE_DIR}/common.cpp
@@ -99,7 +98,7 @@ if (USE_STEAM)
     add_definitions(-DCHOWDREN_USE_STEAM)
     if (ENABLE_STEAM)
         add_definitions(-DCHOWDREN_ENABLE_STEAM)
-        include_directories("${CHOWDREN_BASE_DIR}/steam")
+        include_directories("${CHOWDREN_BASE_DIR}/steam/sdk/public")
         if (WIN32)
             set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
                 "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/steam_api.lib")

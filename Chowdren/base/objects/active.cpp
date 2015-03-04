@@ -1,5 +1,6 @@
 #include "objects/active.h"
 #include "manager.h"
+#include "render.h"
 
 // Active
 
@@ -273,13 +274,15 @@ void Active::load(const std::string & filename, int anim, int dir, int frame,
 
 void Active::draw()
 {
-    blend_color.apply();
-    bool blend = transparent || blend_color.a < 255 || shader != NULL;
-    if (!blend)
-        glDisable(GL_BLEND);
-    draw_image(image, x, y, angle, x_scale, y_scale);
-    if (!blend)
-        glEnable(GL_BLEND);
+    bool blend = transparent || blend_color.a < 255 ||
+                 effect != Render::NONE;
+    if (blend) {
+        draw_image(image, x, y, blend_color, angle, x_scale, y_scale);
+        return;
+    }
+    Render::disable_blend();
+    draw_image(image, x, y, blend_color, angle, x_scale, y_scale);
+    Render::enable_blend();
 }
 
 int Active::get_action_x()
