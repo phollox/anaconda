@@ -248,14 +248,16 @@ cdef class EventGroup(DataLoader):
         cdef int numberOfConditions = reader.readByte(True)
         cdef int numberOfActions = reader.readByte(True)
         self.flags.setFlags(reader.readShort(True)) # Flags
-        self.is_restricted = reader.readShort() # If the group is inhibited
         # wild guess - counter turned integer?
         if self.settings['build'] >= 284:
+            reader.skipBytes(2)
+            self.is_restricted = reader.readInt()
             self.restrictCpt = reader.readInt()
         else:
+            self.is_restricted = reader.readShort() # If the group is inhibited
             self.restrictCpt = reader.readShort() # Counter
-        self.identifier = reader.readShort() # Unique identifier
-        self.undo = reader.readShort() # Identifier for UNDO
+            self.identifier = reader.readShort() # Unique identifier
+            self.undo = reader.readShort() # Identifier for UNDO
 
         cdef int i
 

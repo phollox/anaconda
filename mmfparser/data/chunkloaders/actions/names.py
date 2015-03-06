@@ -130,7 +130,19 @@ systemDict = {
         23 : 'OpenDebugger',
         24 : 'PauseDebugger',
         25 : 'ExtractBinaryFile',
-        26 : 'ReleaseBinaryFile'
+        26 : 'ReleaseBinaryFile',
+        27 : 'SetGlobalValueInt',
+        28 : 'SetGlobalValue2',
+        29 : 'SetGlobalValueDouble',
+        30 : 'SetGlobalValue3',
+        31 : 'AddGlobalValueInt',
+        32 : 'AddGlobalValue2',
+        33 : 'AddGlobalValueDouble',
+        34 : 'AddGlobalValue3',
+        35 : 'SubtractGlobalValueInt',
+        36 : 'SubtractGlobalValue2',
+        37 : 'SubtractGlobalValueDouble',
+        38 : 'SubtractGlobalValue3'
     },
     -7 : {
         0 : 'SetScore',
