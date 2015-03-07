@@ -8,6 +8,8 @@ def get_base_path():
     return os.path.join(get_root_path(), 'base')
 
 def get_root_path():
+    if hasattr(sys, 'frozen'):
+        return os.getcwd()
     path = os.path.join(os.path.dirname(__file__), '..')
     return os.path.abspath(path)
 

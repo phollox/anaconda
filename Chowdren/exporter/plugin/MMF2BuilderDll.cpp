@@ -20,30 +20,34 @@
 #include <stdio.h>
 #include <string>
 
-#define BUILDER_ID 0x20000000
+#define BUILDER_ID 0x30000000
 
 LPCWSTR BUILD_NAMES[] = {
     L"Chowdren (Windows)",
     L"Chowdren (Windows + Source)",
-    L"Chowdren (Source)"
+    L"Chowdren (Source)",
+    L"Chowdren (CCN)"
 };
 
 LPCWSTR BUILD_FILTERS[] = {
-    L"EXE (Windows)|*.exe|All files|*.*||",
-    L"EXE (Windows)|*.exe|All files|*.*||",
-    L"ZIP (Source)|*.zip|All files|*.*||"
+    L"Executable|*.exe|All files|*.*||",
+    L"Executable|*.exe|All files|*.*||",
+    L"ZIP|*.zip|All files|*.*||",
+    L"Sub-application|*.ccn|All files|*.*||"
 };
 
 LPCWSTR SELECTOR_TITLES[] = {
     L"Save as Chowdren (Windows)",
     L"Save as Chowdren (Windows + Source)",
-    L"Save as Chowdren (Source)"
+    L"Save as Chowdren (Source)",
+    L"Save as Chowdren (CCN)"
 };
 
 LPCWSTR DEFAULT_EXTENSIONS[] = {
     L".exe",
     L".exe",
-    L".zip"
+    L".zip",
+    L".ccn"
 };
 
 BOOL APIENTRY DllMain( HANDLE hModule,
@@ -65,7 +69,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 // Return the number of build types added by the dll
 int WINAPI GetNumberOfBuildTypes()
 {
-	return 3;
+	return 4;
 }
 
 // Return the name of a given build type
@@ -136,13 +140,13 @@ BOOL WINAPI Build (LPCWSTR pTargetPathname, LPCWSTR pCCNPathname, int idx, DWORD
     strAppDirectory = strAppDirectory.substr(0, strAppDirectory.rfind(L"\\"));
     const wchar_t * tempdirectory = strAppDirectory.c_str();
     wchar_t directory[MAX_PATH];
-    swprintf(directory, L"%s%s", tempdirectory, L"\\Data\\Runtime\\Chowdren\\");
+    swprintf(directory, MAX_PATH, L"%s%s", tempdirectory, L"\\Data\\Runtime\\Chowdren\\");
     wchar_t exe_path[MAX_PATH];
-    swprintf(exe_path, L"%s%s", directory, L"run.exe");
+    swprintf(exe_path, MAX_PATH, L"%s%s", directory, L"run.exe");
     // setting error mode to prevent "no disk" errors
     unsigned int error_mode = SetErrorMode(SEM_NOOPENFILEERRORBOX | SEM_FAILCRITICALERRORS);
     bool status = CreateProcessW(exe_path, commandline, 0, 0, FALSE,
-        CREATE_DEFAULT_ERROR_MODE, 0, directory, &siStartupInfo, &piProcessInfo);
+        CREATE_DEFAULT_ERROR_MODE, 0, directory, &siStartupInfo, &piProcessInfo) == TRUE;
     bool ret;
     if (status)
     {
