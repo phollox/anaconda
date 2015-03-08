@@ -32,7 +32,7 @@ LPCWSTR BUILD_NAMES[] = {
 LPCWSTR BUILD_FILTERS[] = {
     L"Executable|*.exe|All files|*.*||",
     L"Executable|*.exe|All files|*.*||",
-    L"ZIP|*.zip|All files|*.*||",
+    L"Directory|*.*||",
     L"Sub-application|*.ccn|All files|*.*||"
 };
 
@@ -46,7 +46,7 @@ LPCWSTR SELECTOR_TITLES[] = {
 LPCWSTR DEFAULT_EXTENSIONS[] = {
     L".exe",
     L".exe",
-    L".zip",
+    L"",
     L".ccn"
 };
 
@@ -127,6 +127,10 @@ BOOL WINAPI Build (LPCWSTR pTargetPathname, LPCWSTR pCCNPathname, int idx, DWORD
 
     memset(&siStartupInfo, 0, sizeof(siStartupInfo));
     memset(&piProcessInfo, 0, sizeof(piProcessInfo));
+    siStartupInfo.dwFlags = STARTF_USESTDHANDLES;
+    siStartupInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    siStartupInfo.hStdOutput =  GetStdHandle(STD_OUTPUT_HANDLE);
+    siStartupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
 
     siStartupInfo.cb = sizeof(siStartupInfo);
 
@@ -146,7 +150,8 @@ BOOL WINAPI Build (LPCWSTR pTargetPathname, LPCWSTR pCCNPathname, int idx, DWORD
     // setting error mode to prevent "no disk" errors
     unsigned int error_mode = SetErrorMode(SEM_NOOPENFILEERRORBOX | SEM_FAILCRITICALERRORS);
     bool status = CreateProcessW(exe_path, commandline, 0, 0, FALSE,
-        CREATE_DEFAULT_ERROR_MODE, 0, directory, &siStartupInfo, &piProcessInfo) == TRUE;
+        CREATE_DEFAULT_ERROR_MODE | CREATE_NO_WINDOW, 0, directory,
+        &siStartupInfo, &piProcessInfo) == TRUE;
     bool ret;
     if (status)
     {

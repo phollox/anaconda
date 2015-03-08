@@ -272,6 +272,8 @@ class ExtendedHeader(DataLoader):
         self.screenRatioTolerance = reader.readShort()
         self.screenAngle = reader.readShort()
         reader.readInt() # unused
+        if self.buildType >= 0x10000000:
+            self.parent.settings['compat'] = True
     
     def write(self, reader):
         reader.writeInt(self.flags.getFlags())

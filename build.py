@@ -17,6 +17,7 @@
 
 import glob
 import sys
+import os
 import platform
 from setuptools import setup
 from Cython.Distutils import build_ext
@@ -42,15 +43,21 @@ names = open('names.txt', 'rb').read().splitlines()
 
 is_pypy = platform.python_implementation() == 'PyPy'
 
-compile_env = {'IS_PYPY': True}
+trans_start = os.environ.get('MMF_TRANS_START', None)
+compile_env = {'IS_PYPY': True, 'USE_TRANS': trans_start is not None}
+define_macros = []
+if trans_start is not None:
+    define_macros.append(('TRANS_START', trans_start))
 
 kw = dict(language='c++')
 
 for name in names:
     if name.startswith('#'):
         continue
-    ext_modules.append(Extension(name, ['./' + name.replace('.', '/') + '.pyx'],
-        include_dirs = include_dirs, **kw))
+    ext_modules.append(Extension(name,
+                                 ['./' + name.replace('.', '/') + '.pyx'],
+                                 define_macros=define_macros,
+                                 include_dirs=include_dirs, **kw))
 
 webp_srcs = glob.glob('./mmfparser/webp/*/*.c')
 ext_modules.append(Extension('mmfparser.webp',

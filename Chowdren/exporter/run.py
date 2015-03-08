@@ -1,4 +1,5 @@
 import sys
+import shutil
 
 class Logger(object):
     data = ''

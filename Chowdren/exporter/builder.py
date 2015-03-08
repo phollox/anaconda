@@ -96,9 +96,9 @@ class Builder(object):
         makedirs(self.build_dir)
         os.chdir(self.build_dir)
         args = [CMAKE_PATH, '..', '-G', 'MinGW Makefiles',
-                '-DCMAKE_LIBRARY_PATH:PATH=%s' % LIB_PATH,
+                '-DCMAKE_LIBRARY_PATH:PATH=%s' % LIB_PATH.replace('\\', '/'),
                 '-DCMAKE_EXE_LINKER_FLAGS:STRING=-static-libgcc '
-                '-static-libstdc++ -static']
+                '-static-libstdc++ -static', '-Wno-dev']
 
         call(args)
 
