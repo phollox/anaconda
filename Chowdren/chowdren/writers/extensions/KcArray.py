@@ -38,6 +38,13 @@ class KcArray(ObjectWriter):
         else:
             writer.putln(init)
 
+class SetValue(ActionMethodWriter):
+    method = 'set_value'
+
+    def __init__(self, *arg, **kw):
+        ActionMethodWriter.__init__(self, *arg, **kw)
+        self.converter.config.init_array_set_value(self)
+
 actions = make_table(ActionMethodWriter, {
     0 : '.data.x_pos = %s',
     1 : '.data.y_pos = %s',
@@ -48,7 +55,7 @@ actions = make_table(ActionMethodWriter, {
     7 : 'set_string',
     13 : 'set_value',
     14 : 'set_value',
-    15 : 'set_value', # xyz
+    15 : SetValue, # xyz
     16 : 'set_string',
     18 : 'set_string', # with xyz
     8 : 'clear',

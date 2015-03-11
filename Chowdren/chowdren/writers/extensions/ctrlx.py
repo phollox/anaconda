@@ -31,7 +31,7 @@ conditions = make_table(ConditionMethodWriter, {
     0 : 'is_key_pressed(translate_string_to_key(%s))',
     1 : 'is_key_pressed_once(translate_string_to_key(%s))',
     4 : 'is_any_key_pressed',
-    5 : 'is_key_pressed(translate_vk_to_key(%s))',
+    5 : 'is_key_pressed(%s)',
     9 : 'is_any_key_pressed_once'
 })
 

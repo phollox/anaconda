@@ -1,4 +1,5 @@
 import sys
+import os
 import shutil
 
 class Logger(object):
@@ -76,7 +77,7 @@ def main():
         executable = sys.argv[3]
         src_dir = os.path.join(os.path.dirname(executable), 'src')
     elif build_type == 'src':
-        src_dir = sys.argv[3]
+        src_dir = os.path.dirname(sys.argv[3])
     else:
         shutil.copy(src, sys.argv[3])
         return

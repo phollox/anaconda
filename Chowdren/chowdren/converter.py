@@ -1462,7 +1462,7 @@ class Converter(object):
 
         # since fire_write_callbacks can be called whenever, we need to
         # keep an initialization writer handy
-        start_name = 'on_frame_%s_start' % (frame_index + 1)
+        start_name = 'on_frame_%s_init' % (frame_index + 1)
         start_writer = self.start_writer = CodeWriter()
         start_writer.add_member = event_file.add_member
 
@@ -1482,7 +1482,7 @@ class Converter(object):
 
         self.frame_images[frame_index] = startup_images
 
-        frame_file.putmeth('void on_start')
+        frame_file.putmeth('void init')
         frame_file.putlnc('%s%s();', events_ref, start_name)
         frame_file.end_brace()
 
@@ -1736,8 +1736,9 @@ class Converter(object):
             event_start_name = self.write_generated(event_start_name,
                                                     event_file,
                                                     start_groups)
-
-
+            frame_file.putmeth('void on_start')
+            frame_file.putlnc('%s%s();', events_ref, event_start_name)
+            frame_file.end_brace()
 
         # write any added defaults
         for name, default in self.frame_initializers.iteritems():
@@ -1746,9 +1747,6 @@ class Converter(object):
                 continue
             name = name.rsplit(' ', 1)[-1]
             start_writer.putlnc('%s = %s;', name, default)
-
-        if start_groups:
-            start_writer.putlnc('%s();', event_start_name)
 
         fade = frame.fadeIn
         if fade:

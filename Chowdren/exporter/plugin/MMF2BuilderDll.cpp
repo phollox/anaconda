@@ -32,7 +32,7 @@ LPCWSTR BUILD_NAMES[] = {
 LPCWSTR BUILD_FILTERS[] = {
     L"Executable|*.exe|All files|*.*||",
     L"Executable|*.exe|All files|*.*||",
-    L"Directory|*.*||",
+    L"CMake config|CMakeLists.txt||",
     L"Sub-application|*.ccn|All files|*.*||"
 };
 
@@ -46,7 +46,7 @@ LPCWSTR SELECTOR_TITLES[] = {
 LPCWSTR DEFAULT_EXTENSIONS[] = {
     L".exe",
     L".exe",
-    L"",
+    L".txt",
     L".ccn"
 };
 
@@ -89,7 +89,7 @@ DWORD WINAPI GetBuildType(int idx)
 DWORD WINAPI GetBuildOptions(int idx)
 {
 		// return BUILDEROPTION_ZIP_CHUNKS | BUILDEROPTION_SAVE_IMAGES_AS_FILES | BUILDEROPTION_SAVE_SOUNDS_AS_FILES | BUILDEROPTION_SAVE_MUSICS_AS_FILES | BUILDEROPTION_PNG_WITH_ALPHA_ALWAYS;
-    return BUILDEROPTION_ZIP_CHUNKS | BUILDEROPTION_PNG_WITH_ALPHA_ALWAYS;
+    return BUILDEROPTION_ZIP_CHUNKS;
 }
 
 // Return the file filter to display in the file selector for a given build type when the user builds an application

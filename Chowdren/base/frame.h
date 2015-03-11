@@ -131,6 +131,7 @@ public:
 
     FrameData();
     virtual void event_callback(int id);
+    virtual void init();
     virtual void on_start();
     virtual void on_end();
     virtual void on_app_end();
@@ -239,11 +240,6 @@ public:
     void event_callback(int id)
     {
         data->event_callback(id);
-    }
-
-    void on_start()
-    {
-        data->on_start();
     }
 
     void on_end()

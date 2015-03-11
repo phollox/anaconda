@@ -2,6 +2,7 @@ def init(converter):
     converter.add_define('CHOWDREN_OBSTACLE_IMAGE')
     converter.add_define('CHOWDREN_QUICK_SCALE')
     converter.add_define('CHOWDREN_POINT_FILTER')
+    converter.add_define('CHOWDREN_JOYSTICK2_CONTROLLER')
 
 def init_container(converter, container):
     pass
@@ -104,3 +105,6 @@ def use_blitter_callback(converter, obj):
 
 def get_string(converter, value):
     return value
+
+def init_array_set_value(converter, event_writer):
+    pass

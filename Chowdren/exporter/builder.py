@@ -14,6 +14,7 @@ CMAKE_PATH = os.path.abspath(os.path.join(os.getcwd(),
 DISTRO_PATH = os.path.abspath(os.path.join(os.getcwd(), 'MinGW'))
 MAKE_PATH = os.path.join(DISTRO_PATH, 'bin', 'mingw32-make.exe')
 LIB_PATH = os.path.join(DISTRO_PATH, 'lib')
+BOOST_PATH = os.path.join(os.path.join(os.getcwd(), 'Boost'))
 
 class StopBuild(Exception):
     pass
@@ -96,6 +97,7 @@ class Builder(object):
         makedirs(self.build_dir)
         os.chdir(self.build_dir)
         args = [CMAKE_PATH, '..', '-G', 'MinGW Makefiles',
+                '-DCMAKE_BUILD_TYPE=Release',
                 '-DCMAKE_LIBRARY_PATH:PATH=%s' % LIB_PATH.replace('\\', '/'),
                 '-DCMAKE_EXE_LINKER_FLAGS:STRING=-static-libgcc '
                 '-static-libstdc++ -static', '-Wno-dev']
@@ -150,6 +152,7 @@ class Builder(object):
         os.environ['C_INCLUDE_PATH'] = includes
         os.environ['CPLUS_INCLUDE_PATH'] = includes
         os.environ['SDL2DIR'] = LIB_PATH
+        os.environ['BOOST_ROOT'] = BOOST_PATH
 
 BUILD_TYPES = [
     'win',

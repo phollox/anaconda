@@ -7,7 +7,7 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{B1109B38-B197-48FD-AD72-0135788FD21D}
 AppName=Chowdren
-AppVersion=1.0
+AppVersion=1.01
 ;AppVerName=Chowdren 1.0
 AppPublisher=MP2 Games
 AppPublisherURL=http://mp2.dk
@@ -19,9 +19,11 @@ DefaultGroupName=Chowdren
 DisableProgramGroupPage=yes
 LicenseFile=C:\MMF2\Python\COPYING.txt
 OutputBaseFilename=setup
-;Compression=lzma
-Compression=none
+Compression=lzma
+;Compression=none
 SolidCompression=yes
+WizardImageFile=WizModernImage-IS.bmp
+WizardSmallImageFile=WizModernSmallImage-IS.bmp
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

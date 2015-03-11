@@ -8,6 +8,7 @@
 #include "md5.h"
 #include "intern.cpp"
 #include "overlap.cpp"
+#include "collision.cpp"
 
 #ifdef CHOWDREN_USE_VALUEADD
 #include "extra_keys.cpp"
@@ -722,6 +723,10 @@ void FrameData::event_callback(int id)
 {
 }
 
+void FrameData::init()
+{
+}
+
 void FrameData::on_start()
 {
 }
@@ -962,7 +967,9 @@ bool Frame::update()
     }
 
     if (loop_count == 0) {
-        on_start();
+        data->init();
+        update_objects();
+        data->on_start();
     } else {    
         PROFILE_BEGIN(handle_pre_events);
         data->handle_pre_events();
@@ -2042,28 +2049,8 @@ int remap_button(int n)
             return CHOWDREN_BUTTON_START;
         case CHOWDREN_BUTTON_B:
             return n;
-        default:
-            return CHOWDREN_BUTTON_INVALID;
     }
-#elif defined(CHOWDREN_JOYSTICK2_CONTROLLER)
-    switch (n) {
-        case CHOWDREN_BUTTON_BACK:
-            return CHOWDREN_BUTTON_LEFTSHOULDER;
-        case CHOWDREN_BUTTON_GUIDE:
-            return CHOWDREN_BUTTON_RIGHTSHOULDER;
-        case CHOWDREN_BUTTON_START:
-            return CHOWDREN_BUTTON_LEFTSTICK;
-        case CHOWDREN_BUTTON_LEFTSTICK:
-            return CHOWDREN_BUTTON_RIGHTSTICK;
-        case CHOWDREN_BUTTON_RIGHTSTICK:
-            return CHOWDREN_BUTTON_START;
-        case CHOWDREN_BUTTON_LEFTSHOULDER:
-            return CHOWDREN_BUTTON_BACK;
-        case CHOWDREN_BUTTON_RIGHTSHOULDER:
-            return CHOWDREN_BUTTON_GUIDE;
-        default:
-            return n;
-    }
+    return n;
 #else
     return n;
 #endif

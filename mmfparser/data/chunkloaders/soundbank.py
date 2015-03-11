@@ -165,7 +165,7 @@ class SoundBank(DataLoader):
         old = self.settings.get('old', False)
 
         if debug:
-            path = reader.readString()
+            path = self.readString(reader)
             reader = ByteReader(open(path, 'rb'))
             reader.skipBytes(4)
 

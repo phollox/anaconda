@@ -81,7 +81,7 @@ class FontBank(DataLoader):
         debug = self.settings.get('debug', False)
         old = self.settings.get('old', False)
         if debug:
-            path = reader.readString()
+            path = self.readString(reader)
             reader = ByteReader(open(path, 'rb'))
             reader.skipBytes(4)
 
@@ -92,8 +92,15 @@ class FontBank(DataLoader):
         else:
             klass = FontItem
         
-        self.items = [self.new(klass, reader)
-            for _ in xrange(numberOfItems)]
+        offset = 0
+        if self.settings['build'] >= 284:
+            offset = -1
+
+        self.items = []
+        for _ in xrange(numberOfItems):
+            item = self.new(klass, reader)
+            item.handle += offset
+            self.items.append(item)
                 
     def write(self, reader):
         items = self.items or ()

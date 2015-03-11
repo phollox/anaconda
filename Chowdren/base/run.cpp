@@ -34,12 +34,8 @@ GameManager manager;
 #endif
 
 #ifndef NDEBUG
-#define CHOWDREN_DEBUG
-#endif
-
-// #ifdef CHOWDREN_DEBUG
 #define CHOWDREN_SHOW_DEBUGGER
-// #endif
+#endif
 
 GameManager::GameManager()
 : frame(NULL), window_created(false), fullscreen(false), off_x(0), off_y(0),
@@ -494,7 +490,9 @@ void GameManager::map_axis(int axis,
 
 #endif
 
+#ifndef NDEBUG
 #define SHOW_STATS
+#endif
 
 bool GameManager::update()
 {

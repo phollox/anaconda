@@ -371,7 +371,7 @@ cdef class ImageItem(DataLoader):
             newReader = reader
         else:
             newReader = zlibdata.decompress(reader)
-        
+
         start = newReader.tell()
         
         if old:
@@ -400,7 +400,7 @@ cdef class ImageItem(DataLoader):
             self.transparent = newReader.readColor()
 
         cdef int decompressed
-        if debug and self.settings.get('unicode', False):
+        if self.flags['LZX']:
             decompressed = newReader.readInt()
             newReader = ByteReader(zlib.decompress(newReader.read()))
 
@@ -465,6 +465,7 @@ cdef class ImageItem(DataLoader):
             code.interact(local = locals())
             reader.openEditor()
             raise NotImplementedError('unknown graphic mode: %s' % self.graphicMode)
+
         readerData = reader.read()
         data = readerData
         cdef int alphaSize, imageSize
