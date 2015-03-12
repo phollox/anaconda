@@ -672,7 +672,7 @@ size_t platform_get_file_size(const char * filename)
 {
 #ifndef _WIN32
     struct stat path_stat;
-    if (stat(p.c_str(), &path_stat) != 0)
+    if (stat(filename, &path_stat) != 0)
         return 0;
     if (!S_ISREG(path_stat.st_mode))
         return 0;
