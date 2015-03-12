@@ -1,5 +1,5 @@
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-    set(LINUX TRUE)
+    set(LINUX 1)
 endif()
 
 if (APPLE)
