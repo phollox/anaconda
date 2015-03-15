@@ -653,8 +653,17 @@ class Converter(object):
         self.root_path = get_root_path()
         self.info_dict = dict(company = company, version = version,
             copyright = copyright, description = game.name,
-            version_number = version_number, name = game.name,
-            base_path = self.base_path.replace('\\', '/'))
+            version_number = version_number, name = game.name)
+
+        base_path = self.base_path
+        if args.copy_base:
+            new_base = os.path.join(self.outdir, 'base')
+            shutil.rmtree(new_base, ignore_errors=True)
+            shutil.copytree(self.base_path, new_base)
+            base_path = '${CMAKE_CURRENT_SOURCE_DIR}/base'
+        else:
+            base_path = self.base_path.replace('\\', '/')
+        self.info_dict['base_path'] = base_path
 
         # assets, platform and config
         self.platform_name = args.platform or 'generic'

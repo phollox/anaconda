@@ -87,7 +87,8 @@ class Builder(object):
             'copyright': None,
             'company': None,
             'author': None,
-            'version': None
+            'version': None,
+            'copy_base': not self.is_temp
         }
 
         Converter(Arguments(args))
