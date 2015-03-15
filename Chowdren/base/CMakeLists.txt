@@ -262,9 +262,6 @@ endif()
 add_definitions(-DBOOST_ALL_NO_LIB)
 add_definitions(-DBOOST_NO_EXCEPTIONS)
 add_definitions(-DBOOST_EXCEPTION_DISABLE)
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
 
 include_directories(${CHOWDREN_BASE_DIR}/include/staticlibs)
 if (NOT NO_STATIC_OGG)
@@ -286,7 +283,6 @@ if (USE_WEBP)
     set(SRCS ${WEBP_C} ${SRCS})
 endif()
 
-find_package(Boost REQUIRED)
 if (NOT CMAKE_CROSSCOMPILING)
     find_package(SDL2 REQUIRED)
     find_package(OpenALSoft REQUIRED)
@@ -301,8 +297,7 @@ set(EXE_NAME "Chowdren")
 add_executable(${EXE_NAME} WIN32 MACOSX_BUNDLE ${SRCS})
 
 include_directories(${OPENALSOFT_INCLUDE_DIR} ${SDL2_INCLUDE_DIR}
-    ${VORBIS_INCLUDE_DIR} ${BOX2D_INCLUDE_DIR} ${Boost_INCLUDE_DIRS}
-    ${WEBP_INCLUDE_DIR})
+    ${VORBIS_INCLUDE_DIR} ${BOX2D_INCLUDE_DIR} ${WEBP_INCLUDE_DIR})
 target_link_libraries(${EXE_NAME} ${SDL2_LIBRARY} ${OPENGL_LIBRARY}
     ${OPENALSOFT_LIBRARY} ${PYTHON_LIBRARIES} ${PLATFORM_LIBRARIES}
     ${BOX2D_LIBRARY} ${OPENGLES2_LIBRARIES} ${EGL_LIBRARIES})

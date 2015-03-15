@@ -8,7 +8,7 @@
 #include "types.h"
 #include "platform.h"
 #include "chowconfig.h"
-#include <boost/dynamic_bitset.hpp>
+#include "bitarray.h"
 
 extern const float normal_texcoords[8];
 extern const float back_texcoords[8];
@@ -38,7 +38,7 @@ public:
     GLuint tex;
     unsigned char * image;
 #ifndef CHOWDREN_IS_WIIU
-    boost::dynamic_bitset<> alpha;
+    BitArray alpha;
 #endif
 
 #ifdef CHOWDREN_NO_NPOT
@@ -75,8 +75,8 @@ public:
             return c != 0;
         }
     #else
-        if (!alpha.empty())
-            return alpha.test(y * width + x);
+        if (alpha.data != NULL)
+            return alpha.get(y * width + x) != 0;
     #endif
         unsigned int * v = (unsigned int*)image + y * width + x;
         unsigned char c = ((unsigned char*)v)[3];
