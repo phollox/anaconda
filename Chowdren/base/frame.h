@@ -56,6 +56,7 @@ public:
     Broadphase broadphase;
     bool wrap_x, wrap_y;
     Color blend_color;
+    int inactive_box[4];
 
 #ifdef CHOWDREN_IS_3DS
     float depth;

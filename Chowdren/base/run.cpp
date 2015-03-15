@@ -95,7 +95,7 @@ void GameManager::init()
 #elif defined(CHOWDREN_IS_FP)
     player_died = false;
     lives = 3;
-    set_frame(0);
+    set_frame(67);
 #else
     set_frame(0);
 #endif

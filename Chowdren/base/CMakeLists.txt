@@ -236,6 +236,10 @@ endif()
 # include alsoft.conf
 # set(DATA_SRCS ${DATA_SRCS} "${CHOWDREN_BASE_DIR}/alsoft.conf")
 
+if(LINUX)
+    set(DATA_SRCS ${DATA_SRCS} "${CHOWDREN_BASE_DIR}/run.sh")
+endif()
+
 if (USE_PYTHON)
     add_definitions(-DCHOWDREN_USE_PYTHON)
     find_package(PythonLibs 2.7 REQUIRED)

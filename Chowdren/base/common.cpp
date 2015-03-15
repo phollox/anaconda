@@ -245,6 +245,7 @@ void Layer::reset()
     scroll_x = scroll_y = 0;
     back = NULL;
 
+    update_position();
 #ifdef CHOWDREN_IS_3DS
     depth = 0.0f;
 #endif
@@ -361,6 +362,11 @@ void Layer::set_position(int x, int y)
     }
 }
 
+#define INACTIVE_X 64
+#define INACTIVE_Y 16
+#define KILL_X 480
+#define KILL_Y 300
+
 void Layer::update_position()
 {
 #ifdef CHOWDREN_LAYER_WRAP
@@ -371,6 +377,39 @@ void Layer::update_position()
     off_x = scroll_x + x;
     off_y = scroll_y + y;
 #endif
+    Frame * frame = manager.frame;
+    if (frame == NULL) {
+        for (int i = 0; i < 4; i++) {
+            inactive_box[i] = 0;
+        }
+        return;
+    }
+
+    int x = frame->off_x;
+    int y = frame->off_y;
+    int w = frame->width;
+    int h = frame->height;
+
+    int x1 = x - INACTIVE_X;
+    if (x1 < 0)
+        x1 = -KILL_X;
+
+    int x2 = x + WINDOW_WIDTH + INACTIVE_X;
+    if (x2 > w)
+        x2 = w + KILL_X;
+
+    int y1 = y - INACTIVE_Y;
+    if (y1 < 0)
+        y1 = -KILL_Y;
+
+    int y2 = y + WINDOW_HEIGHT + INACTIVE_Y;
+    if (y2 > h)
+        y2 = h + KILL_Y;
+
+    inactive_box[0] = x1 + off_x;
+    inactive_box[2] = x2 + off_x;
+    inactive_box[1] = y1 + off_y;
+    inactive_box[3] = y2 + off_y;
 }
 
 void Layer::add_background_object(FrameObject * instance)
@@ -970,7 +1009,7 @@ bool Frame::update()
         data->init();
         update_objects();
         data->on_start();
-    } else {    
+    } else {
         PROFILE_BEGIN(handle_pre_events);
         data->handle_pre_events();
         PROFILE_END();
@@ -1829,21 +1868,15 @@ void FrameObject::get_screen_aabb(int box[4])
     box[3] = aabb[3] + off_y;
 }
 
-#define INACTIVE_X 64
-#define INACTIVE_Y 16
-
 void FrameObject::update_inactive()
 {
     flags &= ~INACTIVE;
 
-    int box[4];
-    get_screen_aabb(box);
-    if (box[0] > WINDOW_WIDTH + INACTIVE_X ||
-        box[1] > WINDOW_HEIGHT + INACTIVE_Y ||
-        box[2] < -INACTIVE_X || box[3] < -INACTIVE_Y)
-    {
+    int * aabb = collision->aabb;
+    int * b = layer->inactive_box;
+
+    if (aabb[0] > b[2] || aabb[1] > b[3] || aabb[2] < b[0] || aabb[3] < b[1])
         flags |= INACTIVE;
-    }
 }
 
 int SavedSelection::offset = 0;

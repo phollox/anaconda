@@ -146,8 +146,7 @@ class Builder(object):
                     os.path.join(DISTRO_PATH, 'include', 'freetype2'))
         includes = ';'.join(includes)
         path = os.environ['PATH'].split(';')
-        path = [os.path.join(DISTRO_PATH, 'bin'),
-                os.path.join(DISTRO_PATH, 'git', 'cmd')] + path
+        path = [os.path.join(DISTRO_PATH, 'bin')] + path
         os.environ['PATH'] = ';'.join(path)
         os.environ['C_INCLUDE_PATH'] = includes
         os.environ['CPLUS_INCLUDE_PATH'] = includes
