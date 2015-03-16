@@ -439,21 +439,53 @@ bool check_not_overlap(FrameObject * obj, QualifierList & list)
 
 // on collision
 
+class ObjectPairs
+{
+public:
+    int size;
+    FrameObject ** buffer;
+
+    ObjectPairs()
+    : size(0), buffer(&SavedSelection::buffer[SavedSelection::offset])
+    {
+    }
+
+    ~ObjectPairs()
+    {
+        SavedSelection::offset -= size;
+    }
+
+    void add(FrameObject * a, FrameObject * b)
+    {
+        SavedSelection::buffer[SavedSelection::offset++] = a;
+        SavedSelection::buffer[SavedSelection::offset++] = b;
+        size += 2;
+    }
+};
+
+#define FIRE_CALLBACK(pairs, e) \
+    for (int i = 0; i < pairs.size; i += 2) {\
+        col_instance_1 = pairs.buffer[i];\
+        col_instance_2 = pairs.buffer[i+1];\
+        (this->*e)();\
+    }
+
 void Frame::test_collisions(ObjectList & a, ObjectList & b,
                             int flag1, int flag2, EventFunction e)
 {
     StackBitArray temp = CREATE_BITARRAY_ZERO(b.size());
+    ObjectPairs pairs;
 
     ObjectList::iterator it1, it2;
     int index;
     for (it1 = a.begin(); it1 != a.end(); ++it1) {
-        col_instance_1 = it1->obj;
+        FrameObject * col_instance_1 = it1->obj;
 #ifndef CHOWDREN_REPEATED_COLLISIONS
         bool has_col = false;
         index = 0;
 #endif
         for (it2 = b.begin(); it2 != b.end(); ++it2, ++index) {
-            col_instance_2 = it2->obj;
+            FrameObject * col_instance_2 = it2->obj;
             if (col_instance_1 == col_instance_2)
                 continue;
             if (!check_overlap(col_instance_1, col_instance_2))
@@ -467,7 +499,7 @@ void Frame::test_collisions(ObjectList & a, ObjectList & b,
             col_instance_1->collision_flags |= flag1;
             col_instance_2->collision_flags |= flag2;
 #endif
-            (this->*e)();
+            pairs.add(col_instance_1, col_instance_2);
         }
 
 #ifndef CHOWDREN_REPEATED_COLLISIONS
@@ -484,23 +516,26 @@ void Frame::test_collisions(ObjectList & a, ObjectList & b,
         it2->obj->collision_flags &= ~flag2;
     }
 #endif
+
+    FIRE_CALLBACK(pairs, e);
 }
 
 void Frame::test_collisions_save(ObjectList & a, ObjectList & b,
                                  int flag1, int flag2, EventFunction e)
 {
     StackBitArray temp = CREATE_BITARRAY_ZERO(b.size());
+    ObjectPairs pairs;
 
     ObjectList::iterator it1, it2;
     int index;
     for (it1 = a.begin(); it1 != a.end(); ++it1) {
-        col_instance_1 = it1->obj;
+        FrameObject * col_instance_1 = it1->obj;
 #ifndef CHOWDREN_REPEATED_COLLISIONS
         bool has_col = false;
         index = 0;
 #endif
         for (it2 = b.begin(); it2 != b.end(); ++it2, ++index) {
-            col_instance_2 = it2->obj;
+            FrameObject * col_instance_2 = it2->obj;
             if (col_instance_1 == col_instance_2)
                 continue;
             if (!check_overlap_save(col_instance_1, col_instance_2))
@@ -514,7 +549,7 @@ void Frame::test_collisions_save(ObjectList & a, ObjectList & b,
             col_instance_1->collision_flags |= flag1;
             col_instance_2->collision_flags |= flag2;
 #endif
-            (this->*e)();
+            pairs.add(col_instance_1, col_instance_2);
         }
 
 #ifndef CHOWDREN_REPEATED_COLLISIONS
@@ -531,24 +566,27 @@ void Frame::test_collisions_save(ObjectList & a, ObjectList & b,
         it2->obj->collision_flags &= ~flag2;
     }
 #endif
+
+    FIRE_CALLBACK(pairs, e);
 }
 
 void Frame::test_collisions(QualifierList & a, ObjectList & b,
                             int flag1, int flag2, EventFunction e)
 {
     StackBitArray temp = CREATE_BITARRAY_ZERO(b.size());
+    ObjectPairs pairs;
 
     ObjectList::iterator it1, it2;
     int index;
     for (int i = 0; i < a.count; ++i)
     for (it1 = a.items[i]->begin(); it1 != a.items[i]->end(); ++it1) {
-        col_instance_1 = it1->obj;
+        FrameObject * col_instance_1 = it1->obj;
 #ifndef CHOWDREN_REPEATED_COLLISIONS
         bool has_col = false;
         index = 0;
 #endif
         for (it2 = b.begin(); it2 != b.end(); ++it2, ++index) {
-            col_instance_2 = it2->obj;
+            FrameObject * col_instance_2 = it2->obj;
             if (col_instance_1 == col_instance_2)
                 continue;
             if (!check_overlap(col_instance_1, col_instance_2))
@@ -562,7 +600,7 @@ void Frame::test_collisions(QualifierList & a, ObjectList & b,
             col_instance_1->collision_flags |= flag1;
             col_instance_2->collision_flags |= flag2;
 #endif
-            (this->*e)();
+            pairs.add(col_instance_1, col_instance_2);
         }
 
 #ifndef CHOWDREN_REPEATED_COLLISIONS
@@ -579,24 +617,27 @@ void Frame::test_collisions(QualifierList & a, ObjectList & b,
         it2->obj->collision_flags &= ~flag2;
     }
 #endif
+
+    FIRE_CALLBACK(pairs, e);
 }
 
 void Frame::test_collisions_save(QualifierList & a, ObjectList & b,
                                  int flag1, int flag2, EventFunction e)
 {
     StackBitArray temp = CREATE_BITARRAY_ZERO(b.size());
+    ObjectPairs pairs;
 
     ObjectList::iterator it1, it2;
     int index;
     for (int i = 0; i < a.count; ++i)
     for (it1 = a.items[i]->begin(); it1 != a.items[i]->end(); ++it1) {
-        col_instance_1 = it1->obj;
+        FrameObject * col_instance_1 = it1->obj;
 #ifndef CHOWDREN_REPEATED_COLLISIONS
         bool has_col = false;
         index = 0;
 #endif
         for (it2 = b.begin(); it2 != b.end(); ++it2, ++index) {
-            col_instance_2 = it2->obj;
+            FrameObject * col_instance_2 = it2->obj;
             if (col_instance_1 == col_instance_2)
                 continue;
             if (!check_overlap_save(col_instance_1, col_instance_2))
@@ -610,7 +651,7 @@ void Frame::test_collisions_save(QualifierList & a, ObjectList & b,
             col_instance_1->collision_flags |= flag1;
             col_instance_2->collision_flags |= flag2;
 #endif
-            (this->*e)();
+            pairs.add(col_instance_1, col_instance_2);
         }
 
 #ifndef CHOWDREN_REPEATED_COLLISIONS
@@ -627,27 +668,30 @@ void Frame::test_collisions_save(QualifierList & a, ObjectList & b,
         it2->obj->collision_flags &= ~flag2;
     }
 #endif
+
+    FIRE_CALLBACK(pairs, e);
 }
 
 void Frame::test_collisions(QualifierList & a, QualifierList & b,
                             int flag1, int flag2, EventFunction e)
 {
     StackBitArray temp = CREATE_BITARRAY_ZERO(b.size());
+    ObjectPairs pairs;
 
     ObjectList::iterator it1, it2;
     int index;
     for (int i = 0; i < a.count; ++i)
     for (it1 = a.items[i]->begin(); it1 != a.items[i]->end(); ++it1) {
-        col_instance_1 = it1->obj;
+        FrameObject * col_instance_1 = it1->obj;
 #ifndef CHOWDREN_REPEATED_COLLISIONS
         bool has_col = false;
         index = 0;
 #endif
         for (int ii = 0; ii < b.count; ++ii)
-        for (it2 = b.items[i]->begin(); it2 != b.items[i]->end(); ++it2,
-                                                                  ++index)
+        for (it2 = b.items[ii]->begin(); it2 != b.items[ii]->end(); ++it2,
+                                                                    ++index)
         {
-            col_instance_2 = it2->obj;
+            FrameObject * col_instance_2 = it2->obj;
             if (col_instance_1 == col_instance_2)
                 continue;
             if (!check_overlap(col_instance_1, col_instance_2))
@@ -661,7 +705,7 @@ void Frame::test_collisions(QualifierList & a, QualifierList & b,
             col_instance_1->collision_flags |= flag1;
             col_instance_2->collision_flags |= flag2;
 #endif
-            (this->*e)();
+            pairs.add(col_instance_1, col_instance_2);
         }
 
 #ifndef CHOWDREN_REPEATED_COLLISIONS
@@ -679,4 +723,6 @@ void Frame::test_collisions(QualifierList & a, QualifierList & b,
         it2->obj->collision_flags &= ~flag2;
     }
 #endif
+
+    FIRE_CALLBACK(pairs, e);
 }

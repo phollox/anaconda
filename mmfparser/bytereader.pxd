@@ -34,10 +34,10 @@ cdef class ByteReader:
     cpdef read(self, int size = ?)
     cpdef adjust(self, int to)
     cpdef size_t size(self)
-    cpdef short readByte(self, bint asUnsigned = ?)
-    cpdef int readShort(self, bint asUnsigned = ?)
-    cpdef float readFloat(self)
-    cpdef double readDouble(self)
+    cpdef short readByte(self, bint asUnsigned = ?) except? -10
+    cpdef int readShort(self, bint asUnsigned = ?) except? -10
+    cpdef float readFloat(self) except? -10
+    cpdef double readDouble(self) except? -10
     cpdef readInt(self, bint asUnsigned = ?)
     cpdef bytes readString(self, size=?)
     cpdef unicode readUnicodeString(self, size=?)

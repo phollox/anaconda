@@ -1,7 +1,7 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MMF2BuilderDll", "MMF2BuilderDll.vcproj", "{145E0180-C6C7-486B-9AEA-8100F3D04DE0}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MMF2BuilderDll", "MMF2BuilderDll.vcxproj", "{145E0180-C6C7-486B-9AEA-8100F3D04DE0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

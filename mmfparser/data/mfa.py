@@ -1285,6 +1285,7 @@ class MFA(DataLoader):
         self.mfaBuild = reader.readInt()
         self.product = reader.readInt()
         self.buildVersion = reader.readInt()
+        self.settings['build'] = self.buildVersion
         if self.mfaBuild >= MFA_CURRENT_VERSION:
             self.languageId = reader.readInt()
         self.name = reader.read(reader.readInt())

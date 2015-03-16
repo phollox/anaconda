@@ -31,6 +31,8 @@ def main():
         default=None, help='platform for which to generate')
     parser.add_argument('--config', type=str, action='store', default=None,
                         help='game-specific configuration file')
+    parser.add_argument('--copy_base', action='store_true',
+                        help='copy base runtime')
     args = parser.parse_args()
     Converter(args)
 

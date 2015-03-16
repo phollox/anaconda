@@ -8,13 +8,13 @@
 #else // CHOWDREN_IS_EMSCRIPTEN
 #include <al.h>
 #include <alc.h>
+#include <SDL_thread.h>
+#include <SDL_mutex.h>
 #endif // CHOWDREN_IS_EMSCRIPTEN
 
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-
-#include "staticlibs/tinythread/tinythread.cpp"
 
 #include <math.h>
 #include "../types.h"
@@ -92,12 +92,12 @@ public:
     ALCcontext * context;
     ALboolean direct_channels_ext, sub_buffer_data_ext;
     vector<SoundStream*> streams;
-    tthread::thread * streaming_thread;
-    tthread::recursive_mutex stream_mutex;
+    SDL_Thread * streaming_thread;
+    SDL_mutex * stream_mutex;
     volatile bool closing;
 
     void open();
-    static void _stream_update(void * data);
+    static int _stream_update(void * data);
     void stream_update();
     void add_stream(SoundStream*);
     void remove_stream(SoundStream*);
@@ -484,8 +484,8 @@ public:
 };
 
 #define BUFFER_COUNT 3
-#define LOCK_STREAM global_device.stream_mutex.lock
-#define UNLOCK_STREAM global_device.stream_mutex.unlock
+#define LOCK_STREAM SDL_LockMutex(global_device.stream_mutex)
+#define UNLOCK_STREAM SDL_UnlockMutex(global_device.stream_mutex)
 
 class SoundStream : public SoundBase
 {
@@ -526,21 +526,21 @@ public:
             buffers[i] = new SoundBuffer(file->sample_rate, file->channels,
                                          format);
 
-        LOCK_STREAM();
+        LOCK_STREAM;
         global_device.add_stream(this);
-        UNLOCK_STREAM();
+        UNLOCK_STREAM;
     }
 
     ~SoundStream()
     {
         stop();
 
-        LOCK_STREAM();
+        LOCK_STREAM;
         for (int i = 0; i < BUFFER_COUNT; i++)
             delete buffers[i];
 
         global_device.remove_stream(this);
-        UNLOCK_STREAM();
+        UNLOCK_STREAM;
 
         delete file;
     }
@@ -577,9 +577,9 @@ public:
     {
         if (!playing)
             return;
-        LOCK_STREAM();
+        LOCK_STREAM;
         playing = false;
-        UNLOCK_STREAM();
+        UNLOCK_STREAM;
         al_check(alSourceStop(source));
         clear_queue();
         al_check(alSourcei(source, AL_BUFFER, 0));
@@ -598,7 +598,7 @@ public:
 
     void set_playing_offset(double time)
     {
-        LOCK_STREAM();
+        LOCK_STREAM;
         al_check(alSourceStop(source));
         clear_queue();
         al_check(alSourcei(source, AL_BUFFER, 0));
@@ -609,7 +609,7 @@ public:
             end_buffers[i] = false;
         stopping = fill_queue();
         al_check(alSourcePlay(source));
-        UNLOCK_STREAM();
+        UNLOCK_STREAM;
     }
 
     double get_playing_offset()
@@ -765,10 +765,10 @@ public:
 
     void update_stereo_pan()
     {
-        LOCK_STREAM();
+        LOCK_STREAM;
         for (int i = 0; i < BUFFER_COUNT; i++)
             buffers[i]->set_pan(left_gain, right_gain);
-        UNLOCK_STREAM();
+        UNLOCK_STREAM;
     }
 };
 
@@ -820,15 +820,19 @@ void AudioDevice::open()
 #ifdef CHOWDREN_IS_EMSCRIPTEN
     stream_update();
 #else
-    streaming_thread = new tthread::thread(_stream_update, (void*)this);
+    stream_mutex = SDL_CreateMutex();
+    streaming_thread = SDL_CreateThread(_stream_update, "Stream thread",
+                                        (void*)this);
 #endif
 }
 
 void AudioDevice::close()
 {
     closing = true;
-    if (streaming_thread != NULL)
-        streaming_thread->join();
+    if (streaming_thread != NULL) {
+        int ret;
+        SDL_WaitThread(streaming_thread, &ret);
+    }
 
     if (device != NULL) {
         alcMakeContextCurrent(NULL);
@@ -836,6 +840,8 @@ void AudioDevice::close()
             alcDestroyContext(context);
         alcCloseDevice(device);
     }
+
+    SDL_DestroyMutex(stream_mutex);
 }
 
 void AudioDevice::stream_update()
@@ -849,20 +855,20 @@ void AudioDevice::stream_update()
     emscripten_async_call(_stream_update, (void*)this, 125);
 #else
     while (!closing) {
-        stream_mutex.lock();
+        SDL_LockMutex(stream_mutex);
         vector<SoundStream*>::const_iterator it;
         for (it = streams.begin(); it != streams.end(); ++it)
             (*it)->update();
-        stream_mutex.unlock();
-        // platform_sleep(0.125);
-        tthread::this_thread::sleep_for(tthread::chrono::milliseconds(125));
+        SDL_UnlockMutex(stream_mutex);
+        platform_sleep(0.125);
     }
 #endif
 }
 
-void AudioDevice::_stream_update(void * data)
+int AudioDevice::_stream_update(void * data)
 {
     ((AudioDevice*)data)->stream_update();
+    return 1;
 }
 
 void AudioDevice::add_stream(SoundStream * stream)

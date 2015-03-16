@@ -164,7 +164,8 @@ void Image::unload()
     tex = 0;
 
 #ifndef CHOWDREN_IS_WIIU
-    boost::dynamic_bitset<>().swap(alpha);
+    free(alpha.data);
+    alpha.data = NULL;
 #endif
 }
 
@@ -191,13 +192,28 @@ void Image::upload_texture()
 
 #ifndef CHOWDREN_IS_WIIU
     // create alpha mask
-    alpha.resize(width * height);
-    for (int i = 0; i < width * height; i++) {
-        unsigned char c = ((unsigned char*)(((unsigned int*)image) + i))[3];
-        alpha.set(i, c != 0);
-    }
-#endif
+    int size = width * height;
+    BaseBitArray::word_t * data;
+    data = (BaseBitArray::word_t*)malloc(GET_BITARRAY_SIZE(size) * 4);
+    int i = 0;
+    int ii = 0;
+    unsigned char c;
 
+    while (i < size) {
+        BaseBitArray::word_t word = 0;
+        for (BaseBitArray::word_t m = 1; m != 0; m <<= 1) {
+            c = ((unsigned char*)(((unsigned int*)image) + i))[3];
+            if (c != 0)
+                word |= m;
+            ++i;
+            if (i >= size)
+                break;
+        }
+        data[ii++] = word;
+    }
+
+    alpha.data = data;
+#endif
     int gl_width, gl_height;
 
 #ifdef CHOWDREN_NO_NPOT

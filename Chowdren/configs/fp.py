@@ -1,3 +1,5 @@
+from chowdren.key import convert_key
+
 def init(converter):
     converter.add_define('CHOWDREN_IS_FP')
     converter.add_define('CHOWDREN_QUICK_SCALE')
@@ -8,15 +10,25 @@ def init(converter):
 
     frameitems = converter.game.frameItems
     for item in frameitems.itemDict.itervalues():
-        if not item.name.startswith('Hazard_ScanLaser'):
-            continue
-        print 'Fixing collisionbox for', item.name
-        flags = item.properties.loader.newFlags
-        flags['CollisionBox'] = False
+        name = item.name
+        if name.startswith('Hazard_ScanLaser'):
+            print 'Fixing collisionbox for', item.name
+            flags = item.properties.loader.newFlags
+            flags['CollisionBox'] = False
+        elif name == 'Icon_Joypad':
+            values = item.properties.loader.values.items # 1, 3, 2, 8
+            values[4] = 1
+            values[5] = 3
+            values[6] = 2
+            values[7] = 7
+        elif name == 'Icon_Keyboard':
+            values = item.properties.loader.values.items
+            for index in xrange(len(values)):
+                values[index] = convert_key(values[index])
 
     values = converter.game.globalValues.items
     # values[0] = 1
-    # values[1] = 2
+    values[1] = 4
     # values[4] = 1
 
 # def get_frames(converter, game, frames):
@@ -199,3 +211,29 @@ def get_string(converter, value):
     value = value.replace('gamepad.cfg', 'control_gamepad.cfg')
     value = value.replace('keyboard.cfg', 'control_keyboard.cfg')
     return value
+
+def init_array_set_value(converter, event_writer):
+    if event_writer.get_object_writer().data.name != 'MapData':
+        return
+
+    convert_index = event_writer.convert_index
+
+    try:
+        param = eval(convert_index(1))
+        if param not in xrange(1, 9):
+            return
+        param = eval(convert_index(2))
+        if param != 1:
+            return
+        param = eval(convert_index(3))
+        if param != 0:
+            return
+    except NameError:
+        return
+
+    from chowdren.key import convert_key, SDL_KEYS
+    first = event_writer.parameters[0].loader.items[0].loader
+    value = SDL_KEYS[convert_key(first.value)]
+    if isinstance(value, str):
+        value = ord(value)
+    first.value = value

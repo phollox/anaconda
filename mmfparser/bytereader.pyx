@@ -170,7 +170,6 @@ cdef class ByteReader:
         self.pos += value
 
     cdef bint _read(self, void * value, int size) except False:
-
         IF IS_PYPY:
             cdef char * data_c
             if self.python_fp:
@@ -250,14 +249,14 @@ cdef class ByteReader:
     def __repr__(self):
         return repr(str(self))
 
-    cpdef short readByte(self, bint asUnsigned = False):
+    cpdef short readByte(self, bint asUnsigned = False) except? -10:
         cdef char value
         self._read(&value, 1)
         if asUnsigned:
             return <unsigned char>value
         return value
 
-    cpdef int readShort(self, bint asUnsigned = False):
+    cpdef int readShort(self, bint asUnsigned = False) except? -10:
         cdef short value
         cdef unsigned char byte1, byte2
         self._read(&byte1, 1)
@@ -267,12 +266,12 @@ cdef class ByteReader:
             return <unsigned short>value
         return value
 
-    cpdef float readFloat(self):
+    cpdef float readFloat(self) except? -10:
         cdef float value
         self._read(&value, 4)
         return value
 
-    cpdef double readDouble(self):
+    cpdef double readDouble(self) except? -10:
         cdef double value
         self._read(&value, 8)
         return value

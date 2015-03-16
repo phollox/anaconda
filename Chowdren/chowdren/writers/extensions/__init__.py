@@ -7,7 +7,16 @@ def filter_name(name):
     return name.replace(' ', '').replace('+', 'p').lower()
 
 names = {}
-for name in os.listdir(os.path.dirname(__file__)):
+
+try:
+    zipfiles = __loader__._files
+    filenames = [zipfiles[f][0] for f in zipfiles.keys()
+                 if 'chowdren\\writers\\extensions' in f]
+    filenames = [f.split('\\')[-1] for f in filenames]
+except (AttributeError, NameError):
+    filenames = os.listdir(os.path.dirname(__file__))
+
+for name in filenames:
     name, ext = os.path.splitext(name)
     names[filter_name(name)] = name
 

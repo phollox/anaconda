@@ -23,8 +23,10 @@ actions = make_table(StaticActionWriter, {
 
 conditions = make_table(AlwaysCondition, {
     1 : 'is_key_pressed(translate_string_to_key(%s))',
-    3 : 'is_key_pressed_once(translate_vk_to_key(%s))',
-    6 : 'is_key_released_once(translate_vk_to_key(%s))',
+    # 3 : 'is_key_pressed_once(translate_vk_to_key(%s))',
+    # 6 : 'is_key_released_once(translate_vk_to_key(%s))',
+    3 : 'is_key_pressed_once(%s)',
+    6 : 'is_key_released_once(%s)',
     7 : 'is_key_released_once(translate_string_to_key(%s))'
 })
 

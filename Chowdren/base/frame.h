@@ -56,6 +56,7 @@ public:
     Broadphase broadphase;
     bool wrap_x, wrap_y;
     Color blend_color;
+    int inactive_box[4];
 
 #ifdef CHOWDREN_IS_3DS
     float depth;
@@ -131,6 +132,7 @@ public:
 
     FrameData();
     virtual void event_callback(int id);
+    virtual void init();
     virtual void on_start();
     virtual void on_end();
     virtual void on_app_end();
@@ -239,11 +241,6 @@ public:
     void event_callback(int id)
     {
         data->event_callback(id);
-    }
-
-    void on_start()
-    {
-        data->on_start();
     }
 
     void on_end()

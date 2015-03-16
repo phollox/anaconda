@@ -171,7 +171,6 @@ class ObjectInfo(DataLoader, _ObjectTypeMixin):
     items = None
 
     def read(self, ByteReader reader):
-        # reader.openEditor()
         infoChunks = self.new(ChunkList, reader)
         properties = None
         for chunk in infoChunks.items:
