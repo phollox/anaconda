@@ -63,7 +63,6 @@ public:
     bool is_valid();
     void unload();
     void set_filter(bool linear);
-
     // inline methods
 
     bool get_alpha(int x, int y)

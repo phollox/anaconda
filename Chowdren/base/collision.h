@@ -486,42 +486,4 @@ inline bool collide_box(FrameObject * a, int v[4])
     return collides(col->aabb, v);
 }
 
-// #include <boost/container/flat_set.hpp>
-
-// class CollisionPairs
-// {
-// public:
-//     struct CollisionPair
-//     {
-//         FrameObject * a;
-//         FrameObject * b;
-
-//         CollisionPair(FrameObject * a, FrameObject * b)
-//         : a(a), b(b)
-//         {
-//         }
-//     };
-
-//     flat_set<CollisionPair> pairs;
-
-//     CollisionPairs()
-//     {
-//     }
-
-//     bool add_pair(FrameObject * a, FrameObject * b)
-//     {
-//         // returns true if insertion took place
-//         return pairs.emplace(a, b).second;
-//     }
-
-//     void remove_pair(FrameObject * a, FrameObject * b)
-//     {
-//         pairs.erase(CollisionPair(a, b));
-//     }
-
-//     void update_pairs()
-//     {
-//     }
-// };
-
 #endif // CHOWDREN_COLLISION_H
