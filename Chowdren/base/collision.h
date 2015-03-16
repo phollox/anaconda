@@ -354,26 +354,6 @@ public:
         r_y = new_y - y_t;
     }
 
-    inline bool get_bit(int x, int y)
-    {
-        // XXX slow, rather get the alpha mask directly from image
-        return image->get_alpha(x, y);
-    }
-
-    inline bool get_tbit(int x, int y)
-    {
-        int xx = GET_SCALER_RESULT(x * co_divx - y * si_divx);
-        int yy = GET_SCALER_RESULT(y * co_divy + x * si_divy);
-        x = xx;
-        y = yy;
-        // XXX bad branching
-        if ((x | y) < 0 || x >= image->width || y >= image->height)
-            return false;
-        if (flags & BOX_COLLISION)
-            return true;
-        return image->get_alpha(x, y);
-    }
-
     void update_aabb()
     {
         aabb[0] = instance->x - new_hotspot_x;
@@ -402,11 +382,6 @@ public:
         aabb[2] = aabb[0] + image->width;
         aabb[3] = aabb[1] + image->height;
         update_proxy();
-    }
-
-    inline bool get_bit(int x, int y)
-    {
-        return image->get_alpha(x, y);
     }
 };
 
@@ -453,11 +428,6 @@ public:
         aabb[1] = dest_y;
         aabb[2] = dest_x + src_width;
         aabb[3] = dest_y + src_height;
-    }
-
-    inline bool get_bit(int x, int y)
-    {
-        return image->get_alpha(x, y);
     }
 
     void draw()
