@@ -87,6 +87,9 @@ void shader_set_effect(int effect, FrameObject * obj,
         case Render::PIXELSCALE:
             pixelscale_shader.begin(NULL, 0, 0);
             break;
+        case Render::FONT:
+            font_shader.begin(NULL, 0, 0);
+            break;
         HANDLE_SHADER(PERSPECTIVE, perspective_shader);
         HANDLE_SHADER(MONOCHROME, monochrome_shader);
         HANDLE_SHADER(ZOOMOFFSET, zoomoffset_shader);

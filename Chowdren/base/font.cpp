@@ -6,7 +6,6 @@
 #include <iostream>
 #include "platform.h"
 #include "assetfile.h"
-#include "render.h"
 
 // front-end font loader
 
@@ -234,36 +233,9 @@ inline void FTUnicodeStringItr<T>::readUTF16()
 }
 
 
-// FTFont
+// FTTextureFont
 
-
-FTFont::FTFont(FileStream & stream)
-{
-    glyphList = new FTGlyphContainer(this);
-
-    size = stream.read_int32();
-    width = stream.read_float();
-    height = stream.read_float();
-    ascender = stream.read_float();
-    descender = stream.read_float();
-    numGlyphs = stream.read_int32();
-
-    for (int i = 0; i < numGlyphs; i++) {
-        FTGlyph * glyph = new FTGlyph(stream);
-        glyphList->Add(glyph, glyph->charcode);
-    }
-}
-
-
-FTFont::~FTFont()
-{
-    if (glyphList == NULL)
-        return;
-    delete glyphList;
-}
-
-
-FTPoint FTFont::KernAdvance(unsigned int index1, unsigned int index2)
+FTPoint FTTextureFont::KernAdvance(unsigned int index1, unsigned int index2)
 {
     return FTPoint(0.0, 0.0);
     // if (!hasKerningTable || !index1 || !index2) {
@@ -285,26 +257,26 @@ FTPoint FTFont::KernAdvance(unsigned int index1, unsigned int index2)
 }
 
 
-float FTFont::Ascender() const
+float FTTextureFont::Ascender() const
 {
     return ascender;
 }
 
 
-float FTFont::Descender() const
+float FTTextureFont::Descender() const
 {
     return descender;
 }
 
 
-float FTFont::LineHeight() const
+float FTTextureFont::LineHeight() const
 {
     return height;
 }
 
 
 template <typename T>
-inline FTBBox FTFont::BBoxI(const T* string, const int len,
+inline FTBBox FTTextureFont::BBoxI(const T* string, const int len,
                                 FTPoint position, FTPoint spacing)
 {
     FTBBox totalBBox;
@@ -349,24 +321,24 @@ inline FTBBox FTFont::BBoxI(const T* string, const int len,
 }
 
 
-FTBBox FTFont::BBox(const char *string, const int len,
-                        FTPoint position, FTPoint spacing)
+FTBBox FTTextureFont::BBox(const char *string, const int len,
+                           FTPoint position, FTPoint spacing)
 {
     /* The chars need to be unsigned because they are cast to int later */
     return BBoxI((const unsigned char *)string, len, position, spacing);
 }
 
 
-FTBBox FTFont::BBox(const wchar_t *string, const int len,
-                        FTPoint position, FTPoint spacing)
+FTBBox FTTextureFont::BBox(const wchar_t *string, const int len,
+                           FTPoint position, FTPoint spacing)
 {
     return BBoxI(string, len, position, spacing);
 }
 
 
 template <typename T>
-inline float FTFont::AdvanceI(const T* string, const int len,
-                                  FTPoint spacing)
+inline float FTTextureFont::AdvanceI(const T* string, const int len,
+                                     FTPoint spacing)
 {
     float advance = 0.0f;
     FTUnicodeStringItr<T> ustr(string);
@@ -388,7 +360,8 @@ inline float FTFont::AdvanceI(const T* string, const int len,
 }
 
 
-float FTFont::Advance(const char* string, const int len, FTPoint spacing)
+float FTTextureFont::Advance(const char* string, const int len,
+                             FTPoint spacing)
 {
     /* The chars need to be unsigned because they are cast to int later */
     const unsigned char *ustring = (const unsigned char *)string;
@@ -396,16 +369,18 @@ float FTFont::Advance(const char* string, const int len, FTPoint spacing)
 }
 
 
-float FTFont::Advance(const wchar_t* string, const int len, FTPoint spacing)
+float FTTextureFont::Advance(const wchar_t* string, const int len,
+                             FTPoint spacing)
 {
     return AdvanceI(string, len, spacing);
 }
 
 
 template <typename T>
-inline FTPoint FTFont::RenderI(const T* string, const int len,
-                               FTPoint position, FTPoint spacing)
+inline FTPoint FTTextureFont::RenderI(const T* string, const int len,
+                                      FTPoint position, FTPoint spacing)
 {
+    Render::set_effect(Render::FONT);
     // for multibyte - we can't rely on sizeof(T) == character
     FTUnicodeStringItr<T> ustr(string);
 
@@ -423,19 +398,21 @@ inline FTPoint FTFont::RenderI(const T* string, const int len,
         }
     }
 
+    Render::disable_effect();
+
     return position;
 }
 
 
-FTPoint FTFont::Render(const char * string, const int len,
-                           FTPoint position, FTPoint spacing)
+FTPoint FTTextureFont::Render(const char * string, const int len,
+                              FTPoint position, FTPoint spacing)
 {
     return RenderI((const unsigned char *)string,
                    len, position, spacing);
 }
 
 
-FTPoint FTFont::Render(const wchar_t * string, const int len,
+FTPoint FTTextureFont::Render(const wchar_t * string, const int len,
                            FTPoint position, FTPoint spacing)
 {
     return RenderI(string, len, position, spacing);
@@ -468,35 +445,26 @@ static inline GLuint ClampSize(GLuint in, GLuint maxTextureSize)
 //
 
 FTTextureFont::FTTextureFont(FileStream & stream)
-: FTFont(stream), maximumGLTextureSize(0), textureWidth(0),
-  textureHeight(0), xOffset(0), yOffset(0), padding(3)
+: textureWidth(0), textureHeight(0), xOffset(0), yOffset(0), padding(3)
 {
-    remGlyphs = numGlyphs;
+    glyphList = new FTGlyphContainer(this);
+
+    size = stream.read_int32();
+    width = stream.read_float();
+    height = stream.read_float();
+    ascender = stream.read_float();
+    descender = stream.read_float();
+    numGlyphs = stream.read_int32();
+
     glyphHeight = std::max(1, int(height + 0.5f));
     glyphWidth = std::max(1, int(width + 0.5f));
-}
 
-
-FTTextureFont::~FTTextureFont()
-{
-    if (textureIDList.empty())
-        return;
-    glDeleteTextures((GLsizei)textureIDList.size(),
-                     (const GLuint*)&textureIDList[0]);
-}
-
-
-void FTTextureFont::CalculateTextureSize()
-{
-    if (!maximumGLTextureSize) {
-        maximumGLTextureSize = 1024;
-        glGetIntegerv(GL_MAX_TEXTURE_SIZE, (GLint*)&maximumGLTextureSize);
-    }
+    int tex_size = 1024;
 
     // Texture width required for numGlyphs glyphs. Will probably not be
     // large enough, but we try to fit as many glyphs in one line as possible
     textureWidth = ClampSize(glyphWidth * numGlyphs + padding * 2,
-                             maximumGLTextureSize);
+                             tex_size);
 
     // Number of lines required for that many glyphs in a line
     int tmp = (textureWidth - (padding * 2)) / glyphWidth;
@@ -505,87 +473,67 @@ void FTTextureFont::CalculateTextureSize()
 
     // Texture height required for tmp lines of glyphs
     textureHeight = ClampSize(glyphHeight * tmp + padding * 2,
-                              maximumGLTextureSize);
+                              tex_size);
+
+    char * data = new char[textureWidth*textureHeight];
+
+    xOffset = yOffset = padding;
+
+    for (int i = 0; i < numGlyphs; i++) {
+        FTGlyph * glyph = new FTGlyph(stream, data, xOffset, yOffset,
+                                      textureWidth, textureHeight);
+        glyphList->Add(glyph, glyph->charcode);
+
+        if (xOffset > (textureWidth - glyphWidth)) {
+            xOffset = padding;
+            yOffset += glyphHeight;
+
+            if (yOffset > (textureHeight - glyphHeight)) {
+                std::cout << "Cannot fit glyphs in texture!" << std::endl;
+                break;
+            }
+        }
+
+        xOffset += int(glyph->BBox().Upper().X() -
+                       glyph->BBox().Lower().X() + padding + 0.5);
+    }
+
+    tex = Render::create_tex(data, Render::L, textureWidth, textureHeight);
+    Render::set_filter(tex, true);
+
+    GlyphVector::iterator it;
+    for (it = glyphList->glyphs.begin(); it != glyphList->glyphs.end(); ++it) {
+        FTGlyph * glyph = *it;
+        if (glyph == NULL)
+            continue;
+        glyph->tex = tex;
+    }
+
+    delete[] data;
+}
+
+
+FTTextureFont::~FTTextureFont()
+{
+    if (glyphList != NULL)
+        delete glyphList;
+    Render::delete_tex(tex);
 }
 
 bool FTTextureFont::CheckGlyph(const unsigned int characterCode)
 {
     FTGlyph * glyph = glyphList->Glyph(characterCode);
-
-    if (glyph == NULL) {
-        return false;
-    }
-
-    if (glyph->loaded)
-        return true;
-
-    if (textureIDList.empty()) {
-        textureIDList.push_back(CreateTexture());
-        xOffset = yOffset = padding;
-    }
-
-    if (xOffset > (textureWidth - glyphWidth)) {
-        xOffset = padding;
-        yOffset += glyphHeight;
-
-        if (yOffset > (textureHeight - glyphHeight)) {
-            textureIDList.push_back(CreateTexture());
-            yOffset = padding;
-        }
-    }
-
-    unsigned int n = textureIDList.size() - 1;
-
-    glyph->Load(textureIDList[n], xOffset, yOffset,
-                textureWidth, textureHeight);
-    xOffset += int(glyph->BBox().Upper().X() -
-                   glyph->BBox().Lower().X() + padding + 0.5);
-
-    --remGlyphs;
-    return true;
-}
-
-GLuint FTTextureFont::CreateTexture()
-{
-    CalculateTextureSize();
-
-    GLuint textID;
-    glGenTextures(1, &textID);
-
-    glBindTexture(GL_TEXTURE_2D, textID);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, textureWidth, textureHeight,
-                 0, GL_ALPHA, GL_UNSIGNED_BYTE, NULL);
-
-    return textID;
-}
-
-
-FTPoint FTTextureFont::Render(const char * string, const int len,
-                              FTPoint position, FTPoint spacing)
-{
-    return RenderI(string, len, position, spacing);
-}
-
-
-FTPoint FTTextureFont::Render(const wchar_t * string, const int len,
-                              FTPoint position, FTPoint spacing)
-{
-    return RenderI(string, len, position, spacing);
+    return glyph != NULL;
 }
 
 //
 //  FTGlyph
 //
 
-GLint FTGlyph::activeTextureID = 0;
-
-FTGlyph::FTGlyph(FileStream & stream)
-: glTextureID(0), loaded(false)
+FTGlyph::FTGlyph(FileStream & stream, char * data,
+                 int x_offset, int y_offset,
+                 int tex_width, int tex_height)
+: tex(0)
 {
     charcode = stream.read_uint32();
     float x1, y1, x2, y2;
@@ -604,57 +552,35 @@ FTGlyph::FTGlyph(FileStream & stream)
     corner = FTPoint(corner_x, corner_y, 0.0f);
     width = stream.read_int32();
     height = stream.read_int32();
-    data = new char[width*height];
-    stream.read(data, width*height);
-}
 
-
-void FTGlyph::Load(int id, int xOffset, int yOffset,
-                   int tex_width, int tex_height)
-{
-    loaded = true;
-    glTextureID = id;
+    char * glyph = new char[width*height];
+    stream.read(glyph, width * height);
 
     if (width && height) {
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glBindTexture(GL_TEXTURE_2D, glTextureID);
-
-        if (yOffset + height > tex_height) {
-            // We'll only get here if we are soft-failing our asserts. In that
-            // case, since the data we're trying to put into our texture is
-            // too long, we'll only copy a portion of the image.
-            height = tex_height - yOffset;
+        if (y_offset + height > tex_height) {
+            // copy subimage
+            height = tex_height - y_offset;
         }
         if (height >= 0) {
-            glTexSubImage2D(GL_TEXTURE_2D, 0, xOffset, yOffset,
-                            width, height, GL_ALPHA, GL_UNSIGNED_BYTE,
-                            data);
+            for (int y = 0; y < height; ++y) {
+                for (int x = 0; x < width; ++x) {
+                    char c = glyph[y * width + x];
+                    data[(y + y_offset) * tex_width + x + x_offset] = c;
+                }
+            }
         }
-
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     }
 
-//      0
-//      +----+
-//      |    |
-//      |    |
-//      |    |
-//      +----+
-//           1
+    uv[0].X(float(x_offset) / float(tex_width));
+    uv[0].Y(float(y_offset) / float(tex_height));
+    uv[1].X(float(x_offset + width) / float(tex_width));
+    uv[1].Y(float(y_offset + height) / float(tex_height));
 
-    uv[0].X(float(xOffset) / float(tex_width));
-    uv[0].Y(float(yOffset) / float(tex_height));
-    uv[1].X(float(xOffset + width) / float(tex_width));
-    uv[1].Y(float(yOffset + height) / float(tex_height));
-
-    delete data;
-    data = NULL;
+    delete[] glyph;
 }
-
 
 FTGlyph::~FTGlyph()
 {
-    delete data;
 }
 
 
@@ -675,10 +601,10 @@ const FTPoint& FTGlyph::Render(const FTPoint& pen)
     float dx, dy;
 
     dx = floor(pen.Xf() + corner.Xf());
-    dy = floor(pen.Yf() + corner.Yf());
+    dy = floor(pen.Yf() - corner.Yf());
 
     Render::draw_tex(dx, dy, dx + width, dy + height, FTTextureFont::color,
-                     glTextureID,
+                     tex,
                      uv[0].Xf(), uv[0].Yf(), uv[1].Xf(), uv[1].Yf());
 
     return advance;
@@ -686,7 +612,7 @@ const FTPoint& FTGlyph::Render(const FTPoint& pen)
 
 // glyphcontainer
 
-FTGlyphContainer::FTGlyphContainer(FTFont* f)
+FTGlyphContainer::FTGlyphContainer(FTTextureFont* f)
 : font(f)
 {
     glyphs.push_back((FTGlyph*)NULL);
@@ -806,8 +732,10 @@ template <typename T>
 inline void FTSimpleLayout::RenderI(const T *string, const int len,
                                     FTPoint position)
 {
+    Render::set_effect(Render::FONT);
     pen = FTPoint(0.0f, 0.0f);
     WrapText(string, len, position, NULL);
+    Render::disable_effect();
 }
 
 
@@ -819,7 +747,7 @@ void FTSimpleLayout::Render(const char *string, const int len,
 
 
 void FTSimpleLayout::Render(const wchar_t* string, const int len,
-                                FTPoint position)
+                            FTPoint position)
 {
     RenderI(string, len, position);
 }
@@ -1088,11 +1016,9 @@ void FTSimpleLayout::OutputWrapped(const wchar_t *buf, const int len,
 
 template <typename T>
 inline void FTSimpleLayout::RenderSpaceI(const T *string, const int len,
-                                             FTPoint position,
-                                             const float extraSpace)
+                                         FTPoint position,
+                                         const float extraSpace)
 {
-    (void)position;
-
     float space = 0.0;
 
     // If there is space to distribute, count the number of spaces
@@ -1127,7 +1053,9 @@ inline void FTSimpleLayout::RenderSpaceI(const T *string, const int len,
             pen += FTPoint(space, 0);
         }
 
-        pen = currentFont->Render(itr.getBufferFromHere(), 1, pen, FTPoint());
+        pen = currentFont->Render(itr.getBufferFromHere(), 1, pen + position,
+                                  FTPoint());
+        pen -= position;
     }
 }
 
@@ -1147,13 +1075,13 @@ void FTSimpleLayout::RenderSpace(const wchar_t *string, const int len,
     RenderSpaceI(string, len, position, extraSpace);
 }
 
-void FTSimpleLayout::SetFont(FTFont *fontInit)
+void FTSimpleLayout::SetFont(FTTextureFont *fontInit)
 {
     currentFont = fontInit;
 }
 
 
-FTFont *FTSimpleLayout::GetFont()
+FTTextureFont *FTSimpleLayout::GetFont()
 {
     return currentFont;
 }

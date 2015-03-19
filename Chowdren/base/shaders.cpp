@@ -971,6 +971,23 @@ public:
     }
 };
 
+class FontShader : public BaseShader
+{
+public:
+    FontShader()
+    : BaseShader(SHADER_FONT)
+    {
+    }
+    
+    void initialize_parameters()
+    {
+    }
+    
+    static void set_parameters(FrameObject * instance)
+    {
+    }
+};
+
 SubtractShader subtract_shader;
 MonochromeShader monochrome_shader;
 MixerShader mixer_shader;
@@ -1002,3 +1019,4 @@ BrightSatBgShader brightsatbg_shader;
 BgBlurShader bgblur_shader;
 PixelScaleShader pixelscale_shader;
 TextureShader texture_shader;
+FontShader font_shader;

@@ -17,12 +17,11 @@ typedef enum
 #ifdef CHOWDREN_USE_FT2
 
 #include <math.h>
-#include "include_gl.h"
 #include "types.h"
 #include "datastream.h"
 #include <string>
 #include "color.h"
-
+#include "render.h"
 
 class FTPoint
 {
@@ -290,14 +289,18 @@ class FTCharToGlyphIndexMap
 };
 
 class FTGlyph;
-class FTFont;
+class FTTextureFont;
 
 typedef vector<FTGlyph*> GlyphVector;
 
 class FTGlyphContainer
 {
 public:
-    FTGlyphContainer(FTFont* font);
+    FTTextureFont* font;
+    FTCharToGlyphIndexMap charMap;
+    GlyphVector glyphs;
+
+    FTGlyphContainer(FTTextureFont* font);
     ~FTGlyphContainer();
     unsigned int FontIndex(const unsigned int characterCode);
     void Add(FTGlyph* glyph, const unsigned int characterCode);
@@ -308,48 +311,67 @@ public:
     FTPoint Render(const unsigned int characterCode,
                    const unsigned int nextCharacterCode,
                    FTPoint penPosition);
-
-private:
-    FTFont* font;
-    FTCharToGlyphIndexMap charMap;
-    GlyphVector glyphs;
 };
 
-class FTFont
+class FTGlyph
+{
+public:
+    unsigned int charcode;
+    FTPoint advance;
+    FTBBox bBox;
+    int width;
+    int height;
+    FTPoint corner;
+    FTPoint uv[2];
+    Texture tex;
+
+    FTGlyph(FileStream & stream, char * data, int x_offset, int y_offset,
+            int tex_width, int tex_height);
+    ~FTGlyph();
+    const FTPoint& Render(const FTPoint& pen);
+    float Advance() const;
+    const FTBBox& BBox() const;
+};
+
+class FTTextureFont
 {
 public:
     int size;
     float width, height;
     float ascender, descender;
 
-    bool hasKerningTable;
     int numGlyphs;
 
-    FTFont(FileStream & fp);
+    int textureWidth;
+    int textureHeight;
+    Texture tex;
+    int glyphHeight;
+    int glyphWidth;
+    unsigned int padding;
+    int xOffset;
+    int yOffset;
+    static Color color;
+    FTGlyphContainer * glyphList;
+    FTPoint pen;
+
+    FTTextureFont(FileStream & stream);
+    ~FTTextureFont();
 
     FTPoint KernAdvance(unsigned int index1, unsigned int index2);
 
-    virtual ~FTFont();
-    virtual float Ascender() const;
-    virtual float Descender() const;
-    virtual float LineHeight() const;
-    virtual FTBBox BBox(const char *s, const int len = -1,
-                        FTPoint position = FTPoint(),
-                        FTPoint spacing = FTPoint());
-    virtual FTBBox BBox(const wchar_t *s, const int len = -1,
-                        FTPoint position = FTPoint(),
-                        FTPoint spacing = FTPoint());
-    virtual float Advance(const char *s, const int len = -1,
-                          FTPoint spacing = FTPoint());
-    virtual float Advance(const wchar_t *s, const int len = -1,
-                          FTPoint spacing = FTPoint());
-    virtual FTPoint Render(const char *s, const int len,
-                           FTPoint, FTPoint);
-    virtual FTPoint Render(const wchar_t *s, const int len,
-                           FTPoint, FTPoint);
-    virtual bool CheckGlyph(const unsigned int chr) = 0;
-    FTGlyphContainer* glyphList;
-    FTPoint pen;
+    float Ascender() const;
+    float Descender() const;
+    float LineHeight() const;
+    FTBBox BBox(const char *s, const int len = -1,
+                FTPoint position = FTPoint(),
+                FTPoint spacing = FTPoint());
+    FTBBox BBox(const wchar_t *s, const int len = -1,
+                FTPoint position = FTPoint(),
+                FTPoint spacing = FTPoint());
+    float Advance(const char *s, const int len = -1,
+                  FTPoint spacing = FTPoint());
+    float Advance(const wchar_t *s, const int len = -1,
+                  FTPoint spacing = FTPoint());
 
     template <typename T>
     inline FTBBox BBoxI(const T *s, const int len,
@@ -361,63 +383,6 @@ public:
     template <typename T>
     inline FTPoint RenderI(const T *s, const int len,
                            FTPoint position, FTPoint spacing);
-};
-
-class FTGlyph
-{
-public:
-    unsigned int charcode;
-    bool loaded;
-    FTPoint advance;
-    FTBBox bBox;
-    char * data;
-
-    FTGlyph(FileStream & stream);
-    void Load(int id, int xOffset, int yOffset, int tex_width, int tex_height);
-    ~FTGlyph();
-    const FTPoint& Render(const FTPoint& pen);
-    static void ResetActiveTexture() { activeTextureID = 0; }
-    float Advance() const;
-    const FTBBox& BBox() const;
-
-private:
-    int width;
-    int height;
-    FTPoint corner;
-    FTPoint uv[2];
-    int glTextureID;
-    static GLint activeTextureID;
-};
-
-class FTTextureFont : public FTFont
-{
-public:
-    GLsizei maximumGLTextureSize;
-    GLsizei textureWidth;
-    GLsizei textureHeight;
-    vector<GLuint> textureIDList;
-    int glyphHeight;
-    int glyphWidth;
-    unsigned int padding;
-    unsigned int remGlyphs;
-    int xOffset;
-    int yOffset;
-    static Color color;
-
-    FTTextureFont(FileStream & stream);
-    ~FTTextureFont();
-    void CalculateTextureSize();
-    GLuint CreateTexture();
-
-    template <typename T>
-    inline FTPoint RenderI(const T* string, const int len,
-                           FTPoint position, FTPoint spacing)
-    {
-        FTGlyph::ResetActiveTexture();
-        FTPoint tmp = FTFont::Render(string, len,
-                                     position, spacing);
-        return tmp;
-    }
 
     FTPoint Render(const char * string, const int len,
                    FTPoint position, FTPoint spacing);
@@ -439,8 +404,8 @@ class FTSimpleLayout
                     FTPoint position = FTPoint());
         void Render(const wchar_t *string, const int len = -1,
                             FTPoint position = FTPoint());
-        void SetFont(FTFont *fontInit);
-        FTFont *GetFont();
+        void SetFont(FTTextureFont *fontInit);
+        FTTextureFont *GetFont();
         void SetLineLength(const float LineLength);
         float GetLineLength() const;
         void SetAlignment(const TextAlignment Alignment);
@@ -453,7 +418,7 @@ class FTSimpleLayout
                                  FTPoint position, const float extraSpace);
         FTPoint pen;
     private:
-        FTFont *currentFont;
+        FTTextureFont *currentFont;
         float lineLength;
         TextAlignment alignment;
         float lineSpacing;

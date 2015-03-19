@@ -50,7 +50,7 @@ def init_frame(converter, frame):
     if converter.current_frame_index != 0:
         return
     frame.fadeIn = None
-    frame.fadeOut = None
+    # frame.fadeOut = None
 
 def use_image_flush(converter, frame):
     return False
@@ -156,3 +156,7 @@ def use_blitter_callback(converter, obj):
         return False
     frame_index = converter.current_frame_index
     return frame_index in (None, 6)
+
+def get_string(converter, value):
+    value = value.replace('controls.ini', 'controlsc.ini')
+    return value

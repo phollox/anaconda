@@ -782,8 +782,8 @@ void AudioDevice::open()
     context = NULL;
 
     device = alcOpenDevice(NULL);
-    if(!device) {
-        std::cerr << "Device open failed" << std::endl;
+    if (!device) {
+        std::cout << "Device open failed" << std::endl;
         return;
     }
 
@@ -792,7 +792,7 @@ void AudioDevice::open()
         if(context)
             alcDestroyContext(context);
         alcCloseDevice(device);
-        std::cerr << "Context setup failed" << std::endl;
+        std::cout << "Context setup failed" << std::endl;
         return;
     }
 

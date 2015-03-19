@@ -29,7 +29,6 @@ void SystemBox::draw()
 			Render::disable_scissor();
             break;
         case CENTER_IMAGE:
-            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
             xx = x + width / 2 - image->width / 2;
             yy = y + height / 2 - image->height / 2;
             draw_image(image, xx + image->hotspot_x, yy + image->hotspot_y,

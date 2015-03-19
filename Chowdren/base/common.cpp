@@ -9,6 +9,7 @@
 #include "intern.cpp"
 #include "overlap.cpp"
 #include "collision.cpp"
+#include "objects/active.h"
 
 #ifdef CHOWDREN_USE_VALUEADD
 #include "extra_keys.cpp"
@@ -406,10 +407,10 @@ void Layer::update_position()
     if (y2 > h)
         y2 = h + KILL_Y;
 
-    inactive_box[0] = x1 + off_x;
-    inactive_box[2] = x2 + off_x;
-    inactive_box[1] = y1 + off_y;
-    inactive_box[3] = y2 + off_y;
+    inactive_box[0] = x1 - off_x;
+    inactive_box[2] = x2 - off_x;
+    inactive_box[1] = y1 - off_y;
+    inactive_box[3] = y2 - off_y;
 }
 
 void Layer::add_background_object(FrameObject * instance)
@@ -846,20 +847,22 @@ void Frame::update_display_center()
     if (off_x == new_off_x && off_y == new_off_y)
         return;
 
+    int old_x = off_x;
+    int old_y = off_y;
+    off_x = new_off_x;
+    off_y = new_off_y;
+
     vector<Layer>::iterator it;
     for (it = layers.begin(); it != layers.end(); ++it) {
         Layer & layer = *it;
-        int x1 = off_x * layer.coeff_x;
-        int y1 = off_y * layer.coeff_y;
-        int x2 = new_off_x * layer.coeff_x;
-        int y2 = new_off_y * layer.coeff_y;
-        int layer_off_x = new_off_x - x2;
-        int layer_off_y = new_off_y - y2;
+        int x1 = old_x * layer.coeff_x;
+        int y1 = old_y * layer.coeff_y;
+        int x2 = off_x * layer.coeff_x;
+        int y2 = off_y * layer.coeff_y;
+        int layer_off_x = off_x - x2;
+        int layer_off_y = off_y - y2;
         layer.scroll(layer_off_x, layer_off_y, x2 - x1, y2 - y1);
     }
-
-    off_x = new_off_x;
-    off_y = new_off_y;
 }
 
 void Frame::set_width(int w, bool adjust)

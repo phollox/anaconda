@@ -48,7 +48,8 @@ public:
         SURFACESUBTRACT,
         LAYERCOLOR,
         PERSPECTIVE,
-        PIXELSCALE
+        PIXELSCALE,
+        FONT
     };
 
     static int offset[2];
@@ -99,6 +100,7 @@ public:
 
     // textures
     static Texture create_tex(void * pixels, Format f, int width, int height);
+    static void delete_tex(Texture tex);
     static void set_filter(Texture tex, bool linear);
 
 #ifdef CHOWDREN_IS_3DS

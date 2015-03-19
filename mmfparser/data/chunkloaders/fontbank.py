@@ -93,7 +93,7 @@ class FontBank(DataLoader):
             klass = FontItem
         
         offset = 0
-        if self.settings['build'] >= 284:
+        if self.settings['build'] >= 284 and not debug:
             offset = -1
 
         self.items = []

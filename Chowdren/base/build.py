@@ -4,11 +4,14 @@ Build script for Linux and Mac
 import shutil
 import tempfile
 import os
+import urllib2
+import tarfile
+import stat
 
 chroot_prefix = 'steamrt_scout_'
 chroots = '/var/chroots'
 
-steamrt_archive = 'https://github.com/ValveSoftware/archive/master.tar.gz'
+steamrt_archive = 'https://codeload.github.com/ValveSoftware/steam-runtime/tar.gz/master'
 
 class Builder(object):
     def __init__(self):
@@ -30,8 +33,9 @@ class Builder(object):
 
 class LinuxBuilder(Builder):
     temp = None
+    chroot = None
 
-    def install_chroot(arch):
+    def install_chroot(self, arch):
         chroot = chroot_prefix + arch
         if os.path.isdir(os.path.join(chroots, chroot)):
             return chroot
@@ -39,10 +43,14 @@ class LinuxBuilder(Builder):
         if self.temp is None:
             self.temp = tempfile.mkdtemp()
             os.chdir(self.temp)
-            self.system('curl -L %s | tar xz' % steamrt_archive)
+            data = urllib2.urlopen(steamrt_archive).read()
+            with open('steamrt.tar.gz', 'wb') as fp:
+                fp.write(data)
+            archive = tarfile.open('steamrt.tar.gz')
+            archive.extractall()
 
-        os.chdir(os.path.join(self.temp, 'steam-runtime'))
-        self.system('./setup_chroot --%s' % arch)
+        os.chdir(os.path.join(self.temp, 'steam-runtime-master'))
+        self.system('./setup_chroot.sh --%s' % arch)
         os.chdir(cwd)
         return chroot
 
@@ -51,7 +59,7 @@ class LinuxBuilder(Builder):
             command = 'schroot --chroot %s -- %s' % (self.chroot, command)
         return os.system(command)
 
-    def build_arch(arch):
+    def build_arch(self, arch):
         chroot = self.install_chroot(arch)
         self.build_dir = os.path.join(self.root_dir, 'build_%s' % arch)
         self.install_dir = os.path.join(self.build_dir, 'install')
@@ -60,6 +68,7 @@ class LinuxBuilder(Builder):
         self.create_project()
         self.build_project()
         self.copy_dependencies(arch)
+        self.chroot = None
 
     def copy_dependencies(self, arch):
         try:
@@ -68,14 +77,17 @@ class LinuxBuilder(Builder):
             pass
 
         if arch == 'amd64':
-            bin_dir = 'bin32'
-        else:
             bin_dir = 'bin64'
+        else:
+            bin_dir = 'bin32'
 
         src_bin_dir = os.path.join(self.install_dir, bin_dir)
         dst_bin_dir = os.path.join(self.dist_dir, bin_dir)
 
+        shutil.rmtree(dst_bin_dir, ignore_errors=True)
         shutil.copytree(src_bin_dir, dst_bin_dir)
+        shutil.copy(os.path.join(self.install_dir, 'run.sh'),
+                    os.path.join(self.dist_dir, 'run.sh'))
 
         arch_deps = {
             'amd64': ('/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0',
@@ -91,6 +103,9 @@ class LinuxBuilder(Builder):
     def make_dist(self):
         shutil.copy(os.path.join(self.root_dir, 'Assets.dat'),
                     os.path.join(self.dist_dir, 'Assets.dat'))
+        run_sh = os.path.join(self.dist_dir, 'run.sh')
+        st = os.stat(run_sh)
+        os.chmod(run_sh, st.st_mode | stat.S_IEXEC)
 
     def build_project(self):
         cwd = os.getcwd()
@@ -99,7 +114,7 @@ class LinuxBuilder(Builder):
         self.system('make install')
         os.chdir(cwd)
 
-    def build():
+    def build(self):
         self.build_arch('amd64')
         self.build_arch('i386')
         self.make_dist()

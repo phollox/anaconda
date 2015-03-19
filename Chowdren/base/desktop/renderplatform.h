@@ -82,6 +82,11 @@ inline Texture Render::create_tex(void * pixels, Format f,
     return tex;
 }
 
+inline void Render::delete_tex(Texture tex)
+{
+    glDeleteTextures(1, &tex);
+}
+
 inline float transform_x(float x)
 {
     return (x + render_data.pos_x) * render_data.trans_x - 1.0f;

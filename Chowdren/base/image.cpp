@@ -159,7 +159,7 @@ void Image::unload()
     if (image != NULL)
         stbi_image_free(image);
     if (tex != 0)
-        glDeleteTextures(1, &tex);
+        Render::delete_tex(tex);
     image = NULL;
     tex = 0;
 

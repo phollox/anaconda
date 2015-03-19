@@ -28,7 +28,7 @@ def init(converter):
 
     values = converter.game.globalValues.items
     # values[0] = 1
-    values[1] = 4
+    # values[1] = 4
     # values[4] = 1
 
 # def get_frames(converter, game, frames):

@@ -5,7 +5,7 @@ from chowdren.common import get_animation_name, to_c, make_color
 from chowdren.writers.events import (StaticConditionWriter,
     StaticActionWriter, StaticExpressionWriter, make_table,
     ConditionMethodWriter, ExpressionMethodWriter, EmptyAction,
-    StaticConditionWriter, TrueCondition, FalseCondition)
+    StaticConditionWriter, TrueCondition, FalseCondition, ActionMethodWriter)
 
 class ControlsObject(ObjectWriter):
     class_name = 'ControlsObject'
@@ -14,16 +14,20 @@ class ControlsObject(ObjectWriter):
     def write_init(self, writer):
         pass
 
-actions = make_table(StaticActionWriter, {
-    7 : EmptyAction, # set player up
-    8 : EmptyAction, # set player down
-    9 : EmptyAction, # set player left
-    10 : EmptyAction, # set player right
-    11 : EmptyAction, # set player fire 1
-    12 : EmptyAction, # set player fire 2
-    33 : EmptyAction, # simulate key value down
-    38 : EmptyAction, # set player fire 3
-    39 : EmptyAction, # set player fire 4
+class ActionWriter(ActionMethodWriter):
+    has_object = False
+
+actions = make_table(ActionWriter, {
+    7 : 'manager.up = translate_string_to_key({1})', # set player up
+    8 : 'manager.down = translate_string_to_key({1})', # set player down
+    9 : 'manager.left = translate_string_to_key({1})', # set player left
+    10 : 'manager.right = translate_string_to_key({1})', # set player right
+    11 : 'manager.button1 = translate_string_to_key({1})', # set player fire 1
+    12 : 'manager.button2 = translate_string_to_key({1})', # set player fire 2
+    # simulate key value down
+    33 : 'manager.simulate_key(translate_vk_to_key(%s))',
+    38 : 'manager.button3 = translate_string_to_key({1})', # set player fire 3
+    39 : 'manager.button4 = translate_string_to_key({1})', # set player fire 4
     15 : EmptyAction, # disable_alt_tab_ctrl_esc_and_ctrl_alt_del
 })
 

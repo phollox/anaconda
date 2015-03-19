@@ -1,6 +1,8 @@
 #include "frameobject.h"
 #include "bitarray.h"
 
+// XXX move this into gencol.py
+
 // FrameObject vs FrameObject
 
 template <bool save>
@@ -96,7 +98,29 @@ inline bool overlap_impl(FrameObject * obj, ObjectList & list)
 template <bool save>
 inline bool overlap_impl(ObjectList & list, FrameObject * obj)
 {
-    return overlap_impl<save>(obj, list);
+    int size = list.size();
+    if (size <= 0)
+        return false;
+
+    CollisionBase * col = obj->collision;
+    if (col == NULL)
+        return false;
+
+    bool ret = false;
+    for (ObjectIterator it(list); !it.end(); ++it) {
+        FrameObject * other = *it;
+        if (other->collision == NULL) {
+            it.deselect();
+            continue;
+        }
+        if (!overlap_impl<save>(other, obj)) {
+            it.deselect();
+            continue;
+        }
+        ret = true;
+    }
+
+    return ret;
 }
 
 // QualifierList vs ObjectList
@@ -126,7 +150,7 @@ inline bool overlap_impl(QualifierList & list1, ObjectList & list2)
                     it2.deselect();
                     continue;
                 }
-                if (!overlap_impl<save>(instance, other))
+                if (!overlap_impl<save>(other, instance))
                     continue;
                 added = ret = true;
                 temp.set(temp_offset + it2.index - 1);
@@ -156,7 +180,53 @@ inline bool overlap_impl(QualifierList & list1, ObjectList & list2)
 template <bool save>
 inline bool overlap_impl(ObjectList & list1, QualifierList & list2)
 {
-    return overlap_impl<save>(list2, list1);
+    int size = list2.size();
+    if (size <= 0)
+        return false;
+    StackBitArray temp = CREATE_BITARRAY_ZERO(size);
+
+    bool ret = false;
+    for (ObjectIterator it1(list1); !it1.end(); ++it1) {
+        FrameObject * instance = *it1;
+        if (instance->collision == NULL) {
+            it1.deselect();
+            continue;
+        }
+        bool added = false;
+        int temp_offset = 0;
+        for (int i = 0; i < list2.count; i++) {
+            ObjectList & list = *list2.items[i];
+            for (ObjectIterator it2(list); !it2.end(); ++it2) {
+                FrameObject * other = *it2;
+                if (other->collision == NULL) {
+                    it2.deselect();
+                    continue;
+                }
+                if (!overlap_impl<save>(instance, other))
+                    continue;
+                added = ret = true;
+                temp.set(temp_offset + it2.index - 1);
+            }
+            temp_offset += list.size();
+        }
+        if (!added)
+            it1.deselect();
+    }
+
+    if (!ret)
+        return false;
+
+    int total_index = 0;
+    for (int i = 0; i < list2.count; i++) {
+        ObjectList & list = *list2.items[i];
+        for (ObjectIterator it(list); !it.end(); ++it) {
+            if (!temp.get(total_index + it.index - 1))
+                it.deselect();
+        }
+        total_index += list.size();
+    }
+
+    return true;
 }
 
 // FrameObject vs QualifierList
@@ -193,9 +263,34 @@ inline bool overlap_impl(FrameObject * obj, QualifierList & list)
 }
 
 template <bool save>
-inline bool overlap_impl(QualifierList & list, FrameObject * instance)
+inline bool overlap_impl(QualifierList & list, FrameObject * obj)
 {
-    return overlap_impl<save>(instance, list);
+    int size = list.size();
+    if (size <= 0)
+        return false;
+
+    if (obj->collision == NULL)
+        return false;
+
+    bool ret = false;
+    int temp_offset = 0;
+    for (int i = 0; i < list.count; i++) {
+        ObjectList & list2 = *list.items[i];
+        for (ObjectIterator it(list2); !it.end(); ++it) {
+            FrameObject * other = *it;
+            if (other->collision == NULL) {
+                it.deselect();
+                continue;
+            }
+            if (!overlap_impl<save>(other, obj)) {
+                it.deselect();
+                continue;
+            }
+            ret = true;
+        }
+    }
+
+    return ret;
 }
 
 // QualifierList vs QualifierList
@@ -226,7 +321,7 @@ inline bool overlap_impl(QualifierList & list1, QualifierList & list2)
                     it2.deselect();
                     continue;
                 }
-                if (!overlap_impl<save>(instance, other))
+                if (!overlap_impl<save>(other, instance))
                     continue;
                 added = ret = true;
                 temp.set(temp_offset + it2.index - 1);

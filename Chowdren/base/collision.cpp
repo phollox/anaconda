@@ -1,5 +1,5 @@
 #include "collision.h"
-#include "colgen.cpp"
+#include "gencol.cpp"
 
 bool collide_direct(CollisionBase * a, CollisionBase * b, int * aabb_2)
 {

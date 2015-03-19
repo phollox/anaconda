@@ -99,6 +99,7 @@ public:
 
     void set_deadzone(float deadzone);
     void simulate_key(const std::string & key);
+    void simulate_key(int key);
     void map_button(int button, const std::string & key);
     void map_axis(int axis, const std::string & neg, const std::string & pos);
 #endif

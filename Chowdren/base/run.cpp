@@ -95,7 +95,7 @@ void GameManager::init()
 #elif defined(CHOWDREN_IS_FP)
     player_died = false;
     lives = 3;
-    set_frame(67);
+    set_frame(39);
 #else
     set_frame(0);
 #endif
@@ -430,11 +430,16 @@ void GameManager::set_deadzone(float value)
 
 void GameManager::simulate_key(const std::string & key)
 {
-    if (simulate_count >= InputList::STATE_COUNT)
-        return;
     int key_int = -1;
     if (!key.empty())
         key_int = translate_string_to_key(key);
+    simulate_key(key_int);
+}
+
+void GameManager::simulate_key(int key_int)
+{
+    if (simulate_count >= InputList::STATE_COUNT)
+        return;
     if (key_int == -1)
         return;
     for (int i = 0; i < simulate_count; i++) {

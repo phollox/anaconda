@@ -180,6 +180,7 @@ shader_pixelscale.add_uniform('x_size', 'float')
 shader_pixelscale.add_uniform('y_size', 'float')
 
 shader_texture = Shader('Texture', 'texture')
+shader_font = Shader('Font', 'font')
 
 SHADERS = [
     shader_subtract,
@@ -212,5 +213,6 @@ SHADERS = [
     shader_brightsatbg,
     shader_bgblur,
     shader_pixelscale,
-    shader_texture
+    shader_texture,
+    shader_font
 ]
