@@ -67,6 +67,7 @@ public:
     void set_framerate(int framerate);
     void set_window(bool fullscreen);
     void set_window_scale(int scale);
+    void set_scale_type(int type);
     void set_fullscreen_type(int type);
     bool is_fullscreen();
     void run();

@@ -22,6 +22,13 @@
 
 #define CHOWDREN_EXTRA_BILINEAR
 
+enum ScaleType
+{
+    BEST_FIT = 0,
+    BEST_FIT_INT = 1,
+    EXACT_FIT = 2
+};
+
 static Framebuffer screen_fbo;
 static SDL_Window * global_window = NULL;
 static SDL_GLContext global_context = NULL;
@@ -29,6 +36,7 @@ static bool is_fullscreen = false;
 static bool hide_cursor = false;
 static bool has_closed = false;
 static Uint64 start_time;
+int scale_type = BEST_FIT;
 
 static int draw_x_size = 0;
 static int draw_y_size = 0;
@@ -505,6 +513,9 @@ bool platform_get_vsync()
 
 void platform_set_fullscreen(bool value)
 {
+    if (value == is_fullscreen)
+        return;
+    is_fullscreen = value;
 #ifdef CHOWDREN_DESKTOP_FULLSCREEN
     int flags;
     if (value)
@@ -546,26 +557,31 @@ void platform_swap_buffers()
     bool resize = window_width != WINDOW_WIDTH ||
                   window_height != WINDOW_HEIGHT;
 
-    float real_aspect;
+    int use_scale_type = scale_type;
+    if (!is_fullscreen)
+        use_scale_type = BEST_FIT;
 
-    if (resize) {
+    if (resize && use_scale_type == EXACT_FIT) {
+        draw_x_size = window_width;
+        draw_y_size = window_height;
+    } else if (resize) {
         // aspect-aware resize
         float aspect_width = window_width / float(WINDOW_WIDTH);
         float aspect_height = window_height / float(WINDOW_HEIGHT);
 
-        real_aspect = std::min(aspect_width, aspect_height);
+        float aspect = std::min(aspect_width, aspect_height);
+        if (use_scale_type == BEST_FIT_INT)
+            aspect = floor(aspect);
 
-        float aspect = real_aspect;
         draw_x_size = aspect * WINDOW_WIDTH;
         draw_y_size = aspect * WINDOW_HEIGHT;
-
-        draw_x_off = (window_width - draw_x_size) / 2;
-        draw_y_off = (window_height - draw_y_size) / 2;
     } else {
-        draw_x_off = draw_y_off = 0;
         draw_x_size = WINDOW_WIDTH;
         draw_y_size = WINDOW_HEIGHT;
     }
+
+    draw_x_off = (window_width - draw_x_size) / 2;
+    draw_y_off = (window_height - draw_y_size) / 2;
 
     screen_fbo.unbind();
 
@@ -626,6 +642,11 @@ void platform_set_display_scale(int scale)
     SDL_SetWindowPosition(global_window,
                           SDL_WINDOWPOS_CENTERED,
                           SDL_WINDOWPOS_CENTERED);
+}
+
+void platform_set_scale_type(int type)
+{
+    scale_type = type;
 }
 
 bool platform_has_focus()

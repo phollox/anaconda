@@ -63,6 +63,7 @@ const std::string & get_joystick_name(int n);
 
 // desktop
 void platform_set_display_scale(int scale);
+void platform_set_scale_type(int type);
 
 // path
 std::string convert_path(const std::string & value);

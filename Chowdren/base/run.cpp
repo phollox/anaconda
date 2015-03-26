@@ -88,16 +88,23 @@ void GameManager::init()
 
     fps_limit.set(FRAMERATE);
 
+    int start_frame = 0;
 #if defined(CHOWDREN_IS_AVGN)
-    set_frame(0);
+    start_frame = 0;
 #elif defined(CHOWDREN_IS_HFA)
-    set_frame(0);
+    start_frame = 0;
 #elif defined(CHOWDREN_IS_FP)
     player_died = false;
     lives = 3;
-    set_frame(39);
+    start_frame = 0;
 #else
+    start_frame = 0;
+#endif
+
+#ifdef NDEBUG
     set_frame(0);
+#else
+    set_frame(start_frame);
 #endif
 }
 
@@ -138,6 +145,13 @@ void GameManager::set_window_scale(int scale)
 {
 #ifdef CHOWDREN_IS_DESKTOP
     platform_set_display_scale(scale);
+#endif
+}
+
+void GameManager::set_scale_type(int type)
+{
+#ifdef CHOWDREN_IS_DESKTOP
+    platform_set_scale_type(type);
 #endif
 }
 
@@ -515,6 +529,8 @@ bool GameManager::update()
     keyboard.update();
     mouse.update();
 
+    platform_poll_events();
+
     // player controls
     int new_control = get_player_control_flags(1);
     player_press_flags = new_control & ~(player_flags);
@@ -527,7 +543,6 @@ bool GameManager::update()
     joystick_flags = new_control;
 
     fps_limit.start();
-    platform_poll_events();
 
 #ifdef CHOWDREN_USE_JOYTOKEY
     for (int i = 0; i < simulate_count; i++) {

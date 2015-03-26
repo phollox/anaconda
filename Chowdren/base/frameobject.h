@@ -1000,6 +1000,14 @@ public:
     int count;
     FrameObject ** items;
 
+    SavedSelection(SavedSelection & list)
+    : count(list.count), items(&buffer[offset])
+    {
+        for (int i = 0; i < count; ++i)
+            items[i] = list.items[i];
+        offset += count;
+    }
+
     SavedSelection(ObjectList & list)
     : count(0), items(&buffer[offset])
     {
@@ -1025,6 +1033,7 @@ public:
     ~SavedSelection()
     {
         offset -= count;
+        assert(offset >= 0);
     }
 };
 

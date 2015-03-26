@@ -548,6 +548,7 @@ public:
     ~ObjectPairs()
     {
         SavedSelection::offset -= size;
+        assert(SavedSelection::offset >= 0);
     }
 
     void add(FrameObject * a, FrameObject * b)

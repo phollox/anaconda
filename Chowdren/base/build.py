@@ -11,7 +11,8 @@ import stat
 chroot_prefix = 'steamrt_scout_'
 chroots = '/var/chroots'
 
-steamrt_archive = 'https://codeload.github.com/ValveSoftware/steam-runtime/tar.gz/master'
+steamrt_archive = ('https://codeload.github.com/ValveSoftware/steam-runtime/'
+                   'tar.gz/master')
 
 class Builder(object):
     def __init__(self):

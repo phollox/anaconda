@@ -593,6 +593,7 @@ class PlayerKeyPressed(PlayerKeyCondition):
 
 class AnyKeyPressed(ConditionMethodWriter):
     is_always = True
+    pre_event = True
     method = 'is_any_key_pressed_once'
 
 class PlayerDied(ConditionMethodWriter):
