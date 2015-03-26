@@ -27,5 +27,3 @@ public:
     static void set_vec4(FrameObject * instance, int src, int uniform);
     static void set_image(FrameObject * instance, int src);
 };
-
-
