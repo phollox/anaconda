@@ -189,6 +189,9 @@ elseif(APPLE)
         ${CMAKE_LIBRARY_PATH})
     set(CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include/osx"
         ${CMAKE_INCLUDE_PATH})
+    # for frameworks
+    set(CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/lib/osx"
+        ${CMAKE_INCLUDE_PATH})
     find_library(CARBON_LIBRARY Carbon)
     set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES} ${CARBON_LIBRARY})
 endif()
