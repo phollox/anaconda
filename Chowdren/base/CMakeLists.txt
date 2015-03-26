@@ -105,6 +105,9 @@ if (USE_STEAM)
         elseif (APPLE)
             set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
                 "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/osx32/libsteam_api.dylib")
+        elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+            set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
+                "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/linux64/libsteam_api.so")
         else()
             set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
                 "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/linux32/libsteam_api.so")

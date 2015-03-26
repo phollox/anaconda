@@ -1707,7 +1707,7 @@ class SetInkEffect(ActionWriter):
             elif ink_effect == SEMITRANSPARENT_EFFECT:
                 writer.putlnc('%s->blend_color.set_semi_transparency(%s);',
                               obj, ink_value)
-                writer.putlnc('%s->set_shader(NULL);', obj)
+                writer.putlnc('%s->set_shader(Render::NONE);', obj)
             else:
                 print 'unknown set ink effect:', ink_effect
 
