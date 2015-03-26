@@ -54,23 +54,21 @@ PFNGLGENFRAMEBUFFERSEXTPROC __glGenFramebuffersEXT;
 PFNGLFRAMEBUFFERTEXTURE2DEXTPROC __glFramebufferTexture2DEXT;
 PFNGLBINDFRAMEBUFFEREXTPROC __glBindFramebufferEXT;
 
-PFNGLUSEPROGRAMPROC __glUseProgram;
-PFNGLDETACHSHADERPROC __glDetachShader;
-PFNGLGETPROGRAMINFOLOGPROC __glGetProgramInfoLog;
-PFNGLGETPROGRAMIVPROC __glGetProgramiv;
-PFNGLLINKPROGRAMPROC __glLinkProgram;
-PFNGLCREATEPROGRAMPROC __glCreateProgram;
-PFNGLATTACHSHADERPROC __glAttachShader;
-PFNGLGETSHADERINFOLOGPROC __glGetShaderInfoLog;
-PFNGLGETSHADERIVPROC __glGetShaderiv;
-PFNGLCOMPILESHADERPROC __glCompileShader;
-PFNGLSHADERSOURCEPROC __glShaderSource;
-PFNGLCREATESHADERPROC __glCreateShader;
-PFNGLUNIFORM1IPROC __glUniform1i;
-PFNGLUNIFORM2FPROC __glUniform2f;
-PFNGLUNIFORM1FPROC __glUniform1f;
-PFNGLUNIFORM4FPROC __glUniform4f;
-PFNGLGETUNIFORMLOCATIONPROC __glGetUniformLocation;
+PFNGLUSEPROGRAMOBJECTARBPROC __glUseProgramObjectARB;
+PFNGLDETACHOBJECTARBPROC __glDetachObjectARB;
+PFNGLGETINFOLOGARBPROC __glGetInfoLogARB;
+PFNGLGETOBJECTPARAMETERIVARBPROC __glGetObjectParameterivARB;
+PFNGLLINKPROGRAMARBPROC __glLinkProgramARB;
+PFNGLCREATEPROGRAMOBJECTARBPROC __glCreateProgramObjectARB;
+PFNGLATTACHOBJECTARBPROC __glAttachObjectARB;
+PFNGLCOMPILESHADERARBPROC __glCompileShaderARB;
+PFNGLSHADERSOURCEARBPROC __glShaderSourceARB;
+PFNGLCREATESHADEROBJECTARBPROC __glCreateShaderObjectARB;
+PFNGLUNIFORM1IARBPROC __glUniform1iARB;
+PFNGLUNIFORM2FARBPROC __glUniform2fARB;
+PFNGLUNIFORM1FARBPROC __glUniform1fARB;
+PFNGLUNIFORM4FARBPROC __glUniform4fARB;
+PFNGLGETUNIFORMLOCATIONARBPROC __glGetUniformLocationARB;
 #endif
 
 static bool check_opengl_extension(const char * name)
@@ -89,6 +87,7 @@ static bool check_opengl_extension(const char * name)
 const char * extensions[] = {
 #ifdef CHOWDREN_USE_GL
     "GL_EXT_framebuffer_object",
+    "GL_ARB_shader_objects",
     "GL_ARB_vertex_shader",
     "GL_ARB_fragment_shader",
     "GL_ARB_texture_non_power_of_two",
@@ -384,57 +383,51 @@ void platform_create_display(bool fullscreen)
         SDL_GL_GetProcAddress("glBindFramebufferEXT");
 
     // shaders
-    __glUniform1i =
-        (PFNGLUNIFORM1IPROC)
-        SDL_GL_GetProcAddress("glUniform1i");
-    __glUseProgram =
-        (PFNGLUSEPROGRAMPROC)
-        SDL_GL_GetProcAddress("glUseProgram");
-    __glDetachShader =
-        (PFNGLDETACHSHADERPROC)
-        SDL_GL_GetProcAddress("glDetachShader");
-    __glGetProgramInfoLog =
-        (PFNGLGETPROGRAMINFOLOGPROC)
-        SDL_GL_GetProcAddress("glGetProgramInfoLog");
-    __glGetProgramiv =
-        (PFNGLGETPROGRAMIVPROC)
-        SDL_GL_GetProcAddress("glGetProgramiv");
-    __glLinkProgram =
-        (PFNGLLINKPROGRAMPROC)
-        SDL_GL_GetProcAddress("glLinkProgram");
-    __glCreateProgram =
-        (PFNGLCREATEPROGRAMPROC)
-        SDL_GL_GetProcAddress("glCreateProgram");
-    __glAttachShader =
-        (PFNGLATTACHSHADERPROC)
-        SDL_GL_GetProcAddress("glAttachShader");
-    __glGetShaderInfoLog =
-        (PFNGLGETSHADERINFOLOGPROC)
-        SDL_GL_GetProcAddress("glGetShaderInfoLog");
-    __glGetShaderiv =
-        (PFNGLGETSHADERIVPROC)
-        SDL_GL_GetProcAddress("glGetShaderiv");
-    __glCompileShader =
-        (PFNGLCOMPILESHADERPROC)
-        SDL_GL_GetProcAddress("glCompileShader");
-    __glShaderSource =
-        (PFNGLSHADERSOURCEPROC)
-        SDL_GL_GetProcAddress("glShaderSource");
-    __glCreateShader =
-        (PFNGLCREATESHADERPROC)
-        SDL_GL_GetProcAddress("glCreateShader");
-    __glUniform2f =
-        (PFNGLUNIFORM2FPROC)
-        SDL_GL_GetProcAddress("glUniform2f");
-    __glUniform1f =
-        (PFNGLUNIFORM1FPROC)
-        SDL_GL_GetProcAddress("glUniform1f");
-    __glUniform4f =
-        (PFNGLUNIFORM4FPROC)
-        SDL_GL_GetProcAddress("glUniform4f");
-    __glGetUniformLocation =
-        (PFNGLGETUNIFORMLOCATIONPROC)
-        SDL_GL_GetProcAddress("glGetUniformLocation");
+    __glUniform1iARB =
+        (PFNGLUNIFORM1IARBPROC)
+        SDL_GL_GetProcAddress("glUniform1iARB");
+    __glUseProgramObjectARB =
+        (PFNGLUSEPROGRAMOBJECTARBPROC)
+        SDL_GL_GetProcAddress("glUseProgramObjectARB");
+    __glDetachObjectARB =
+        (PFNGLDETACHOBJECTARBPROC)
+        SDL_GL_GetProcAddress("glDetachObjectARB");
+    __glGetInfoLogARB =
+        (PFNGLGETINFOLOGARBPROC)
+        SDL_GL_GetProcAddress("glGetInfoLogARB");
+    __glGetObjectParameterivARB =
+        (PFNGLGETOBJECTPARAMETERIVARBPROC)
+        SDL_GL_GetProcAddress("glGetObjectParameterivARB");
+    __glLinkProgramARB =
+        (PFNGLLINKPROGRAMARBPROC)
+        SDL_GL_GetProcAddress("glLinkProgramARB");
+    __glCreateProgramObjectARB =
+        (PFNGLCREATEPROGRAMOBJECTARBPROC)
+        SDL_GL_GetProcAddress("glCreateProgramObjectARB");
+    __glAttachObjectARB =
+        (PFNGLATTACHOBJECTARBPROC)
+        SDL_GL_GetProcAddress("glAttachObjectARB");
+    __glCompileShaderARB =
+        (PFNGLCOMPILESHADERARBPROC)
+        SDL_GL_GetProcAddress("glCompileShaderARB");
+    __glShaderSourceARB =
+        (PFNGLSHADERSOURCEARBPROC)
+        SDL_GL_GetProcAddress("glShaderSourceARB");
+    __glCreateShaderObjectARB =
+        (PFNGLCREATESHADEROBJECTARBPROC)
+        SDL_GL_GetProcAddress("glCreateShaderObjectARB");
+    __glUniform2fARB =
+        (PFNGLUNIFORM2FARBPROC)
+        SDL_GL_GetProcAddress("glUniform2fARB");
+    __glUniform1fARB =
+        (PFNGLUNIFORM1FARBPROC)
+        SDL_GL_GetProcAddress("glUniform1fARB");
+    __glUniform4fARB =
+        (PFNGLUNIFORM4FARBPROC)
+        SDL_GL_GetProcAddress("glUniform4fARB");
+    __glGetUniformLocationARB =
+        (PFNGLGETUNIFORMLOCATIONARBPROC)
+        SDL_GL_GetProcAddress("glGetUniformLocationARB");
 #endif
 
 #if !defined(NDEBUG) && defined(CHOWDREN_USE_GL_DEBUG)

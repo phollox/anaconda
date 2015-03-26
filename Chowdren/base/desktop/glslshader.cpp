@@ -28,9 +28,9 @@ void BaseShader::initialize()
 
     fp.set_item(id, AssetFile::SHADER_DATA);
 
-    program = glCreateProgram();
-    GLuint vert_shader = attach_source(fp, GL_VERTEX_SHADER);
-    GLuint frag_shader = attach_source(fp, GL_FRAGMENT_SHADER);
+    program = glCreateProgramObject();
+    GLuint vert_shader = attach_source(fp, GL_VERTEX_SHADER_ARB);
+    GLuint frag_shader = attach_source(fp, GL_FRAGMENT_SHADER_ARB);
 
 #ifndef CHOWDREN_USE_GL
     glBindAttribLocation(program, POSITION_ATTRIB_IDX, POSITION_ATTRIB_NAME);
@@ -42,20 +42,21 @@ void BaseShader::initialize()
     glLinkProgram(program);
 
     GLint status;
-    glGetProgramiv(program, GL_LINK_STATUS, &status);
+    glGetObjectParameteriv(program, GL_OBJECT_LINK_STATUS_ARB, &status);
     if (status == GL_FALSE) {
         GLint info_len;
-        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &info_len);
+        glGetObjectParameteriv(program, GL_OBJECT_INFO_LOG_LENGTH_ARB,
+                               &info_len);
         GLchar * info_log = new GLchar[info_len + 1];
-        glGetProgramInfoLog(program, info_len, NULL, info_log);
+        glGetInfoLog(program, info_len, NULL, info_log);
         std::cout << "Linker failure: " << info_log << std::endl;
         delete[] info_log;
     }
 
-    glDetachShader(program, vert_shader);
-    glDetachShader(program, frag_shader);
+    glDetachObject(program, vert_shader);
+    glDetachObject(program, frag_shader);
 
-    glUseProgram(program);
+    glUseProgramObject(program);
 
     // setup uniforms
     glUniform1i((GLint)get_uniform(TEXTURE_SAMPLER_NAME), 0);
@@ -80,7 +81,7 @@ void BaseShader::initialize_parameters()
 
 GLuint BaseShader::attach_source(FSFile & fp, GLenum type)
 {
-    GLuint shader = glCreateShader(type);
+    GLuint shader = glCreateShaderObject(type);
 
     FileStream stream(fp);
     size_t size = stream.read_uint32();
@@ -93,17 +94,18 @@ GLuint BaseShader::attach_source(FSFile & fp, GLenum type)
     glCompileShader(shader);
 
     GLint status;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    glGetObjectParameteriv(shader, GL_OBJECT_COMPILE_STATUS_ARB, &status);
     if (status == GL_FALSE) {
         GLint info_len;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &info_len);
+        glGetObjectParameteriv(shader, GL_OBJECT_INFO_LOG_LENGTH_ARB,
+                               &info_len);
         GLchar * info_log = new GLchar[info_len + 1];
-        glGetShaderInfoLog(shader, info_len, NULL, info_log);
+        glGetInfoLog(shader, info_len, NULL, info_log);
         std::cout << "Compile error in " << type << ":" << std::endl <<
             info_log << std::endl;
         delete[] info_log;
     } else {
-        glAttachShader(program, shader);
+        glAttachObject(program, shader);
     }
     return shader;
 }
@@ -123,7 +125,7 @@ void BaseShader::begin(FrameObject * instance, int width, int height)
     }
 
     if (current != this) {
-        glUseProgram(program);
+        glUseProgramObject(program);
         current = this;
     }
 
