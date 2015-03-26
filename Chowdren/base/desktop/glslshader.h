@@ -7,7 +7,7 @@ class BaseShader
 {
 public:
     static BaseShader * current;
-    GLuint program;
+    GLhandleARB program;
     GLint size_uniform;
     bool initialized;
     unsigned int id;
@@ -17,7 +17,7 @@ public:
     BaseShader(unsigned int id, int flags = 0,
                const char * texture_parameter = NULL);
     void initialize();
-    GLuint attach_source(FSFile & fp, GLenum type);
+    GLhandleARB attach_source(FSFile & fp, GLenum type);
     GLuint get_background_texture();
     int get_uniform(const char * value);
     virtual void initialize_parameters();

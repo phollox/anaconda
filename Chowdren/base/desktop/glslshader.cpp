@@ -29,8 +29,8 @@ void BaseShader::initialize()
     fp.set_item(id, AssetFile::SHADER_DATA);
 
     program = glCreateProgramObject();
-    GLuint vert_shader = attach_source(fp, GL_VERTEX_SHADER_ARB);
-    GLuint frag_shader = attach_source(fp, GL_FRAGMENT_SHADER_ARB);
+    GLhandleARB vert_shader = attach_source(fp, GL_VERTEX_SHADER_ARB);
+    GLhandleARB frag_shader = attach_source(fp, GL_FRAGMENT_SHADER_ARB);
 
 #ifndef CHOWDREN_USE_GL
     glBindAttribLocation(program, POSITION_ATTRIB_IDX, POSITION_ATTRIB_NAME);
@@ -79,9 +79,9 @@ void BaseShader::initialize_parameters()
 {
 }
 
-GLuint BaseShader::attach_source(FSFile & fp, GLenum type)
+GLhandleARB BaseShader::attach_source(FSFile & fp, GLenum type)
 {
-    GLuint shader = glCreateShaderObject(type);
+    GLhandleARB shader = glCreateShaderObject(type);
 
     FileStream stream(fp);
     size_t size = stream.read_uint32();
