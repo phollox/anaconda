@@ -89,8 +89,9 @@ public:
     vector<SurfaceBlit> blit_images;
     int dest_width, dest_height;
     int dest_x, dest_y;
+    int src_width, src_height;
     int stretch_mode;
-    int effect;
+    int blit_effect;
 
     // Image array
     vector<SurfaceImage> images;
@@ -149,7 +150,7 @@ public:
     int get_edit_height();
     int get_image_width(int index);
     void scroll(int x, int y, int wrap);
-    void resize_source(int w, int h);
+    void set_src_size(int w, int h);
     void draw_line(int x1, int y1, int x2, int y2, Color color, int width);
     void draw_polygon(int x, int y, Color color, int outline_size,
                       Color outline);

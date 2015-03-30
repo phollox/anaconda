@@ -14,7 +14,7 @@ inline void cross_srand(unsigned int value)
 inline unsigned int cross_rand()
 {
     cross_seed = cross_seed * 214013 + 2531011;
-    return (cross_seed >> 16) & 0x7FFF;
+    return (cross_seed >> 16) & CROSS_RAND_MAX;
 }
 
 #endif // CROSSRAND_H

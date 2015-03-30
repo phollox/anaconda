@@ -314,14 +314,17 @@ inline void get_dir(int dir, float & x, float & y)
 
 inline int randrange(int range)
 {
-    if (range == 0)
-        return 0;
-    return cross_rand() / (CROSS_RAND_MAX / range + 1);
+    return (range * cross_rand()) / (CROSS_RAND_MAX + 1);
+}
+
+inline int randrange_event(int range)
+{
+    return randrange(range & 0xFFFF);
 }
 
 inline float randrange(float a, float b)
 {
-    return a + cross_rand() / (CROSS_RAND_MAX/(b-a));
+    return a + (cross_rand() * (b - a)) / (CROSS_RAND_MAX + 1.0f);
 }
 
 inline bool random_chance(int a, int b)

@@ -16,6 +16,10 @@ def write_pre(converter, writer, group):
 def write_frame_post(converter, writer):
     pass
 
+def get_scale_method(converter, obj):
+    # True for linear, False for linear
+    return None
+
 def use_simple_or(converter):
     return False
 

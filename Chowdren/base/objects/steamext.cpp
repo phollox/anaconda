@@ -37,11 +37,7 @@ SteamGlobal::SteamGlobal()
 {
     initialized = SteamAPI_Init();
     if (!initialized) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Steam error",
-                                 "Could not initialize Steam API", NULL);
-#ifdef NDEBUG
-        exit(0);
-#endif
+        std::cout << "Could not initialize Steam API" << std::endl;
         return;
     }
     SteamUserStats()->RequestCurrentStats();

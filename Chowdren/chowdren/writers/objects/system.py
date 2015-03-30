@@ -64,9 +64,14 @@ class Active(ObjectWriter):
         writer.putlnc('if (!%s) {', self.initialized_name)
         writer.indent()
         writer.putlnc('%s = true;', self.initialized_name)
+        scale_method = self.converter.config.get_scale_method(self) 
         for name, images in self.images:
             for image_index, image in enumerate(images):
                 writer.putlnc('%s[%s] = %s;', name, image_index, image)
+                if scale_method is None:
+                    continue
+                writer.putlnc('%s[%s]->set_filter(%s);', name, image_index,
+                              scale_method)
         writer.end_brace()
         flags = common.newFlags
         writer.putln(to_c('collision_box = %s;', flags['CollisionBox']))

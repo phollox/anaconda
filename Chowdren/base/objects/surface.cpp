@@ -17,8 +17,9 @@ static bool has_fbo = false;
 SurfaceObject::SurfaceObject(int x, int y, int type_id)
 : FrameObject(x, y, type_id), selected_index(-1), displayed_index(-1),
   load_failed(false), dest_width(0), dest_height(0), dest_x(0), dest_y(0),
-  stretch_mode(0), effect(0), selected_image(NULL), displayed_image(NULL),
-  use_fbo_blit(false), use_image_blit(false), vert_index(0)
+  stretch_mode(0), blit_effect(0), selected_image(NULL), displayed_image(NULL),
+  use_fbo_blit(false), use_image_blit(false), vert_index(0), src_width(-1),
+  src_height(-1)
 {
     if (!has_fbo) {
         has_fbo = true;
@@ -117,10 +118,9 @@ void SurfaceObject::draw()
 
             begin_draw(hh->width, hh->height);
             int off_x = x + hh->hotspot_x * img.scale_x;
-            int off_y = y + hh->hotspot_x * img.scale_x;
+            int off_y = y + hh->hotspot_y * img.scale_y;
             int draw_x = img.x + img.scroll_x;
             int draw_y = img.y + img.scroll_y;
-
             int w = hh->width * img.scale_x;
             int h = hh->height * img.scale_y;
 
@@ -193,8 +193,10 @@ void SurfaceObject::resize(int w, int h)
     collision->update_aabb();
 }
 
-void SurfaceObject::resize_source(int w, int h)
+void SurfaceObject::set_src_size(int w, int h)
 {
+    src_width = w;
+    src_height = h;
 }
 
 void SurfaceObject::resize_canvas(int x1, int y1, int x2, int y2)
@@ -301,16 +303,22 @@ void SurfaceObject::blit(Active * obj)
     blit_images[index].y = dest_y * scale_y;
     dest_width *= scale_x;
     dest_height *= scale_y;
-    blit_images[index].scale_x = dest_width / double(img->width);
-    blit_images[index].scale_y = dest_height / double(img->height);
+    int img_w = src_width;
+    if (img_w == -1)
+        img_w = img->width;
+    int img_h = src_height;
+    if (img_h == -1)
+        img_h = img->height;
+    blit_images[index].scale_x = dest_width / double(img_w);
+    blit_images[index].scale_y = dest_height / double(img_h);
     blit_images[index].scroll_x = 0;
     blit_images[index].scroll_y = 0;
 
-    if (effect != 1 && effect != 11) {
-        std::cout << "Unsupported blit effect: " << effect << std::endl;
+    if (blit_effect != 1 && blit_effect != 11) {
+        std::cout << "Unsupported blit effect: " << blit_effect << std::endl;
         blit_images[index].effect = 1;
     } else
-        blit_images[index].effect = effect;
+        blit_images[index].effect = blit_effect;
 
     blit_images[index].image = img;
 }
@@ -322,7 +330,7 @@ void SurfaceObject::blit(SurfaceObject * obj, int image)
 
 void SurfaceObject::set_effect(int index)
 {
-    effect = index;
+    blit_effect = index;
 }
 
 void SurfaceObject::set_display_image(int index)
@@ -392,8 +400,14 @@ void SurfaceObject::blit_image(int image)
     blit_images.resize(index+1);
     blit_images[index].x = dest_x;
     blit_images[index].y = dest_y;
-    blit_images[index].scale_x = dest_width / double(img->width);
-    blit_images[index].scale_y = dest_height / double(img->height);
+    int img_w = src_width;
+    if (img_w == -1)
+        img_w = img->width;
+    int img_h = src_height;
+    if (img_h == -1)
+        img_h = img->height;
+    blit_images[index].scale_x = dest_width / double(img_w);
+    blit_images[index].scale_y = dest_height / double(img_h);
     blit_images[index].image = img;
     blit_images[index].scroll_x = 0;
     blit_images[index].scroll_y = 0;

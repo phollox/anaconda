@@ -2188,7 +2188,7 @@ expressions = make_table(ExpressionMethodWriter, {
     'AND' : '.&math_helper&',
     'OR' : '.|math_helper|',
     'XOR' : '.^math_helper^',
-    'Random' : 'randrange',
+    'Random' : 'randrange_event',
     'ApplicationPath' : 'get_app_path()',
     'AlterableValue' : AlterableValueExpression,
     'AlterableValueIndex' : AlterableValueIndexExpression,

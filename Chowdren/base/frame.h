@@ -57,6 +57,7 @@ public:
     bool wrap_x, wrap_y;
     Color blend_color;
     int inactive_box[4];
+    int kill_box[4];
 
 #ifdef CHOWDREN_IS_3DS
     float depth;

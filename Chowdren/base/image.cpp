@@ -201,7 +201,7 @@ void Image::upload_texture()
 
     while (i < size) {
         BaseBitArray::word_t word = 0;
-        for (BaseBitArray::word_t m = 1; m != 0; m <<= 1) {
+        for (BaseBitArray::word_t m = 1UL; m != 0UL; m <<= 1UL) {
             c = ((unsigned char*)(((unsigned int*)image) + i))[3];
             if (c != 0)
                 word |= m;
@@ -250,7 +250,6 @@ void Image::upload_texture()
 #endif
 
     tex = Render::create_tex(image, Render::RGBA, gl_width, gl_height);
-
     Render::set_filter(tex, (flags & LINEAR_FILTER) != 0);
 
     if (flags & KEEP)

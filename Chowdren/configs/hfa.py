@@ -112,6 +112,18 @@ def get_startup_instances(converter, instances):
 
         new_instances += text_blitters
         return new_instances
+    elif converter.current_frame_index == 26:
+        # remove Active 10
+        new_instances = []
+        for item in instances:
+            frameitem = item[1]
+            obj = (frameitem.handle, frameitem.objectType)
+            writer = converter.get_object_writer(obj)
+            if writer.data.name == 'Active 10':
+                converter.multiple_instances.add(obj)
+                continue
+            new_instances.append(item)
+        return new_instances
     return instances
 
 def write_frame_post(converter, writer):
@@ -160,3 +172,26 @@ def use_blitter_callback(converter, obj):
 def get_string(converter, value):
     value = value.replace('controls.ini', 'controlsc.ini')
     return value
+
+scale_objs = (
+    ('Active', 1262, 1233),
+    ('Active 5', 274, 231),
+    ('Active 10', 100, 100)
+)
+
+def get_scale_method(converter, obj):
+    if obj.game_index != 0:
+        return None
+    bank = converter.games[0].images
+    images = obj.get_images()
+    for (scale_name, img_w, img_h) in scale_objs:
+        if obj.data.name != scale_name:
+            continue
+        for image in images:
+            image = bank.itemDict[image]
+            if image.width != img_w:
+                break
+            if image.height != img_h:
+                break
+            return True
+    return None

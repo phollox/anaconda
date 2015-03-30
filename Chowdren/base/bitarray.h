@@ -34,12 +34,12 @@ public:
 
     unsigned long get(int index)
     {
-        return data[index / WORD_SIZE] & (1 << (index % WORD_SIZE));
+        return data[index / WORD_SIZE] & (1UL << (index % WORD_SIZE));
     }
 
     void set(int index)
     {
-        data[index / WORD_SIZE] |= 1 << (index % WORD_SIZE);
+        data[index / WORD_SIZE] |= 1UL << (index % WORD_SIZE);
     }
 };
 
