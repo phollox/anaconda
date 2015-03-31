@@ -37,6 +37,10 @@ GameManager manager;
 #define CHOWDREN_SHOW_DEBUGGER
 #endif
 
+#ifndef NDEBUG
+#define SHOW_STATS
+#endif
+
 GameManager::GameManager()
 : frame(NULL), window_created(false), fullscreen(false), off_x(0), off_y(0),
   x_size(WINDOW_WIDTH), y_size(WINDOW_HEIGHT), values(NULL), strings(NULL),
@@ -190,6 +194,12 @@ int GameManager::update_frame()
     PROFILE_FUNC();
 #endif
     double dt = fps_limit.dt;
+
+#ifdef SHOW_STATS
+    if (dt > (1.4 / fps_limit.framerate))
+        std::cout << "Bad frame: " << dt << " " << (1.0 / dt) << std::endl;
+#endif
+
     if (fade_dir != 0.0f) {
         fade_value += fade_dir * (float)dt;
         if (fade_value <= 0.0f || fade_value >= 1.0f) {
@@ -507,10 +517,6 @@ void GameManager::map_axis(int axis,
     axis_pos_mappings[axis-1] = key;
 }
 
-#endif
-
-#ifndef NDEBUG
-#define SHOW_STATS
 #endif
 
 bool GameManager::update()
