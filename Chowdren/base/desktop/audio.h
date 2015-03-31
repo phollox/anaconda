@@ -483,7 +483,7 @@ public:
     }
 };
 
-#define BUFFER_COUNT 3
+#define BUFFER_COUNT 2
 #define LOCK_STREAM SDL_LockMutex(global_device.stream_mutex)
 #define UNLOCK_STREAM SDL_UnlockMutex(global_device.stream_mutex)
 
@@ -523,7 +523,7 @@ public:
         format = get_format(file->channels);
 
         for (int i = 0; i < BUFFER_COUNT; ++i)
-            buffers[i] = new SoundBuffer(file->sample_rate, file->channels,
+            buffers[i] = new SoundBuffer(file->sample_rate / 2, file->channels,
                                          format);
 
         LOCK_STREAM;

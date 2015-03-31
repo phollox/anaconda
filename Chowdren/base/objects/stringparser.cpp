@@ -1,5 +1,6 @@
 #include "objects/stringparser.h"
 #include "stringcommon.h"
+#include "common.h"
 #include "fileio.h"
 
 StringParser::StringParser(int x, int y, int id)
@@ -98,4 +99,9 @@ std::string StringParser::remove(const std::string & sub)
     std::string ret = value;
     replace_substring(ret, sub, empty_string);
     return ret;
+}
+
+std::string StringParser::get_md5()
+{
+    return ::get_md5(value);
 }

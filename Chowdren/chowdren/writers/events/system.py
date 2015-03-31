@@ -1738,9 +1738,8 @@ class SetEffect(ActionWriter):
             obj = self.converter.get_object(self.get_object())
             name = self.parameters[0].loader.value
             if name == '':
-                shader_name = 'NULL'
-            else:
-                shader_name = shader.get_name(name)
+                name = None
+            shader_name = shader.get_name(name)
             writer.putlnc('%s->set_shader(%s);', obj, shader_name)
 
 class SpreadValue(ActionWriter):

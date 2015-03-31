@@ -26,6 +26,7 @@ public:
     std::string replace(const std::string & from, const std::string & to);
     std::string remove(const std::string & sub);
     int get_count();
+    std::string get_md5();
 };
 
 #endif // CHOWDREN_STRINGPARSER_H
