@@ -201,17 +201,6 @@ void platform_init()
 #endif
 }
 
-void platform_exit()
-{
-#ifdef _WIN32
-    timeEndPeriod(1);
-#endif
-
-    joysticks.clear();
-
-    SDL_Quit();
-}
-
 void platform_poll_events()
 {
 #ifdef CHOWDREN_USE_EDITOBJ
@@ -1199,4 +1188,15 @@ void platform_debug(const std::string & value)
 {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Debug",
                              value.c_str(), NULL);
+}
+
+void platform_exit()
+{
+#ifdef _WIN32
+    timeEndPeriod(1);
+#endif
+
+    joysticks.clear();
+
+    SDL_Quit();
 }
