@@ -153,6 +153,12 @@ def use_counter_int(converter, expression):
             return True
     return False
 
+def use_image_preload(converter):
+    return True
+
+def use_image_flush(converter):
+    return True
+
 LOOP_NAMES = (
     'Player01DetectSensorMain',
     'Player01DetectSensorTop',
