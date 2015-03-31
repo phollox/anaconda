@@ -1176,7 +1176,7 @@ class Converter(object):
                 continue
             for packfile in files.items:
                 data = str(packfile.data)
-                name = os.path.basename(packfile.name)
+                name = packfile.name.replace('\\', '/').split('/')[-1]
                 print 'filename:', name
                 self.assets.add_file(name, data)
 
