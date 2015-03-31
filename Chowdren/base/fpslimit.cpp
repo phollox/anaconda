@@ -30,7 +30,6 @@ void FPSLimiter::finish()
 {
     double current_time = platform_get_time();
 
-    std::cout << "\r" << int(1.0 / (current_time - old_time));
 #ifdef CHOWDREN_IS_DESKTOP
     if (framerate < 100) {
         double t = normalize(next_update - current_time);

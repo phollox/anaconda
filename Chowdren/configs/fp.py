@@ -158,6 +158,11 @@ def use_image_preload(converter):
     return True
 
 def use_image_flush(converter, frame):
+    if frame.name in ('Update Records', 'Unlocked!', 'Black Load',
+                      'Continue?', 'Bonus Stage'):
+        return False
+    if frame.name.startswith('Scene -'):
+        return False
     return True
 
 LOOP_NAMES = (

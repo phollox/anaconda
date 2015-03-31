@@ -19,6 +19,14 @@ struct RenderData
 
 extern RenderData render_data;
 
+inline void set_tex(Texture t)
+{
+    if (render_data.last_tex != t) {
+        glBindTexture(GL_TEXTURE_2D, t);
+        render_data.last_tex = t;
+    }
+}
+
 inline void Render::set_offset(int x, int y)
 {
     offset[0] = x;
@@ -48,7 +56,7 @@ inline void Render::clear(Color color)
 
 inline void Render::set_filter(Texture tex, bool linear)
 {
-    glBindTexture(GL_TEXTURE_2D, tex);
+    set_tex(tex);
     if (linear) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -63,7 +71,7 @@ inline Texture Render::create_tex(void * pixels, Format f,
 {
     GLuint tex;
     glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
+    set_tex(tex);
 
     GLenum format;
     switch (f) {
@@ -85,6 +93,8 @@ inline Texture Render::create_tex(void * pixels, Format f,
 inline void Render::delete_tex(Texture tex)
 {
     glDeleteTextures(1, &tex);
+    if (render_data.last_tex == tex)
+        render_data.last_tex = 0;
 }
 
 inline float transform_x(float x)
@@ -320,7 +330,7 @@ inline Texture Render::copy_rect(int x1, int y1, int x2, int y2)
 
     int y = WINDOW_HEIGHT - y2;
 
-    glBindTexture(GL_TEXTURE_2D, render_data.back_tex);
+    set_tex(render_data.back_tex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height,
                  0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, x1, y, width, height);
