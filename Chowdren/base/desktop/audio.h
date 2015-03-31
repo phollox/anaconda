@@ -182,7 +182,7 @@ public:
 
     bool read(SoundDecoder & file)
     {
-        return read(file, sample_rate * channels);
+        return read(file, (sample_rate / 2) * channels);
     }
 
     void buffer_data(bool updated = false)
@@ -523,7 +523,7 @@ public:
         format = get_format(file->channels);
 
         for (int i = 0; i < BUFFER_COUNT; ++i)
-            buffers[i] = new SoundBuffer(file->sample_rate / 2, file->channels,
+            buffers[i] = new SoundBuffer(file->sample_rate, file->channels,
                                          format);
 
         LOCK_STREAM;
