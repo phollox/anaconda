@@ -1,20 +1,11 @@
 #include "platform.h"
-
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <windows.h>
-#include <mmsystem.h>
-#endif
-
+#include <iostream>
 #include "fpslimit.h"
+#include <algorithm>
 
 FPSLimiter::FPSLimiter()
-: framerate(-1)
+: framerate(-1), dt(0.0), current_framerate(0.0)
 {
-    old_time = platform_get_time();
 }
 
 void FPSLimiter::set(int value)
@@ -31,21 +22,25 @@ double FPSLimiter::normalize(double delta)
 
 void FPSLimiter::start()
 {
+    old_time = platform_get_time();
+    next_update = old_time;
+}
+
+void FPSLimiter::finish()
+{
     double current_time = platform_get_time();
-    next_update = current_time + 1.0 / framerate;
+
+    std::cout << "\r" << int(1.0 / (current_time - old_time));
+#ifdef CHOWDREN_IS_DESKTOP
+    if (framerate < 100) {
+        double t = normalize(next_update - current_time);
+        platform_sleep(t);
+    }
+    next_update = std::max(current_time, next_update) + 1.0 / framerate;
+#endif
     dt = normalize(current_time - old_time);
     old_time = current_time;
     if (dt < 0.0)
         dt = 0.001;
     current_framerate = 1.0 / dt;
-}
-
-void FPSLimiter::finish()
-{
-#ifdef CHOWDREN_IS_DESKTOP
-    if (framerate >= 100)
-        return;
-    double t = normalize(next_update - platform_get_time());
-    platform_sleep(t);
-#endif
 }

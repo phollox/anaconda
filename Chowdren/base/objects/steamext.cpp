@@ -20,6 +20,7 @@ public:
     SteamGlobal();
     static void on_close();
     bool is_ready();
+    void init();
 
     STEAM_CALLBACK(SteamGlobal, receive_callback, UserStatsReceived_t,
                    receive_callback_data);
@@ -34,6 +35,10 @@ static SteamGlobal global_steam_obj;
 SteamGlobal::SteamGlobal()
 : initialized(false), has_data(false),
   receive_callback_data(this, &SteamGlobal::receive_callback)
+{
+}
+
+void SteamGlobal::init()
 {
     initialized = SteamAPI_Init();
     if (!initialized) {
@@ -82,6 +87,13 @@ void SteamGlobal::receive_callback(UserStatsReceived_t * callback)
 SteamObject::SteamObject(int x, int y, int type_id)
 : FrameObject(x, y, type_id)
 {
+#ifdef CHOWDREN_ENABLE_STEAM
+    static bool initialized = false;
+    if (initialized)
+        return;
+    initialized = true;
+    global_steam_obj.init();
+#endif
 }
 
 bool SteamObject::is_ready()

@@ -90,6 +90,7 @@ void GameManager::init()
     // setup random generator from start
     cross_srand((unsigned int)platform_get_global_time());
 
+    fps_limit.start();
     fps_limit.set(FRAMERATE);
 
     int start_frame = 0;
@@ -196,7 +197,7 @@ int GameManager::update_frame()
     double dt = fps_limit.dt;
 
 #ifdef SHOW_STATS
-    if (dt > (1.4 / fps_limit.framerate))
+    if (dt > (1.2 / fps_limit.framerate))
         std::cout << "Bad frame: " << dt << " " << (1.0 / dt) << std::endl;
 #endif
 
@@ -547,8 +548,6 @@ bool GameManager::update()
     joystick_press_flags = new_control & ~(joystick_flags);
     joystick_release_flags = joystick_flags & ~(new_control);
     joystick_flags = new_control;
-
-    fps_limit.start();
 
 #ifdef CHOWDREN_USE_JOYTOKEY
     for (int i = 0; i < simulate_count; i++) {
