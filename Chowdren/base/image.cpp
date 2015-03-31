@@ -532,10 +532,12 @@ void flush_image_cache()
 
 void preload_images()
 {
+#ifndef CHOWDREN_IS_DESKTOP
 #if defined(CHOWDREN_PRELOAD_IMAGES) || defined(CHOWDREN_PRELOAD_ALL)
     AssetFile fp;
     fp.open();
     FileStream stream(fp);
+
     glc_set_storage(true);
     for (int i = 0; i < IMAGE_COUNT; i++) {
         unsigned short handle = stream.read_uint16();
@@ -548,6 +550,7 @@ void preload_images()
         image->set_static();
     }
     glc_set_storage(false);
+#endif
 #endif
 }
 
