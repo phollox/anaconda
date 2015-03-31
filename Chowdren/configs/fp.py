@@ -156,7 +156,7 @@ def use_counter_int(converter, expression):
 def use_image_preload(converter):
     return True
 
-def use_image_flush(converter):
+def use_image_flush(converter, frame):
     return True
 
 LOOP_NAMES = (
