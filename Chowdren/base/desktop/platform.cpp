@@ -207,6 +207,8 @@ void platform_exit()
     timeEndPeriod(1);
 #endif
 
+    joysticks.clear();
+
     SDL_Quit();
 }
 
