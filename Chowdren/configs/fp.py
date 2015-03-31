@@ -7,6 +7,7 @@ def init(converter):
     converter.add_define('CHOWDREN_OBSTACLE_IMAGE')
     converter.add_define('CHOWDREN_STEAM_APPID', 248310)
     converter.add_define('CHOWDREN_JOYSTICK2_CONTROLLER')
+    converter.add_define('CHOWDREN_TEXTURE_GC')
 
     frameitems = converter.game.frameItems
     for item in frameitems.itemDict.itervalues():

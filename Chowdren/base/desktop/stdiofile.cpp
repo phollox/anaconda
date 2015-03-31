@@ -144,6 +144,13 @@ class StandardFile : public FileHandle
 #else
 #define HANDLE_BASE StandardFile
 
+// convert path on Linux/Mac
+#if !defined(FSFILE_CONVERT_PATH) && defined(CHOWDREN_IS_DESKTOP)
+#if !defined(_WIN32) && (defined(__APPLE__) || defined(__linux))
+#define FSFILE_CONVERT_PATH
+#endif
+#endif
+
 class StandardFile
 #endif
 {
