@@ -325,11 +325,21 @@ void platform_create_display(bool fullscreen)
                                      SDL_WINDOWPOS_CENTERED,
                                      WINDOW_WIDTH, WINDOW_HEIGHT,
                                      flags);
+
     if (global_window == NULL) {
         std::cout << "Could not open window: " << SDL_GetError() << std::endl;
         exit(EXIT_FAILURE);
         return;
     }
+
+#ifdef __linux
+    SDL_Surface * icon = SDL_LoadBMP("icon.bmp");
+    if (icon != NULL) {
+        SDL_SetWindowIcon(global_window, icon);
+        SDL_FreeSurface(icon);
+    }
+#endif
+
     global_context = SDL_GL_CreateContext(global_window);
     if (global_context == NULL) {
         std::cout << "Could not create OpenGL context: " << SDL_GetError()
