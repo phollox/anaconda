@@ -20,6 +20,8 @@
 #include "../types.h"
 #include "../audiodecoders.h"
 
+#define BUFFER_COUNT 3
+
 namespace ChowdrenAudio {
 
 #ifndef CHOWDREN_IS_EMSCRIPTEN
@@ -151,15 +153,21 @@ public:
     unsigned int channels;
     ALenum format;
 
-    SoundBuffer(unsigned int sample_rate, unsigned int channels, ALenum format)
-    : left_gain(1.0), right_gain(1.0), sample_rate(sample_rate), format(format),
-      samples_size(0), samples(NULL), channels(channels)
+    SoundBuffer()
+    : left_gain(1.0), right_gain(1.0), samples_size(0), samples(NULL),
+      sample_count(0)
     {
+    }
+
+    void init(unsigned int sample_rate, unsigned int channels, ALenum format)
+    {
+        this->sample_rate = sample_rate;
+        this->format = format;
+        this->channels = channels;
         al_check(alGenBuffers(1, &buffer));
     }
 
-    SoundBuffer(SoundDecoder & file, size_t sample_count)
-    : left_gain(1.0), right_gain(1.0), samples_size(0), samples(NULL)
+    void init(SoundDecoder & file, size_t sample_count)
     {
         al_check(alGenBuffers(1, &buffer));
         channels = file.channels;
@@ -182,7 +190,7 @@ public:
 
     bool read(SoundDecoder & file)
     {
-        return read(file, (sample_rate / 2) * channels);
+        return read(file, (sample_rate / BUFFER_COUNT) * channels);
     }
 
     void buffer_data(bool updated = false)
@@ -228,7 +236,7 @@ public:
         buffer_data(true);
     }
 
-    ~SoundBuffer()
+    void destroy()
     {
         delete[] samples;
         samples = NULL;
@@ -242,7 +250,7 @@ typedef vector<Sound*> SoundList;
 class Sample
 {
 public:
-    SoundBuffer * buffer;
+    SoundBuffer buffer;
     unsigned int sample_rate;
     unsigned int channels;
     SoundList sounds;
@@ -403,9 +411,9 @@ public:
 
     Sound(Sample & sample) : sample(sample), SoundBase()
     {
-        al_check(alSourcei(source, AL_BUFFER, sample.buffer->buffer));
+        al_check(alSourcei(source, AL_BUFFER, sample.buffer.buffer));
         sample.add_sound(this);
-        format = sample.buffer->format;
+        format = sample.buffer.format;
     }
 
     ~Sound()
@@ -455,7 +463,7 @@ public:
 
     double get_duration()
     {
-        return double(sample.buffer->sample_count)
+        return double(sample.buffer.sample_count)
                / sample.sample_rate
                / sample.channels;
     }
@@ -470,7 +478,7 @@ public:
         // XXX okay, so we can't actually do this since the sample buffer
         // is shared. need to implement buffer copying for panning.
         return;
-        sample.buffer->set_pan(left_gain, right_gain);
+        sample.buffer.set_pan(left_gain, right_gain);
     }
 
     void reset_buffer()
@@ -483,7 +491,6 @@ public:
     }
 };
 
-#define BUFFER_COUNT 2
 #define LOCK_STREAM SDL_LockMutex(global_device.stream_mutex)
 #define UNLOCK_STREAM SDL_UnlockMutex(global_device.stream_mutex)
 
@@ -493,7 +500,7 @@ public:
     AssetFile fp;
     SoundDecoder * file;
     bool playing;
-    SoundBuffer * buffers[BUFFER_COUNT];
+    SoundBuffer buffers[BUFFER_COUNT];
     unsigned int channels;
     unsigned int sample_rate;
     bool loop;
@@ -523,8 +530,7 @@ public:
         format = get_format(file->channels);
 
         for (int i = 0; i < BUFFER_COUNT; ++i)
-            buffers[i] = new SoundBuffer(file->sample_rate, file->channels,
-                                         format);
+            buffers[i].init(file->sample_rate, file->channels, format);
 
         LOCK_STREAM;
         global_device.add_stream(this);
@@ -536,8 +542,9 @@ public:
         stop();
 
         LOCK_STREAM;
-        for (int i = 0; i < BUFFER_COUNT; i++)
-            delete buffers[i];
+        for (int i = 0; i < BUFFER_COUNT; i++) {
+            buffers[i].destroy();
+        }
 
         global_device.remove_stream(this);
         UNLOCK_STREAM;
@@ -673,7 +680,7 @@ public:
             // Find its number
             unsigned int buffer_num = 0;
             for (int i = 0; i < BUFFER_COUNT; ++i)
-                if (buffers[i]->buffer == buffer) {
+                if (buffers[i].buffer == buffer) {
                     buffer_num = i;
                     break;
                 }
@@ -701,7 +708,6 @@ public:
 
     void on_seek(double offset)
     {
-        // Lock lock(m_mutex);
         file->seek(offset);
     }
 
@@ -709,7 +715,7 @@ public:
     {
         bool stopping = false;
 
-        SoundBuffer & buffer = *buffers[buffer_num];
+        SoundBuffer & buffer = buffers[buffer_num];
 
         if (!buffer.read(*file)) {
             // Mark the buffer as the last one (so that we know when to reset
@@ -733,8 +739,9 @@ public:
             }
         }
 
-        if (buffer.sample_count != 0)
+        if (buffer.sample_count != 0) {
             al_check(alSourceQueueBuffers(source, 1, &buffer.buffer));
+        }
 
         return stopping;
     }
@@ -767,7 +774,7 @@ public:
     {
         LOCK_STREAM;
         for (int i = 0; i < BUFFER_COUNT; i++)
-            buffers[i]->set_pan(left_gain, right_gain);
+            buffers[i].set_pan(left_gain, right_gain);
         UNLOCK_STREAM;
     }
 };
@@ -905,7 +912,7 @@ Sample::Sample(FSFile & fp, Media::AudioType type, size_t size)
     SoundDecoder * file = create_decoder(fp, type, size);
     channels = file->channels;
     sample_rate = file->sample_rate;
-    buffer = new SoundBuffer(*file, file->samples);
+    buffer.init(*file, file->samples);
     delete file;
 }
 
@@ -915,7 +922,7 @@ Sample::~Sample()
     for (it = sounds.begin(); it != sounds.end(); ++it)
         (*it)->reset_buffer();
 
-    delete buffer;
+    buffer.destroy();
 }
 
 void Sample::add_sound(Sound * sound)

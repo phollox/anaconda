@@ -24,6 +24,7 @@ GameManager manager;
 #include "fonts.h"
 #include "crossrand.h"
 #include "media.h"
+#include "crashdump.cpp"
 
 #if defined(CHOWDREN_IS_DESKTOP)
 #include "SDL.h"
@@ -33,11 +34,8 @@ GameManager manager;
 #include <emscripten/emscripten.h>
 #endif
 
-#ifndef NDEBUG
+#if !defined(NDEBUG)
 #define CHOWDREN_SHOW_DEBUGGER
-#endif
-
-#ifndef NDEBUG
 #define SHOW_STATS
 #endif
 
@@ -977,6 +975,8 @@ bool is_player_pressed_once(int player, int flags)
 
 int main(int argc, char *argv[])
 {
+    install_crash_handler();
+
 #if defined(_WIN32) && defined(CHOWDREN_SHOW_DEBUGGER)
     int outHandle, errHandle, inHandle;
     FILE *outFile, *errFile, *inFile;

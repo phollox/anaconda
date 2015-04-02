@@ -14,6 +14,7 @@ def init(converter):
     converter.add_define('CHOWDREN_DISABLE_DISPLAY0_EXT')
     converter.add_define('CHOWDREN_AUTOSAVE_ON_CHANGE') # this is stupid
     converter.add_define('CHOWDREN_SAVE_PATH', 'data/savegames')
+    converter.add_define('CHOWDREN_USE_CRASHDUMP')
 
     # hack to turn on high-resolution lighting system images
     values = converter.game.globalValues.items
@@ -170,7 +171,7 @@ def use_blitter_callback(converter, obj):
     return frame_index in (None, 6)
 
 def get_string(converter, value):
-    value = value.replace('controls.ini', 'controlsc.ini')
+    value = value.replace('controls.ini', 'controls_final.ini')
     return value
 
 scale_objs = (
