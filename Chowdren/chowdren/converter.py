@@ -2984,6 +2984,9 @@ class Converter(object):
             if self.has_common_objects(obj, self.has_selection):
                 has_col = True
             else:
+                if self.has_single(obj):
+                    print 'ignoring single for clear list'
+                    continue
                 clear_lists.add(self.get_object_list(obj))
 
         if has_col:

@@ -1,3 +1,5 @@
+// #define CHOWDREN_USE_CRASHDUMP
+
 #if !defined(_WIN32) || !defined(CHOWDREN_USE_CRASHDUMP)
 
 void install_crash_handler()

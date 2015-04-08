@@ -34,10 +34,10 @@ GameManager manager;
 #include <emscripten/emscripten.h>
 #endif
 
-#if !defined(NDEBUG)
+// #if !defined(NDEBUG)
 #define CHOWDREN_SHOW_DEBUGGER
 #define SHOW_STATS
-#endif
+// #endif
 
 GameManager::GameManager()
 : frame(NULL), window_created(false), fullscreen(false), off_x(0), off_y(0),
@@ -77,13 +77,13 @@ void GameManager::init()
 #endif
 
     platform_init();
+    media.init();
     set_window(false);
 
     // application setup
     preload_images();
     reset_globals();
     setup_keys(this);
-    media.init();
 
     // setup random generator from start
     cross_srand((unsigned int)platform_get_global_time());
@@ -927,6 +927,13 @@ static int get_joystick_control_flags(int n)
     flags |= get_joystick_flag(n, CHOWDREN_BUTTON_DPAD_DOWN);
     flags |= get_joystick_flag(n, CHOWDREN_BUTTON_DPAD_LEFT);
     flags |= get_joystick_flag(n, CHOWDREN_BUTTON_DPAD_RIGHT);
+
+#ifdef CHOWDREN_IS_DESKTOP
+    // extra joystick flags
+    for (int i = 0; i < 8; i++) {
+        flags |= get_joystick_flag(n, CHOWDREN_BUTTON_DPAD_RIGHT+1+i);
+    }
+#endif
     return flags;
 }
 

@@ -3,8 +3,7 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 endif()
 
 if (APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.7" CACHE STRING "")
-    set(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk" CACHE STRING "")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.6" CACHE STRING "")
 endif()
 
 set(CMAKE_MODULE_PATH "${CHOWDREN_BASE_DIR}/cmake")

@@ -115,6 +115,10 @@ static void on_key(SDL_KeyboardEvent & e)
         return;
     }
 
+    if (state && key == SDLK_F2) {
+        manager.frame->restart();
+    }
+
 #ifdef CHOWDREN_USE_EDITOBJ
     if (state && key == SDLK_v && (SDL_GetModState() & KMOD_CTRL) &&
         SDL_HasClipboardText())
@@ -139,6 +143,7 @@ void update_joystick();
 void add_joystick(int device);
 void remove_joystick(int instance);
 void on_joystick_button(int instance, int button, bool state);
+void on_controller_button(int instance, int button, bool state);
 
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
@@ -201,8 +206,35 @@ void platform_init()
 #endif
 }
 
+// Here, we check if vsync is causing the game to slow down from 60fps to lower
+// than ~55fps.
+
+static int vsync_value = -2;
+static double vsync_fail_time = 0.0;
+
+void check_vsync()
+{
+    double expected = 1.0 / manager.fps_limit.framerate;
+    if (manager.fps_limit.dt - expected > 0.0015) {
+        vsync_fail_time += manager.fps_limit.dt;
+    } else {
+        vsync_fail_time = 0.0;
+        return;
+    }
+
+    if (vsync_fail_time > 2.0) {
+        std::cout << "Swap interval causing slowdown, turning off vsync"
+            << std::endl;
+        vsync_fail_time = 0.0;
+        platform_set_vsync(0);
+    }
+}
+
 void platform_poll_events()
 {
+    if (vsync_value == 1)
+        check_vsync();
+
 #ifdef CHOWDREN_USE_EDITOBJ
     manager.input.clear();
 #endif
@@ -218,16 +250,21 @@ void platform_poll_events()
             case SDL_MOUSEBUTTONUP:
                 on_mouse(e.button);
                 break;
-            case SDL_CONTROLLERDEVICEADDED:
-                add_joystick(e.cdevice.which);
+            case SDL_JOYDEVICEADDED:
+                add_joystick(e.jdevice.which);
                 break;
-            case SDL_CONTROLLERDEVICEREMOVED:
-                remove_joystick(e.cdevice.which);
+            case SDL_JOYDEVICEREMOVED:
+                remove_joystick(e.jdevice.which);
+                break;
+            case SDL_JOYBUTTONDOWN:
+            case SDL_JOYBUTTONUP:
+                on_joystick_button(e.jbutton.which, e.jbutton.button,
+                                   e.jbutton.state == SDL_PRESSED);
                 break;
             case SDL_CONTROLLERBUTTONDOWN:
             case SDL_CONTROLLERBUTTONUP:
-                on_joystick_button(e.cbutton.which, e.cbutton.button,
-                                   e.cbutton.state == SDL_PRESSED);
+                on_controller_button(e.cbutton.which, e.cbutton.button,
+                                     e.cbutton.state == SDL_PRESSED);
                 break;
 #ifdef CHOWDREN_USE_EDITOBJ
             case SDL_TEXTINPUT:
@@ -465,8 +502,6 @@ void platform_create_display(bool fullscreen)
     screen_fbo.init(WINDOW_WIDTH, WINDOW_HEIGHT);
 }
 
-static int vsync_value = -2;
-
 void platform_set_vsync(bool value)
 {
     if (global_window == NULL)
@@ -524,7 +559,6 @@ void platform_set_fullscreen(bool value)
         SDL_DisplayMode mode;
         SDL_GetDesktopDisplayMode(display, &mode);
         SDL_SetWindowDisplayMode(global_window, &mode);
-        std::cout << "Real fullscreen" << std::endl;
     } else
         flags = 0;
 #endif
@@ -590,8 +624,7 @@ void platform_swap_buffers()
 #ifdef CHOWDREN_QUICK_SCALE
     float x_scale = draw_x_size / float(WINDOW_WIDTH);
     float y_scale = draw_y_size / float(WINDOW_WIDTH);
-    float use_effect = draw_x_size % WINDOW_WIDTH != 0 ||
-                       draw_y_size % WINDOW_HEIGHT != 0;
+    float use_effect = false;
     if (use_effect) {        
         Render::set_effect(Render::PIXELSCALE);
         set_scale_uniform(WINDOW_WIDTH, WINDOW_HEIGHT,
@@ -820,8 +853,6 @@ const std::string & platform_get_appdata_dir()
 
 // joystick
 
-class JoystickData;
-static vector<JoystickData> joysticks;
 static SDL_HapticEffect rumble_effect;
 
 class JoystickData
@@ -829,14 +860,12 @@ class JoystickData
 public:
     SDL_Joystick * joy;
     SDL_GameController * controller;
-    int device;
     int instance;
     SDL_Haptic * haptics;
     bool has_effect, has_rumble;
-    const unsigned char * buttons;
     int axis_count;
-    const float * axes;
     int last_press;
+    int button_count;
 
     JoystickData()
     : has_effect(false), has_rumble(false), last_press(0), controller(NULL),
@@ -844,21 +873,24 @@ public:
     {
     }
 
-    void init(int device, SDL_GameController * c)
+    void init(SDL_GameController * c, SDL_Joystick * j, int i)
     {
         controller = c;
-        this->device = device;
-        joy = SDL_GameControllerGetJoystick(c);
-        instance = SDL_JoystickInstanceID(joy);
+        joy = j;
+        instance = i;
+        if (c == NULL)
+            button_count = SDL_JoystickNumButtons(j);
         init_rumble();
     }
 
-    ~JoystickData()
+    void close()
     {
         if (controller != NULL)
             SDL_GameControllerClose(controller);
         if (haptics != NULL)
             SDL_HapticClose(haptics);
+        controller = NULL;
+        haptics = NULL;
     }
 
     void init_rumble()
@@ -880,28 +912,52 @@ public:
         }
     }
 
-    float get_axis(SDL_GameControllerAxis n)
-    {
-        if (n <= SDL_CONTROLLER_AXIS_INVALID || n >= SDL_CONTROLLER_AXIS_MAX)
-            return 0.0f;
-        return float(SDL_GameControllerGetAxis(controller, n)) / float(0x7FFF);
-    }
-
     float get_axis(int n)
     {
-        return get_axis((SDL_GameControllerAxis)n);
+        if (controller == NULL)
+            return SDL_JoystickGetAxis(joy, n) / float(0x7FFF);
+        if (n <= SDL_CONTROLLER_AXIS_INVALID || n >= SDL_CONTROLLER_AXIS_MAX)
+            return 0.0f;
+        return SDL_GameControllerGetAxis(controller,
+                                         (SDL_GameControllerAxis)n)
+               / float(0x7FFF);
     }
 
     bool get_button(int b)
     {
+        if (controller == NULL)
+            return get_button((SDL_GameControllerButton)b);
         if (b <= SDL_CONTROLLER_BUTTON_INVALID ||
             b >= SDL_CONTROLLER_BUTTON_MAX)
             return false;
         return get_button((SDL_GameControllerButton)b);
     }
 
+    bool get_joy_button(int n)
+    {
+        return SDL_JoystickGetButton(joy, n) == 1;
+    }
+
     bool get_button(SDL_GameControllerButton b)
     {
+        if (controller == NULL) {
+            int bb;
+            switch (b) {
+                case SDL_CONTROLLER_BUTTON_DPAD_UP:
+                    return (SDL_JoystickGetHat(joy, 0) & SDL_HAT_UP) != 0;
+                case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+                    return (SDL_JoystickGetHat(joy, 0) & SDL_HAT_DOWN) != 0;
+                case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+                    return (SDL_JoystickGetHat(joy, 0) & SDL_HAT_LEFT) != 0;
+                case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+                    return (SDL_JoystickGetHat(joy, 0) & SDL_HAT_RIGHT) != 0;
+                default:
+                    bb = (int)b;
+            }
+            if (bb >= SDL_CONTROLLER_BUTTON_DPAD_UP)
+                bb -= 4;
+            return SDL_JoystickGetButton(joy, bb) == 1;
+        }
         return SDL_GameControllerGetButton(controller, b) == 1;
     }
 
@@ -930,9 +986,19 @@ public:
     }
 };
 
+static int selected_joy_index = 0;
+static JoystickData * selected_joy = NULL;
+static vector<JoystickData> joysticks;
+
+#define CHOWDREN_SINGLE_JOYSTICK
+
 JoystickData & get_joy(int n)
 {
+#ifdef CHOWDREN_SINGLE_JOYSTICK
+    return *selected_joy;
+#else
     return joysticks[n-1];
+#endif
 }
 
 JoystickData * get_joy_instance(int instance)
@@ -949,31 +1015,48 @@ JoystickData * get_joy_instance(int instance)
 
 void add_joystick(int device)
 {
-    if (!SDL_IsGameController(device))
-        return;
+    SDL_GameController * c = NULL;
+    if (SDL_IsGameController(device))
+        c = SDL_GameControllerOpen(device);
+
+    SDL_Joystick * joy = NULL;
+    if (c == NULL)
+        joy = SDL_JoystickOpen(device);
+    else
+        joy = SDL_GameControllerGetJoystick(c);
     vector<JoystickData>::iterator it;
     for (it = joysticks.begin(); it != joysticks.end(); ++it) {
         JoystickData & j = *it;
-        if (j.device == device)
+        if (j.joy == joy) {
+            if (c != NULL)
+                SDL_GameControllerClose(c);
+            else
+                SDL_JoystickClose(joy);
             return;
+        }
     }
-    SDL_GameController * c = SDL_GameControllerOpen(device);
-    if (c == NULL)
-        return;
+    int instance = SDL_JoystickInstanceID(joy);
     int index = joysticks.size();
     joysticks.resize(index+1);
-    joysticks[index].init(device, c);
+    joysticks[index].init(c, joy, instance);
+    selected_joy = &joysticks[selected_joy_index];
 }
 
 void remove_joystick(int instance)
 {
+    if (selected_joy != NULL && selected_joy->instance == instance) {
+        selected_joy = NULL;
+        selected_joy_index = 0;
+    }
+
     vector<JoystickData>::iterator it;
     for (it = joysticks.begin(); it != joysticks.end(); ++it) {
         JoystickData & j = *it;
         if (j.instance != instance)
             continue;
+        j.close();
         joysticks.erase(it);
-        break;
+        return;
     }
 }
 
@@ -995,9 +1078,31 @@ void update_joystick()
 
 void on_joystick_button(int instance, int button, bool state)
 {
+    JoystickData * joy = NULL;
+    unsigned int i;
+    for (i = 0; i < joysticks.size(); ++i) {
+        JoystickData & j = joysticks[i];
+        if (j.instance != instance)
+            continue;
+        joy = &j;
+        break;
+    }
+
+    selected_joy_index = int(i);
+    selected_joy = joy;
     if (!state)
         return;
-    get_joy_instance(instance)->last_press = button;
+    if (joy->controller != NULL)
+        return;
+    if (button >= SDL_CONTROLLER_BUTTON_DPAD_UP)
+        button += 4;
+    joy->last_press = button;
+}
+
+void on_controller_button(int instance, int button, bool state)
+{
+    JoystickData * joy = get_joy_instance(instance);
+    joy->last_press = button;
 }
 
 int get_joystick_last_press(int n)
@@ -1014,14 +1119,24 @@ const std::string & get_joystick_name(int n)
     if (!is_joystick_attached(n))
         return empty_string;
     static std::string ret;
-    ret = SDL_GameControllerName(get_joy(n).controller);
+    JoystickData & joy = get_joy(n);
+    if (joy.controller == NULL)
+        ret = SDL_JoystickName(joy.joy);
+    else
+        ret = SDL_GameControllerName(joy.controller);
     return ret;
 }
 
 bool is_joystick_attached(int n)
 {
     n--;
+#ifdef CHOWDREN_SINGLE_JOYSTICK
+    if (n != 0)
+        return false;
+    return selected_joy != NULL;
+#else
     return n >= 0 && n < int(joysticks.size());
+#endif
 }
 
 bool is_joystick_pressed(int n, int button)
@@ -1038,7 +1153,15 @@ bool any_joystick_pressed(int n)
     if (!is_joystick_attached(n))
         return false;
     JoystickData & joy = get_joy(n);
-    for (unsigned int i = 0; i < SDL_CONTROLLER_BUTTON_MAX; i++) {
+    if (joy.controller == NULL) {
+        for (int i = 0; i < joy.button_count; i++) {
+            if (joy.get_joy_button(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    for (unsigned int i = 0; i < SDL_CONTROLLER_BUTTON_DPAD_UP; i++) {
         if (joy.get_button(i)) {
             return true;
         }

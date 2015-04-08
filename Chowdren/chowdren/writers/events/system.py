@@ -71,7 +71,9 @@ class SystemObject(ObjectWriter):
     def write_group_activated(self, writer):
         self.group_activations = defaultdict(list)
         for group in self.converter.always_groups_dict['OnGroupActivation']:
-            cond = group.conditions[0]
+            for cond in group.conditions:
+                if cond.data.getName() == 'OnGroupActivation':
+                    break
             container = cond.container
             check_name = cond.get_group_check()
             group.add_member('bool %s' % check_name, 'true')
@@ -1402,6 +1404,9 @@ class Foreach(ActionWriter):
         if real_name is None:
             raise NotImplementedError()
         name = get_method_name(real_name)
+        if real_name not in self.converter.system_object.foreach_names:
+            print 'foreach error! nested foreach not implemented yet'
+            return
         func_call = self.converter.system_object.foreach_names[real_name]
         with self.converter.iterate_object(obj, writer):
             selected = self.converter.get_object(obj)
