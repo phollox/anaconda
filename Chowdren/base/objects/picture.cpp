@@ -4,7 +4,7 @@
 
 ActivePicture::ActivePicture(int x, int y, int type_id)
 : FrameObject(x, y, type_id), image(NULL), horizontal_flip(false),
-  scale_x(1.0f), scale_y(1.0f), angle(0.0f)
+  scale_x(1.0f), scale_y(1.0f), angle(0)
 {
     sprite_col.instance = this;
     collision = &sprite_col;
@@ -83,7 +83,7 @@ void ActivePicture::set_zoom(float value)
     set_scale(value / 100.0);
 }
 
-void ActivePicture::set_angle(float value, int quality)
+void ActivePicture::set_angle(int value, int quality)
 {
     ((SpriteCollision*)collision)->set_angle(value);
     angle = value;

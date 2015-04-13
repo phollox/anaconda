@@ -34,10 +34,10 @@ GameManager manager;
 #include <emscripten/emscripten.h>
 #endif
 
-// #if !defined(NDEBUG)
+#if !defined(NDEBUG)
 #define CHOWDREN_SHOW_DEBUGGER
 #define SHOW_STATS
-// #endif
+#endif
 
 GameManager::GameManager()
 : frame(NULL), window_created(false), fullscreen(false), off_x(0), off_y(0),
@@ -99,7 +99,7 @@ void GameManager::init()
 #elif defined(CHOWDREN_IS_FP)
     player_died = false;
     lives = 3;
-    start_frame = 0;
+    start_frame = 55;
 #else
     start_frame = 0;
 #endif

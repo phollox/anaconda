@@ -411,6 +411,12 @@ void Layer::update_position()
     inactive_box[2] = x2 - off_x;
     inactive_box[1] = y1 - off_y;
     inactive_box[3] = y2 - off_y;
+
+    kill_box[0] = -KILL_X - off_x;
+    kill_box[2] = w + KILL_X - off_x;
+    kill_box[1] = -KILL_Y - off_y;
+    kill_box[3] = h + KILL_Y - off_y;
+
 }
 
 void Layer::add_background_object(FrameObject * instance)
@@ -1779,12 +1785,12 @@ void FrameObject::shoot(FrameObject * other, int speed, int direction)
     other->movement->start();
 }
 
-float FrameObject::get_angle()
+int FrameObject::get_angle()
 {
-    return 0.0f;
+    return 0;
 }
 
-void FrameObject::set_angle(float angle, int quality)
+void FrameObject::set_angle(int angle, int quality)
 {
 }
 
@@ -1873,13 +1879,36 @@ void FrameObject::get_screen_aabb(int box[4])
 
 void FrameObject::update_inactive()
 {
-    flags &= ~INACTIVE;
-
     int * aabb = collision->aabb;
     int * b = layer->inactive_box;
 
     if (aabb[0] > b[2] || aabb[1] > b[3] || aabb[2] < b[0] || aabb[3] < b[1])
         flags |= INACTIVE;
+    else
+        flags &= ~INACTIVE;
+}
+
+void FrameObject::update_kill()
+{
+    int * aabb = collision->aabb;
+    int * b1 = layer->inactive_box;
+    int * b2 = layer->kill_box;
+
+    bool in = aabb[0] <= b1[2] && aabb[1] <= b1[3] &&
+              aabb[2] >= b1[0] && aabb[3] >= b1[1];
+    if (flags & INACTIVE) {
+        if (in)
+            flags &= ~INACTIVE;
+        return;
+    } else if (in) {
+        return;
+    }
+
+    flags |= INACTIVE;
+    if (aabb[0] <= b2[2] && aabb[1] <= b2[3] &&
+        aabb[2] >= b2[0] && aabb[3] >= b2[1])
+        return;
+    destroy();
 }
 
 int SavedSelection::offset = 0;

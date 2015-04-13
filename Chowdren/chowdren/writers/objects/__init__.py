@@ -16,6 +16,7 @@ class ObjectWriter(BaseWriter):
     movement_count = 0
     default_instance = None
     has_collision_events = False
+    disable_kill = False
 
     def __init__(self, *arg, **kw):
         self.event_callbacks = {}
@@ -81,6 +82,11 @@ class ObjectWriter(BaseWriter):
         except AttributeError:
             pass
         return False
+
+    def has_kill(self):
+        if not self.has_sleep() or self.disable_kill:
+            return False
+        return not self.common.flags['NeverKill']
 
     def has_updates(self):
         return self.update

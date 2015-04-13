@@ -20,6 +20,11 @@ inline float mod(float a, float b)
     return a - b * floor(a / b);
 }
 
+inline int mod(int a, int b)
+{
+    return a - b * (a / b);
+}
+
 template <class T>
 inline T rad(T x)
 {

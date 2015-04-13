@@ -127,7 +127,10 @@ alterable_int_objects = [
     ('CrystalCursor', None),
     ('GimmickRisingSwingPiece_', [0, 1, 8]),
     ('BossKujackerTail', None),
-    ('HazardOrbitBeam_', None)
+    ('HazardOrbitBeam_', None),
+    ('BG13Layer1_', None),
+    ('BossShadeBeastEye_', [3]),
+    ('BossSatelliteArm_', [3])
 ]
 
 def use_alterable_int(converter, expression):

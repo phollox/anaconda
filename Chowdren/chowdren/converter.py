@@ -820,6 +820,7 @@ class Converter(object):
             has_updates = writer.has_updates()
             has_movements = writer.has_movements()
             has_sleep = writer.has_sleep()
+            has_kill = writer.has_kill()
             if not has_updates and not has_movements:
                 continue
             list_name = self.get_object_list(handle)
@@ -829,7 +830,8 @@ class Converter(object):
 
             func_name = 'update_%s_%s' % (writer.class_name.lower(),
                                           len(updaters))
-            key = (writer.class_name, has_updates, has_movements, has_sleep)
+            key = (writer.class_name, has_updates, has_movements, has_sleep,
+                   has_kill)
             func_name = updaters.get(key, None)
             has_func = func_name is not None
             if not has_func:
@@ -858,8 +860,12 @@ class Converter(object):
             event_file.indent()
             event_file.putln('continue;')
             event_file.dedent()
-            if has_sleep:
+            if has_kill:
+                event_file.putln('instance->update_kill();')
+            elif has_sleep:
                 event_file.putln('instance->update_inactive();')
+
+            if has_sleep:
                 event_file.putln('if (instance->flags & INACTIVE)')
                 event_file.indent()
                 event_file.putln('continue;')
@@ -1261,7 +1267,7 @@ class Converter(object):
                 startup_instances.append((instance, frameitem))
             if not create_startup:
                 self.multiple_instances.add(obj)
-            if object_writer.has_autodestruct():
+            elif object_writer.has_autodestruct():
                 self.multiple_instances.add(obj)
 
         events = frame.events
@@ -1451,6 +1457,12 @@ class Converter(object):
 
             new_always_groups.sort(key=lambda x: x.global_id)
             always_groups.extend(new_always_groups)
+
+
+        for obj in all_startup_infos:
+            if obj in self.multiple_instances:
+                continue
+            self.get_object_writer(obj).disable_kill = True
 
         for k, v in containers.iteritems():
             if k in changed_containers:

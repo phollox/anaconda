@@ -18,7 +18,7 @@ public:
     std::string filename;
     TransparentColor transparent_color;
     float scale_x, scale_y;
-    float angle;
+    int angle;
     SpriteCollision sprite_col;
 
     ActivePicture(int x, int y, int type_id);
@@ -30,7 +30,7 @@ public:
     void flip_horizontal();
     void set_scale(float value);
     void set_zoom(float value);
-    void set_angle(float value, int quality = 0);
+    void set_angle(int value, int quality = 0);
     float get_zoom_x();
     int get_width();
     int get_height();

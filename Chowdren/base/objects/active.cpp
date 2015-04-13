@@ -6,10 +6,11 @@
 
 Active::Active(int x, int y, int type_id)
 : FrameObject(x, y, type_id), forced_animation(-1),
-  animation_frame(0), counter(0), angle(0.0f), forced_frame(-1),
+  animation_frame(0), counter(0), angle(0), forced_frame(-1),
   forced_speed(-1), forced_direction(-1), x_scale(1.0f), y_scale(1.0f),
   animation_direction(0), stopped(false), flash_interval(0.0f),
-  animation_finished(-1), transparent(false), image(NULL), direction_data(NULL)
+  animation_finished(-1), transparent(false), image(NULL),
+  direction_data(NULL), last_dir(-1)
 {
     sprite_col.instance = this;
     collision = &sprite_col;
@@ -78,6 +79,7 @@ void Active::force_frame(int value)
 
 void Active::force_speed(int value)
 {
+    value = std::max(0, std::min(100, value));
     int delta = direction_data->max_speed - direction_data->min_speed;
     if (delta != 0) {
         value = (value * delta) / 100 + direction_data->min_speed;
@@ -305,15 +307,15 @@ int Active::get_action_y()
     return get_y() + action_y;
 }
 
-void Active::set_angle(float angle, int quality)
+void Active::set_angle(int angle, int quality)
 {
-    angle = mod(angle, 360.0f);
+    angle = mod(angle, 360);
     this->angle = angle;
     sprite_col.set_angle(angle);
     update_action_point();
 }
 
-float Active::get_angle()
+int Active::get_angle()
 {
     return angle;
 }
@@ -343,11 +345,14 @@ Direction * Active::get_direction_data()
 
     int dir = get_animation_direction();
     Direction * data = anim->dirs[dir];
-    if (data != NULL)
+    if (data != NULL) {
+        if (data->index == dir)
+            last_dir = dir;
         return data;
+    }
 
     int search_dir = 1;
-    if (direction_data != NULL && ((dir - direction_data->index) & 31) <= 15)
+    if (last_dir != -1 && ((dir - last_dir) & 31) <= 15)
         search_dir = -1;
 
     while (true) {
@@ -401,7 +406,7 @@ void Active::set_direction(int value, bool set_movement)
     value &= 31;
     FrameObject::set_direction(value, set_movement);
     if (auto_rotate) {
-        set_angle(float(value) * 11.25f);
+        set_angle((value * 360) / 32);
         value = 0;
     }
     if (value == animation_direction)

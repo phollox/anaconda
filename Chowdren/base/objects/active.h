@@ -40,7 +40,7 @@ public:
     int animation_direction, animation_frame;
     int forced_animation, forced_frame, forced_speed, forced_direction;
     unsigned int counter;
-    float angle;
+    int angle;
     float x_scale, y_scale;
     int action_x, action_y;
     bool collision_box;
@@ -53,6 +53,7 @@ public:
     SpriteCollision sprite_col;
     Direction * direction_data;
     Image * image;
+    int last_dir;
 
     Active(int x, int y, int type_id);
     void initialize_active();
@@ -72,8 +73,8 @@ public:
     void draw();
     int get_action_x();
     int get_action_y();
-    void set_angle(float angle, int quality = 0);
-    float get_angle();
+    void set_angle(int angle, int quality = 0);
+    int get_angle();
     int get_frame();
     int get_speed();
     Direction * get_direction_data();
