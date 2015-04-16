@@ -3,12 +3,12 @@
 
 #include "path.h"
 #include <string>
-#include "include_gl.h"
 #include "color.h"
 #include "types.h"
 #include "platform.h"
 #include "chowconfig.h"
 #include "bitarray.h"
+#include "render.h"
 
 extern const float normal_texcoords[8];
 extern const float back_texcoords[8];
@@ -35,7 +35,7 @@ public:
     unsigned short flags;
     short hotspot_x, hotspot_y, action_x, action_y;
     short width, height;
-    GLuint tex;
+    Texture tex;
     unsigned char * image;
 #ifndef CHOWDREN_IS_WIIU
     BitArray alpha;
@@ -69,7 +69,7 @@ public:
     {
     #ifdef CHOWDREN_IS_WIIU
         if (tex != 0) {
-            unsigned int & v = platform_get_texture_pixel(tex, x, y);
+            unsigned int v = platform_get_texture_pixel(tex, x, y);
             unsigned char c = ((unsigned char*)&v)[3];
             return c != 0;
         }

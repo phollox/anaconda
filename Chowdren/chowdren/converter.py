@@ -1801,6 +1801,7 @@ class Converter(object):
     def write_objects(self, items, objects_file, objects_header,
                       lists_header):
         for frameitem in items:
+            self.current_write_object = frameitem
             name = frameitem.name
             self.name_to_item[(name, self.game_index)] = frameitem
             handle = (frameitem.handle, frameitem.objectType, self.game_index)
@@ -2092,7 +2093,11 @@ class Converter(object):
     def get_image_handle(self, value, game_index=None):
         if game_index is None:
             game_index = self.game_index
-        return self.image_indexes[(value, game_index)]
+        value = (value, game_index)
+        try:
+            return self.image_indexes[value]
+        except KeyError:
+            return self.config.get_missing_image(value)
 
     def iterate_groups(self, groups):
         index = 0

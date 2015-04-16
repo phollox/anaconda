@@ -1,9 +1,12 @@
 #include "steamext.h"
 #include <stdlib.h>
 #include <iostream>
-#include <SDL.h>
 #include "fileio.h"
 #include "path.h"
+
+#ifdef CHOWDREN_IS_DESKTOP
+#include <SDL.h>
+#endif
 
 // SteamGlobal
 
@@ -183,3 +186,17 @@ void SteamObject::download(const std::string & name)
     fp.close();
 #endif
 }
+
+#if !defined(CHOWDREN_ENABLE_STEAM) && defined(CHOWDREN_IS_FP)
+void SteamObject::find_board(int char_id, int stage_id)
+{
+}
+
+void SteamObject::upload_crystal(int value)
+{
+}
+
+void SteamObject::upload_time(int value)
+{
+}
+#endif

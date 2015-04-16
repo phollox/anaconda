@@ -1,5 +1,5 @@
-#ifndef CHOWDREN_TYPES
-#define CHOWDREN_TYPES
+#ifndef CHOWDREN_TYPES_H
+#define CHOWDREN_TYPES_H
 
 #ifdef _MSC_VER
 #include <stddef.h>
@@ -23,4 +23,4 @@ typedef unsigned __int64 uint64_t;
 #include <boost/container/vector.hpp>
 using boost::container::vector;
 
-#endif // CHOWDREN_TYPES
+#endif // CHOWDREN_TYPES_H

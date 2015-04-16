@@ -538,18 +538,25 @@ void preload_images()
     fp.open();
     FileStream stream(fp);
 
-    glc_set_storage(true);
+#ifdef CHOWDREN_IS_3DS
+    Render::set_storage(true);
+#endif
+
     for (int i = 0; i < IMAGE_COUNT; i++) {
         unsigned short handle = stream.read_uint16();
         Image * image = get_internal_image(handle);
         image->upload_texture();
-#ifndef CHOWDREN_PRELOAD_ALL
-        if (glc_is_vram_full())
+#if !defined(CHOWDREN_PRELOAD_ALL) && defined(CHOWDREN_IS_3DS)
+        if (Render::is_vram_full())
             break;
 #endif
         image->set_static();
     }
-    glc_set_storage(false);
+
+#ifdef CHOWDREN_IS_3DS
+    Render::set_storage(false);
+#endif
+
 #endif
 #endif
 }

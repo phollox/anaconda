@@ -1937,6 +1937,41 @@ class FixedValue(ExpressionMethodWriter):
             pass
         return 'get_fixed()'
 
+class ApplicationDrive(ExpressionWriter):
+    def get_string(self):
+        converter = self.converter
+        items = converter.expression_items
+        next_exp = items[converter.item_index + 1]
+        if next_exp.getName() != 'Plus':
+            return 'get_app_dir()'
+        next_exp = items[converter.item_index + 2]
+        if next_exp.getName() != 'ApplicationDirectory':
+            return 'get_app_dir()'
+        next_exp = items[converter.item_index + 3]
+        if next_exp.getName() != 'Plus':
+            return 'get_app_dir()'
+        next_exp = items[converter.item_index + 4]
+        if next_exp.getName() != 'String':
+            converter.item_index += 2
+            return 'get_app_path()'
+        converter.item_index += 3
+        next_exp.loader.value = './' + next_exp.loader.value
+        return ''
+
+class ApplicationPath(ExpressionWriter):
+    def get_string(self):
+        converter = self.converter
+        items = converter.expression_items
+        next_exp = items[converter.item_index + 1]
+        if next_exp.getName() != 'Plus':
+            return 'get_app_path()'
+        next_exp = items[converter.item_index + 2]
+        if next_exp.getName() != 'String':
+            return 'get_app_path()'
+        converter.item_index += 1
+        next_exp.loader.value = './' + next_exp.loader.value
+        return ''
+
 actions = make_table(ActionMethodWriter, {
     'CreateObject' : CreateObject,
     'Shoot' : ShootObject,
@@ -2193,7 +2228,7 @@ expressions = make_table(ExpressionMethodWriter, {
     'OR' : '.|math_helper|',
     'XOR' : '.^math_helper^',
     'Random' : 'randrange_event',
-    'ApplicationPath' : 'get_app_path()',
+    'ApplicationPath' : ApplicationPath,
     'AlterableValue' : AlterableValueExpression,
     'AlterableValueIndex' : AlterableValueIndexExpression,
     'AlterableStringIndex' : 'alterables->strings.get',
@@ -2270,7 +2305,7 @@ expressions = make_table(ExpressionMethodWriter, {
     'ObjectCount' : ObjectCount,
     'CounterMaximumValue' : '.maximum',
     'ApplicationDirectory' : 'get_app_dir()',
-    'ApplicationDrive' : 'get_app_drive()',
+    'ApplicationDrive' : ApplicationDrive,
     'TimerValue' : '.(frame_time * 1000.0)',
     'TimerHundreds' : '.(int(frame_time * 100) % 100)',
     'CounterValue': CounterValue,

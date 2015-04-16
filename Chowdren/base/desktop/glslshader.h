@@ -1,3 +1,6 @@
+#ifndef CHOWDREN_GLSLSHADER_H
+#define CHOWDREN_GLSLSHADER_H
+
 #include "include_gl.h"
 #include "fileio.h"
 
@@ -27,3 +30,5 @@ public:
     static void set_vec4(FrameObject * instance, int src, int uniform);
     static void set_image(FrameObject * instance, int src);
 };
+
+#endif // CHOWDREN_GLSLSHADER_H

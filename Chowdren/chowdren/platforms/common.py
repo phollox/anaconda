@@ -3,6 +3,8 @@ from mmfparser.bytereader import ByteReader
 from mmfparser.webp import encode
 
 class Platform(object):
+    save_dir = '.'
+
     def __init__(self, converter):
         self.converter = converter
         self.initialize()
@@ -10,7 +12,8 @@ class Platform(object):
 
     def get_image(self, image):
         if self.converter.config.use_webp():
-            webp = encode(image.tobytes('raw', 'RGBA'), image.size[0], image.size[1])
+            webp = encode(image.tobytes('raw', 'RGBA'),
+                          image.size[0], image.size[1])
             return webp
         else:
             temp = StringIO()

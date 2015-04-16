@@ -8,6 +8,7 @@ def init(converter):
     converter.add_define('CHOWDREN_STEAM_APPID', 248310)
     converter.add_define('CHOWDREN_JOYSTICK2_CONTROLLER')
     converter.add_define('CHOWDREN_TEXTURE_GC')
+    converter.add_define('CHOWDREN_FORCE_REMOTE')
 
     frameitems = converter.game.frameItems
     for item in frameitems.itemDict.itervalues():
@@ -225,7 +226,15 @@ def use_condition_expression_iterator(converter):
 def get_string(converter, value):
     value = value.replace('gamepad.cfg', 'control_gamepad.cfg')
     value = value.replace('keyboard.cfg', 'control_keyboard.cfg')
+    if converter.platform_name != 'generic':
+        value = value.replace('./records.dat',
+                              '%s/records.dat' % converter.platform.save_dir)
     return value
+
+def get_missing_image(converter, image):
+    print 'bad image, selecting first instead:', image
+    print converter.current_write_object.name
+    return converter.image_indexes.itervalues().next()
 
 def init_array_set_value(converter, event_writer):
     if event_writer.get_object_writer().data.name != 'MapData':

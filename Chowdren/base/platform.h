@@ -68,14 +68,6 @@ void platform_set_scale_type(int type);
 // path
 std::string convert_path(const std::string & value);
 
-// glc
-void glc_init();
-void glc_copy_color_buffer_rect(unsigned int tex, int x1, int y1, int x2,
-                                     int y2);
-void glc_scissor_world(int x, int y, int w, int h);
-void glc_set_storage(bool vram);
-bool glc_is_vram_full();
-
 // demo
 
 #ifdef CHOWDREN_IS_DEMO
@@ -95,7 +87,7 @@ void platform_set_remote_value(int value);
 void platform_set_remote_setting(const std::string & v);
 const std::string & platform_get_remote_setting();
 int platform_get_remote_value();
-unsigned int & platform_get_texture_pixel(unsigned int tex, int x, int y);
+unsigned int platform_get_texture_pixel(unsigned int tex, int x, int y);
 void platform_set_border(bool value);
 bool platform_has_error();
 

@@ -9,7 +9,7 @@
 #define alloca _alloca
 #endif
 
-#elif defined(CHOWDREN_IS_DESKTOP)
+#elif defined(CHOWDREN_IS_DESKTOP) || defined(CHOWDREN_IS_WIIU)
 #include <alloca.h>
 #else
 #include <stdlib.h>

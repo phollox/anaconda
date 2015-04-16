@@ -104,6 +104,8 @@ public:
     static void set_filter(Texture tex, bool linear);
 
 #ifdef CHOWDREN_IS_3DS
+    static void set_storage(bool vram);
+    static void is_vram_full();
     static void set_global_depth(float depth);
     static void set_depth(float depth);
 #endif

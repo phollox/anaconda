@@ -423,7 +423,8 @@ FTPoint FTTextureFont::Render(const wchar_t * string, const int len,
 
 Color FTTextureFont::color;
 
-static inline GLuint ClampSize(GLuint in, GLuint maxTextureSize)
+static inline unsigned int ClampSize(unsigned int in,
+                                     unsigned int maxTextureSize)
 {
     // Find next power of two
     --in;

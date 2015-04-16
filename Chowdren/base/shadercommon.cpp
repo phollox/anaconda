@@ -27,25 +27,24 @@ void convert_vec4(int val, float & a, float & b, float & c, float & d)
                                 DO_SHADER(S);\
                                 break
 
-#define SET_BLEND_EQ(a, b) has_blend_eq = true;\
-                           set_blend_eqs(a, b);
-#define SET_BLEND_FUNC(a, b) has_blend_func = true;\
+#define SET_BLEND_FUNC(a, b) blend_status = 1;\
                              set_blend_func(a, b);
+#define SET_BLEND_FUNC_EQ(func_a, func_b, eq_a, eq_b)\
+                             blend_status = 2;\
+                             set_blend_func_eq(func_a, func_b, eq_a, eq_b);
 
 static bool has_blend_eq = false;
 static bool has_blend_func = false;
+static int blend_status = 0;
 
 void shader_set_texture()
 {
-    if (has_blend_func) {
+    if (blend_status == 1)
         set_blend_func(FUNC_SRC_ALPHA, FUNC_ONE_MINUS_SRC_ALPHA);
-        has_blend_func = false;
-    }
-
-    if (has_blend_eq) {
-        set_blend_eq(EQ_ADD);
-        has_blend_eq = false;
-    }
+    else if (blend_status == 2)
+        set_blend_func_eq(FUNC_SRC_ALPHA, FUNC_ONE_MINUS_SRC_ALPHA,
+                          EQ_ADD, EQ_ADD);
+    blend_status = 0;
     
     texture_shader.begin(NULL, 0, 0);
 }
@@ -53,23 +52,20 @@ void shader_set_texture()
 void shader_set_effect(int effect, FrameObject * obj,
                        int width, int height)
 {
-    if (has_blend_func) {
+    if (blend_status == 1)
         set_blend_func(FUNC_SRC_ALPHA, FUNC_ONE_MINUS_SRC_ALPHA);
-        has_blend_func = false;
-    }
-
-    if (has_blend_eq) {
-        set_blend_eq(EQ_ADD);
-        has_blend_eq = false;
-    }
+    else if (blend_status == 2)
+        set_blend_func_eq(FUNC_SRC_ALPHA, FUNC_ONE_MINUS_SRC_ALPHA,
+                          EQ_ADD, EQ_ADD);
+    blend_status = 0;
 
     switch (effect) {
         case Render::NONE:
             break;
         case Render::SUBTRACT:
             DO_SHADER(subtract_shader);
-            SET_BLEND_EQ(EQ_REVERSE_SUBTRACT, EQ_ADD);
-            SET_BLEND_FUNC(FUNC_DST_COLOR, FUNC_ONE);
+            SET_BLEND_FUNC_EQ(FUNC_DST_COLOR, FUNC_ONE,
+                              EQ_REVERSE_SUBTRACT, EQ_ADD);
             break;
         case Render::ADDITIVE:
             texture_shader.begin(NULL, 0, 0);
@@ -77,8 +73,8 @@ void shader_set_effect(int effect, FrameObject * obj,
             break;
         case Render::SURFACESUBTRACT:
             texture_shader.begin(NULL, 0, 0);
-            SET_BLEND_EQ(EQ_REVERSE_SUBTRACT, EQ_ADD);
-            SET_BLEND_FUNC(FUNC_ONE, FUNC_ONE);
+            SET_BLEND_FUNC_EQ(FUNC_ONE, FUNC_ONE,
+                              EQ_REVERSE_SUBTRACT, EQ_ADD);
             break;
         case Render::LAYERCOLOR:
             texture_shader.begin(NULL, 0, 0);

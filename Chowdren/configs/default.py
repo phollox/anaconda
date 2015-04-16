@@ -112,3 +112,6 @@ def get_string(converter, value):
 
 def init_array_set_value(converter, event_writer):
     pass
+
+def get_missing_image(converter, image):
+    raise NotImplementedError('invalid image: %s' % image)

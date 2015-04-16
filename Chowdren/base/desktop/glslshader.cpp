@@ -175,8 +175,8 @@ int BaseShader::get_uniform(const char * value)
 #define FUNC_ZERO GL_ZERO
 #define FUNC_SRC_COLOR GL_SRC_COLOR
 
-#define set_blend_eqs(a, b) glBlendEquationSeparate(a, b)
-#define set_blend_eq(a) glBlendEquation(a)
+#define set_blend_func_eq(a, b, c, d) glBlendFunc(a, b);\
+                                      glBlendEquationSeparate(c, d)
 #define set_blend_func(a, b) glBlendFunc(a, b)
 #define commit_parameters(x)
 

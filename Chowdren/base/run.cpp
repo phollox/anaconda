@@ -379,8 +379,7 @@ void GameManager::set_frame(int index)
     if (index == -2) {
         platform_begin_draw();
         media.stop_samples();
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        Render::clear(Color(0, 0, 0, 255));
         platform_swap_buffers();
 #ifdef CHOWDREN_IS_DEMO
         reset_timer = 0.0;

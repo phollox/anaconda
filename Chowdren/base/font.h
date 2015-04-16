@@ -160,10 +160,10 @@ class FTBBox
         }
 
 
-        FTBBox& operator += (const FTPoint & vector)
+        FTBBox& operator += (const FTPoint & v)
         {
-            lower += vector;
-            upper += vector;
+            lower += v;
+            upper += v;
 
             return *this;
         }
