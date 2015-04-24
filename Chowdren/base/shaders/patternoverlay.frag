@@ -14,5 +14,5 @@ void main()
     In /= vec2(width, height);
     vec4 p = texture2D(pattern, mod(In, 1.0)) * alpha;
     // XXX 100% undefined behaviour I think
-    gl_FragColor = p / vec4(0.0, 0.0, 0.0, 1.0);
+    // gl_FragColor = p / vec4(0.0, 0.0, 0.0, 1.0);
 }

@@ -15,12 +15,11 @@
 #include <iostream>
 #include "platform.h"
 #include <SDL.h>
+#include <SDL_syswm.h>
 #include <time.h>
 #include <boost/cstdint.hpp>
 #include "path.h"
 #include "render.h"
-
-#define CHOWDREN_EXTRA_BILINEAR
 
 enum ScaleType
 {
@@ -31,7 +30,14 @@ enum ScaleType
 
 static Framebuffer screen_fbo;
 static SDL_Window * global_window = NULL;
+static int global_window_id;
+
+#ifdef CHOWDREN_USE_D3D
+static D3DPRESENT_PARAMETERS pparams;
+#else
 static SDL_GLContext global_context = NULL;
+#endif
+
 static bool is_fullscreen = false;
 static bool hide_cursor = false;
 static bool has_closed = false;
@@ -71,6 +77,7 @@ PFNGLUNIFORM4FARBPROC __glUniform4fARB;
 PFNGLGETUNIFORMLOCATIONARBPROC __glGetUniformLocationARB;
 #endif
 
+#ifndef CHOWDREN_USE_D3D
 static bool check_opengl_extension(const char * name)
 {
     if (SDL_GL_ExtensionSupported(name) == SDL_TRUE)
@@ -102,6 +109,7 @@ static bool check_opengl_extensions()
             return false;
     return true;
 }
+#endif
 
 static void on_key(SDL_KeyboardEvent & e)
 {
@@ -144,6 +152,8 @@ void add_joystick(int device);
 void remove_joystick(int instance);
 void on_joystick_button(int instance, int button, bool state);
 void on_controller_button(int instance, int button, bool state);
+void d3d_reset(int w, int h);
+void reset_d3d_state();
 
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
@@ -194,7 +204,7 @@ void platform_init()
         return;
     }
     SDL_EventState(SDL_MOUSEMOTION, SDL_DISABLE);
-    SDL_EventState(SDL_WINDOWEVENT, SDL_DISABLE);
+    // SDL_EventState(SDL_WINDOWEVENT, SDL_DISABLE);
 #ifdef __APPLE__
     set_resources_dir();
 #endif
@@ -274,6 +284,15 @@ void platform_poll_events()
             case SDL_QUIT:
                 has_closed = true;
                 break;
+#ifdef CHOWDREN_USE_D3D
+            case SDL_WINDOWEVENT:
+                if (e.window.windowID != global_window_id)
+                    break;
+                if (e.window.event != SDL_WINDOWEVENT_SIZE_CHANGED)
+                    break;
+                d3d_reset(e.window.data1, e.window.data2);
+                break;
+#endif
             default:
                 break;
         }
@@ -318,7 +337,7 @@ void platform_get_mouse_pos(int * x, int * y)
 
 // #define CHOWDREN_USE_GL_DEBUG
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(CHOWDREN_USE_D3D)
 static void APIENTRY on_debug_message(GLenum source, GLenum type, GLuint id,
                                       GLenum severity, GLsizei length,
                                       const GLchar * message,
@@ -329,9 +348,104 @@ static void APIENTRY on_debug_message(GLenum source, GLenum type, GLuint id,
 }
 #endif
 
+#ifdef CHOWDREN_USE_D3D
+static void create_d3d_device()
+{
+    int display_index = SDL_GetWindowDisplayIndex(global_window);
+    int adapter_index = SDL_Direct3D9GetAdapterIndex(display_index);
+
+    HRESULT hr;
+    D3DDEVTYPE device_type = D3DDEVTYPE_HAL;
+    DWORD device_flags = D3DCREATE_FPU_PRESERVE |
+                         D3DCREATE_HARDWARE_VERTEXPROCESSING |
+                         D3DCREATE_PUREDEVICE;
+
+    hr = render_data.d3d->CreateDevice(adapter_index, device_type,
+                                       pparams.hDeviceWindow, device_flags,
+                                       &pparams, &render_data.device);
+    if (!FAILED(hr))
+        return;
+
+    // try again with fixed back buffer count
+    hr = render_data.d3d->CreateDevice(adapter_index, device_type,
+                                       pparams.hDeviceWindow, device_flags,
+                                       &pparams, &render_data.device);
+    if (!FAILED(hr))
+        return;
+
+    // Try to create the device with mixed vertex processing.
+    device_flags &= ~D3DCREATE_HARDWARE_VERTEXPROCESSING;
+    device_flags &= ~D3DCREATE_PUREDEVICE;
+    device_flags |= D3DCREATE_MIXED_VERTEXPROCESSING;
+
+    hr = render_data.d3d->CreateDevice(adapter_index, device_type,
+                                       pparams.hDeviceWindow, device_flags,
+                                       &pparams, &render_data.device);
+    if (!FAILED(hr))
+        return;
+
+    // try to create the device with software vertex processing.
+    device_flags &= ~D3DCREATE_MIXED_VERTEXPROCESSING;
+    device_flags |= D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+    hr = render_data.d3d->CreateDevice(adapter_index, device_type,
+                                       pparams.hDeviceWindow, device_flags,
+                                       &pparams, &render_data.device);
+    if (!FAILED(hr))
+        return;
+
+    // try reference device
+    device_type = D3DDEVTYPE_REF;
+    hr = render_data.d3d->CreateDevice(adapter_index, device_type,
+                                       pparams.hDeviceWindow, device_flags,
+                                       &pparams, &render_data.device);
+    if (!FAILED(hr))
+        return;
+
+    std::cout << "Could not create D3D context" << std::endl;
+    exit(EXIT_FAILURE);
+}
+
+void d3d_reset(int w, int h)
+{
+    pparams.BackBufferWidth = w;
+    pparams.BackBufferHeight = h;
+
+    for (int i = 0; i < 32; ++i) {
+        Framebuffer * fbo = Framebuffer::fbos[i];
+        if (fbo == NULL)
+            continue;
+        fbo->fbo->Release();
+        TextureData & t = render_data.textures[fbo->tex];
+        t.texture->Release();
+    }
+
+    render_data.default_target->Release();
+
+    render_data.device->Reset(&pparams);
+
+    for (int i = 0; i < 32; ++i) {
+        Framebuffer * fbo = Framebuffer::fbos[i];
+        if (fbo == NULL)
+            continue;
+        fbo->init(fbo->w, fbo->h);
+    }
+
+    render_data.device->GetRenderTarget(0, &render_data.default_target);
+
+    reset_d3d_state();
+}
+#endif
+
 void platform_create_display(bool fullscreen)
 {
     is_fullscreen = fullscreen;
+
+    int flags = SDL_WINDOW_RESIZABLE;
+    if (fullscreen)
+        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+
+#ifndef CHOWDREN_USE_D3D
+    flags |= SDL_WINDOW_OPENGL;
 
 #ifdef CHOWDREN_USE_GL
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 0);
@@ -353,15 +467,13 @@ void platform_create_display(bool fullscreen)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 #endif
 
-    int flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
-    if (fullscreen) {
-        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-    }
+#endif // CHOWDREN_USE_D3D
     global_window = SDL_CreateWindow(NAME,
                                      SDL_WINDOWPOS_CENTERED,
                                      SDL_WINDOWPOS_CENTERED,
                                      WINDOW_WIDTH, WINDOW_HEIGHT,
                                      flags);
+    global_window_id = SDL_GetWindowID(global_window);
 
     if (global_window == NULL) {
         std::cout << "Could not open window: " << SDL_GetError() << std::endl;
@@ -377,6 +489,36 @@ void platform_create_display(bool fullscreen)
     }
 #endif
 
+#ifdef CHOWDREN_USE_D3D
+    render_data.d3d = Direct3DCreate9(D3D_SDK_VERSION);
+    SDL_SysWMinfo window_info;
+    SDL_VERSION(&window_info.version);
+    SDL_GetWindowWMInfo(global_window, &window_info);
+    pparams.hDeviceWindow = window_info.info.win.window;
+    pparams.BackBufferWidth = WINDOW_WIDTH;
+    pparams.BackBufferHeight = WINDOW_HEIGHT;
+    pparams.BackBufferCount = 1;
+    pparams.SwapEffect = D3DSWAPEFFECT_DISCARD;
+    pparams.Windowed = TRUE;
+    pparams.BackBufferFormat = D3DFMT_UNKNOWN;
+    pparams.FullScreen_RefreshRateInHz = 0;
+    pparams.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+
+    create_d3d_device();
+
+    D3DCAPS9 caps;
+    render_data.device->GetDeviceCaps(&caps);
+
+    if ((caps.TextureCaps & D3DPTEXTURECAPS_POW2) != 0 &&
+        (caps.TextureCaps & D3DPTEXTURECAPS_NONPOW2CONDITIONAL) == 0)
+    {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "D3D error",
+                                 "NPOT textures not supported", NULL);
+        exit(EXIT_FAILURE);
+    }
+
+    render_data.device->GetRenderTarget(0, &render_data.default_target);
+#else
     global_context = SDL_GL_CreateContext(global_window);
     if (global_context == NULL) {
         std::cout << "Could not create OpenGL context: " << SDL_GetError()
@@ -495,6 +637,8 @@ void platform_create_display(bool fullscreen)
         return;
     }
 
+#endif // CHOWDREN_USE_D3D
+
     // if the cursor was hidden before the window was created, hide it now
     if (hide_cursor)
         platform_hide_mouse();
@@ -517,15 +661,26 @@ void platform_set_vsync(bool value)
         return;
     vsync_value = vsync;
 
+#ifdef CHOWDREN_USE_D3D
+    if (vsync == 1)
+        pparams.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+    else
+        pparams.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+    d3d_reset(pparams.BackBufferWidth, pparams.BackBufferHeight);
+#else
     int ret = SDL_GL_SetSwapInterval(vsync);
     if (ret == 0)
         return;
 
     std::cout << "Set vsync failed: " << SDL_GetError() << std::endl;
+#endif
 }
 
 bool platform_get_vsync()
 {
+#ifdef CHOWDREN_USE_D3D
+    return pparams.PresentationInterval == D3DPRESENT_INTERVAL_ONE;
+#else
     int vsync = SDL_GL_GetSwapInterval();
     if (vsync != -1)
         return vsync == 1;
@@ -536,6 +691,7 @@ bool platform_get_vsync()
         default:
             return false;
     }
+#endif
 }
 
 #define CHOWDREN_DESKTOP_FULLSCREEN
@@ -572,11 +728,9 @@ void platform_set_fullscreen(bool value)
 
 void platform_begin_draw()
 {
+    render_data.device->BeginScene();
     screen_fbo.bind();
 }
-
-void set_scale_uniform(float width, float height,
-                       float x_scale, float y_scale);
 
 void platform_swap_buffers()
 {
@@ -621,34 +775,48 @@ void platform_swap_buffers()
     int x2 = draw_x_off + draw_x_size;
     int y2 = draw_y_off + draw_y_size;
 
-#ifdef CHOWDREN_QUICK_SCALE
-    float x_scale = draw_x_size / float(WINDOW_WIDTH);
-    float y_scale = draw_y_size / float(WINDOW_WIDTH);
-    float use_effect = false;
-    if (use_effect) {        
-        Render::set_effect(Render::PIXELSCALE);
-        set_scale_uniform(WINDOW_WIDTH, WINDOW_HEIGHT,
-                          draw_x_size / float(WINDOW_WIDTH),
-                          draw_y_size / float(WINDOW_HEIGHT));
-    }
-#endif
+// #ifdef CHOWDREN_QUICK_SCALE
+//     float x_scale = draw_x_size / float(WINDOW_WIDTH);
+//     float y_scale = draw_y_size / float(WINDOW_WIDTH);
+//     float use_effect = false;
+//     if (use_effect) {        
+//         Render::set_effect(Render::PIXELSCALE);
+//         set_scale_uniform(WINDOW_WIDTH, WINDOW_HEIGHT,
+//                           draw_x_size / float(WINDOW_WIDTH),
+//                           draw_y_size / float(WINDOW_HEIGHT));
+//     }
+// #endif
 
     Render::disable_blend();
+#ifdef CHOWDREN_USE_D3D
+    Render::draw_tex(draw_x_off, draw_y_off, x2, y2, Color(),
+                     screen_fbo.get_tex());
+#else
 	Render::draw_tex(draw_x_off, y2, x2, draw_y_off, Color(),
                      screen_fbo.get_tex());
+#endif
     Render::enable_blend();
 
-#ifdef CHOWDREN_QUICK_SCALE
-    if (use_effect)
-        Render::disable_effect();
-#endif
+// #ifdef CHOWDREN_QUICK_SCALE
+//     if (use_effect)
+//         Render::disable_effect();
+// #endif
 
+#ifdef CHOWDREN_USE_D3D
+    render_data.device->EndScene();
+    render_data.device->Present(NULL, NULL, NULL, NULL);
+#else
     SDL_GL_SwapWindow(global_window);
+#endif
 }
 
 void platform_get_size(int * width, int * height)
 {
+#ifdef CHOWDREN_USE_D3D
+    SDL_GetWindowSize(global_window, width, height);
+#else
     SDL_GL_GetDrawableSize(global_window, width, height);
+#endif
 }
 
 void platform_get_screen_size(int * width, int * height)

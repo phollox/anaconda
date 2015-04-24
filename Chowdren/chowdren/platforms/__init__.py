@@ -1,7 +1,12 @@
+import sys
+sys.path.append('..')
+
 from chowdren.platforms.generic import GenericPlatform
+from chowdren.platforms.d3d import D3DPlatform
 
 classes = {
-    'generic': GenericPlatform
+    'generic': GenericPlatform,
+    'd3d': D3DPlatform
 }
 
 try:

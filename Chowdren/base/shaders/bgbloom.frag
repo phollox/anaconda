@@ -37,8 +37,6 @@ vec4 get_highlight(vec2 offset)
     return highlight(texture2D(background_texture, coord));
 }
 
-#define HIGHLIGHT(i)
-
 void main()
 {
     vec4 s = texture2D(background_texture, texture_coordinate1);

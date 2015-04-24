@@ -92,7 +92,7 @@ void ArrayObject::save(const std::string & filename)
     FSFile fp(convert_path(filename).c_str(), "w");
     if (!fp.is_open())
         return;
-    FileStream stream(fp);
+    WriteStream stream;
 
     stream.write(CT_ARRAY_MAGIC, sizeof(CT_ARRAY_MAGIC));
     stream.write_int16(ARRAY_MAJOR_VERSION);
@@ -117,6 +117,7 @@ void ArrayObject::save(const std::string & filename)
         }
     }
 
+    stream.save(fp);
     fp.close();
 }
 
