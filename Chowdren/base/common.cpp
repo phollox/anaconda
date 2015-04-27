@@ -291,8 +291,8 @@ void Background::paste(Image * img, int dest_x, int dest_y,
 
 #ifdef CHOWDREN_PASTE_REMOVE
     if (collision_type == 0 || collision_type == 4) {
-        remove_paste_item(item, col_items);
-        remove_paste_item(item, items);
+        remove_paste_item(item, col_items, false);
+        remove_paste_item(item, items, true);
     }
 #endif
 }

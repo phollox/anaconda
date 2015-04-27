@@ -635,7 +635,7 @@ void platform_swap_buffers()
     int x2 = draw_x_off + draw_x_size;
     int y2 = draw_y_off + draw_y_size;
 
-#ifdef CHOWDREN_QUICK_SCALE
+#ifdef CHOWDREN_SPECIAL_POINT_FILTER
     float x_scale = draw_x_size / float(WINDOW_WIDTH);
     float y_scale = draw_y_size / float(WINDOW_WIDTH);
     float use_effect = true;
@@ -652,7 +652,7 @@ void platform_swap_buffers()
                      screen_fbo.get_tex());
     Render::enable_blend();
 
-#ifdef CHOWDREN_QUICK_SCALE
+#ifdef CHOWDREN_SPECIAL_POINT_FILTER
     if (use_effect)
         Render::disable_effect();
 #endif

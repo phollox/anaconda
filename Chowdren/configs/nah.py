@@ -15,6 +15,7 @@ def init(converter):
     converter.add_define('CHOWDREN_ACTIVE_REPLACE_COLOR')
     converter.add_define('CHOWDREN_ACTIVE_LOAD_SINGLE')
     converter.add_define('CHOWDREN_ACTIVE_LOOPING_APPEARING')
+    converter.add_define('CHOWDREN_SPECIAL_POINT_FILTER')
     # converter.add_define('CHOWDREN_PASTE_BROADPHASE')
 
 def get_loop_name(converter, parameter):
