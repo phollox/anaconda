@@ -8,6 +8,13 @@
 #include "frame.h"
 #include "path.h"
 
+#ifdef CHOWDREN_CACHE_INI
+#include "types.h"
+
+typedef hash_map<std::string, SectionMap> INICache;
+static INICache ini_cache;
+#endif
+
 inline bool match_wildcard(const std::string & pattern,
                            const std::string & value)
 {
@@ -78,7 +85,7 @@ static void encrypt_ini_data(std::string & data, const std::string & key)
 
 INI::INI(int x, int y, int type_id)
 : FrameObject(x, y, type_id), overwrite(false), auto_save(false),
-  use_compression(false)
+  use_compression(false), changed(false)
 {
 }
 
@@ -304,13 +311,24 @@ void INI::load_file(const std::string & fn, bool read_only, bool merge,
                     bool overwrite)
 {
 #ifndef CHOWDREN_AUTOSAVE_ON_CHANGE
-    if (auto_save)
+    if (auto_save && changed)
         save_file(false);
 #endif
+
     this->read_only = read_only;
     filename = convert_path(fn);
+
+#ifdef CHOWDREN_CACHE_INI
+    std::string cache_key = filename;
+    to_lower(cache_key);
+    data = &ini_cache[cache_key];
+    is_global = true;
+    if (!data->empty())
+        return;
+#else
     if (!merge)
         reset(false);
+#endif
     std::cout << "Loading " << filename << " (" << get_name() << ")"
         << std::endl;
     platform_create_directories(get_path_dirname(filename));
@@ -399,6 +417,7 @@ void INI::save_file(const std::string & fn, bool force)
 {
     if (fn.empty() || (read_only && !force))
         return;
+    changed = false;
     filename = convert_path(fn);
     platform_create_directories(get_path_dirname(filename));
     std::stringstream out;
@@ -441,6 +460,8 @@ void INI::save_auto()
     if (!auto_save)
         return;
     save_file(false);
+#else
+    changed = true;
 #endif
 }
 

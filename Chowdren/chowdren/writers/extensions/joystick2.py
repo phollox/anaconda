@@ -3,7 +3,7 @@ from chowdren.writers.objects import ObjectWriter
 from chowdren.common import get_animation_name, to_c, make_color
 
 from chowdren.writers.events import (StaticConditionWriter,
-    StaticActionWriter, StaticExpressionWriter, make_table,
+    ActionMethodWriter, StaticExpressionWriter, make_table,
     ConditionMethodWriter, ExpressionMethodWriter, EmptyAction,
     StaticConditionWriter, TrueCondition, FalseCondition)
 
@@ -14,9 +14,15 @@ class Joystick2(ObjectWriter):
     def write_init(self, writer):
         pass
 
-actions = make_table(StaticActionWriter, {
+class GlobalActionWriter(ActionMethodWriter):
+    def get_object(self):
+        return (None, None)
+
+actions = make_table(GlobalActionWriter, {
     0 : EmptyAction, # ignore control
     1 : EmptyAction, # restore control,
+    11 : 'create_joystick_rumble',
+    12 : 'start_joystick_rumble',
     35 : EmptyAction, # poll for devices, not necessary on SDL2
 })
 
@@ -37,7 +43,10 @@ conditions = make_table(GlobalConditionWriter, {
     27 : 'is_joystick_direction_changed',
     33 : TrueCondition, # is xbox controller
     26 : TrueCondition, # has point of view
-    8 : 'is_joystick_pressed(%s, CHOWDREN_BUTTON_DPAD_UP)'
+    8 : 'is_joystick_pressed(%s, CHOWDREN_BUTTON_DPAD_UP)',
+    9 : 'is_joystick_pressed(%s, CHOWDREN_BUTTON_DPAD_DOWN)',
+    10 : 'is_joystick_pressed(%s, CHOWDREN_BUTTON_DPAD_LEFT)',
+    11 : 'is_joystick_pressed(%s, CHOWDREN_BUTTON_DPAD_RIGHT)',
 })
 
 class GlobalExpressionWriter(ExpressionMethodWriter):
@@ -89,7 +98,8 @@ expressions = make_table(GlobalExpressionWriter, {
     # joystick2_max_values_max_slider_value_30
     30 : '.get_joystick_dummy(0.0f, ',
     # joystick2_get_axis_values_raw_slider_value_31
-    31 : '.get_joystick_dummy(0.0f, '
+    31 : '.get_joystick_dummy(0.0f, ',
+    32 : 'get_joystick_name'
 })
 
 def get_object():

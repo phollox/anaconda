@@ -21,8 +21,13 @@ typedef vector<BackgroundItem*> BackgroundItems;
 class Background
 {
 public:
+#ifdef CHOWDREN_PASTE_BROADPHASE
+    Broadphase items;
+    Broadphase col_items;
+#else
     BackgroundItems items;
     BackgroundItems col_items;
+#endif
 
     Background();
     ~Background();

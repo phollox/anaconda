@@ -184,6 +184,15 @@ static void set_resources_dir()
 }
 #endif
 
+#ifndef NDEBUG
+static void sdl_log(void *userdata, int category, SDL_LogPriority priority,
+                    const char * message)
+{
+    std::cout << "SDL log (" << category << ", " << priority << "): "
+              << message << std::endl;
+}
+#endif
+
 void platform_init()
 {
     unsigned int flags = SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER |
@@ -204,6 +213,11 @@ void platform_init()
 #ifdef _WIN32
     timeBeginPeriod(1);
 #endif
+
+#ifndef NDEBUG
+    SDL_LogSetAllPriority(SDL_LOG_PRIORITY_WARN);
+    SDL_LogSetOutputFunction(sdl_log, NULL);
+#endif
 }
 
 // Here, we check if vsync is causing the game to slow down from 60fps to lower
@@ -216,7 +230,7 @@ void check_vsync()
 {
     double expected = 1.0 / manager.fps_limit.framerate;
     if (manager.fps_limit.dt - expected > 0.0015) {
-        vsync_fail_time += manager.fps_limit.dt;
+        vsync_fail_time += expected;
     } else {
         vsync_fail_time = 0.0;
         return;
@@ -624,7 +638,7 @@ void platform_swap_buffers()
 #ifdef CHOWDREN_QUICK_SCALE
     float x_scale = draw_x_size / float(WINDOW_WIDTH);
     float y_scale = draw_y_size / float(WINDOW_WIDTH);
-    float use_effect = false;
+    float use_effect = true;
     if (use_effect) {        
         Render::set_effect(Render::PIXELSCALE);
         set_scale_uniform(WINDOW_WIDTH, WINDOW_HEIGHT,
@@ -1185,12 +1199,21 @@ void joystick_vibrate(int n, int l, int r, int ms)
     get_joy(n).vibrate(l / 100.0f, r / 100.0f, ms);
 }
 
+#define DEADZONE 0.15f
+#define DEADZONE_MUL (1.0f / (1.0f - 0.15f))
+
 float get_joystick_axis(int n, int axis)
 {
     if (!is_joystick_attached(n))
         return 0.0f;
     axis--;
-    return get_joy(n).get_axis(axis);
+    float v = get_joy(n).get_axis(axis);
+    if (v > DEADZONE)
+        return (v - DEADZONE) * DEADZONE_MUL;
+    else if (v < -DEADZONE)
+        return (v + DEADZONE) * DEADZONE_MUL;
+    else
+        return 0.0f;
 }
 
 // url open

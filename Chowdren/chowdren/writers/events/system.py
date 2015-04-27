@@ -315,6 +315,7 @@ class SystemObject(ObjectWriter):
         self.loop_pos = {}
         loops = self.loops = defaultdict(list)
         self.dynamic_loops = set()
+
         for loop_group in self.get_conditions('OnLoop'):
             parameter = loop_group.conditions[0].data.items[0]
             items = parameter.loader.items
@@ -322,19 +323,28 @@ class SystemObject(ObjectWriter):
             if name is None:
                 # try and get config to give us a loop name
                 name = self.converter.config.get_loop_name(parameter)
-            if name is None:
-                name = self.converter.convert_parameter(parameter)
-                if name not in self.loop_name_warnings:
-                    print 'dynamic "on loop" not implemented:', name
-                    self.loop_name_warnings.add(name)
-                continue
+                if hasattr(name, '__iter__'):
+                    names = name
+                else:
+                    names = (name,)
+            else:
+                names = (name,)
 
-            if name == 'Clear Filter':
-                # KU-specific hack
-                continue
-            self.loop_names.add(name.lower())
-            loops[name].append(loop_group)
-            self.loop_pos[name] = loop_group.global_id
+            for name in names:
+                if name is None:
+                    name = self.converter.convert_parameter(parameter)
+                    if name not in self.loop_name_warnings:
+                        print 'dynamic "on loop" not implemented:', name
+                        self.loop_name_warnings.add(name)
+                    continue
+
+                if name == 'Clear Filter':
+                    # KU-specific hack
+                    continue
+
+                self.loop_names.add(name.lower())
+                loops[name].append(loop_group)
+                self.loop_pos[name] = loop_group.global_id
 
         if not loops:
             return
@@ -658,6 +668,10 @@ class AnimationFinished(ConditionWriter):
     is_always = True
 
     def write(self, writer):
+        generated = self.group.conditions[0] is self
+        if generated:
+            writer.put('animation_finished == %s' % self.convert_index(0))
+            return
         writer.put('is_animation_finished(%s)' % self.convert_index(0))
 
 class PathFinished(ConditionMethodWriter):
@@ -900,6 +914,7 @@ class PickFromFixed(PickCondition):
 
 class CompareFixedValue(ConditionWriter):
     custom = True
+    force_single = False
     def write(self, writer):
         obj = self.get_object()
         converter = self.converter
@@ -910,13 +925,15 @@ class CompareFixedValue(ConditionWriter):
         is_equal = comparison == '=='
         has_selection = obj in converter.has_selection
         is_instance = value.endswith('get_fixed()')
-        test_all = has_selection or not is_equal or not is_instance
+        test_all = (has_selection or not is_equal or
+                    (not is_instance and not self.force_single))
         if is_instance:
             instance_value = value.replace('->get_fixed()', '')
         else:
             instance_value = 'get_object_from_fixed(%s)' % value
 
         fixed_name = 'fixed_test_%s' % self.get_id(self)
+
         writer.putln('FrameObject * %s = %s;' % (fixed_name, instance_value))
         is_single = (converter.has_single(obj) or
                      not converter.has_multiple_instances(obj))
@@ -942,7 +959,8 @@ class CompareFixedValue(ConditionWriter):
             writer.putlnc('if (!%s.has_selection()) %s', list_name,
                           converter.event_break)
         else:
-            converter.set_object(obj, fixed_name)
+            class_name = self.converter.get_object_class(obj[1])
+            converter.set_object(obj, '((%s)%s)' % (class_name, fixed_name))
 
 class FacingInDirection(ConditionWriter):
     def write(self, writer):
@@ -1151,6 +1169,7 @@ class CreateBase(ActionWriter):
             else:
                 writer.putlnc('%s.add_back();', list_name)
             if is_shoot:
+                self.converter.get_object_writer(object_info).has_shoot = True
                 writer.putlnc('%s->shoot(new_obj, %s, %s);', parent,
                               details['shoot_speed'], direction)
                 # object_class = self.converter.get_object_class(
@@ -1421,10 +1440,10 @@ class StartLoop(ActionWriter):
     def get_name(self):
         parameter = self.parameters[0]
         items = parameter.loader.items
-        return self.converter.convert_static_expression(items)
-
-    def get_dynamic_name(self):
-        return self.convert_index(0)
+        name = self.converter.convert_static_expression(items)
+        if name is not None:
+            return name
+        return self.converter.config.get_dynamic_loop_call_name(parameter)
 
     def get_loop_names(self, loops):
         if self.get_name() is not None:
@@ -1528,6 +1547,7 @@ class StartLoop(ActionWriter):
         writer.start_brace()
         if is_dynamic:
             dynamic_end = 'dynamic_%s_end' % self.get_id(self)
+            writer.putlnc('if (loops == NULL) goto %s;', dynamic_end)
             writer.putlnc('DynamicLoops::iterator dyn_it = '
                           '(*loops).find(%s);', self.convert_index(0))
             writer.putlnc('if (dyn_it == (*loops).end()) goto %s;',
@@ -1540,6 +1560,9 @@ class StartLoop(ActionWriter):
         writer.putln('%s = 0;' % index_name)
         writer.putln('while (%s) {' % comparison)
         writer.indent()
+
+        self.converter.config.write_loop(real_name, self, writer)
+
         writer.putln('%s;' % func_call)
         writer.putln('if (!%s) break;' % running_name)
         writer.putln('%s++;' % index_name)
@@ -1898,7 +1921,12 @@ class GetLoopIndex(ExpressionWriter):
         else:
             size = 2
             next_exp = items[converter.item_index + 1]
-            name = next_exp.loader.value
+            if next_exp.getName() != 'String':
+                name = converter.config.get_dynamic_loop_index(next_exp)
+                if name is None:
+                    return 'get_loop_index('
+            else:
+                name = next_exp.loader.value
         converter.item_index += size
         index_name = get_loop_index_name(name)
         return index_name
@@ -2123,7 +2151,8 @@ actions = make_table(ActionMethodWriter, {
     # ignore extract/release file actions, we just load directly when using the
     # temporary dir
     'ExtractBinaryFile' : EmptyAction,
-    'ReleaseBinaryFile' : EmptyAction
+    'ReleaseBinaryFile' : EmptyAction,
+    'Wrap' : 'wrap_pos'
 })
 
 conditions = make_table(ConditionMethodWriter, {
@@ -2257,6 +2286,7 @@ expressions = make_table(ExpressionMethodWriter, {
     'GetAngle' : 'get_angle()',
     'FrameHeight' : '.height',
     'FrameWidth' : '.width',
+    'GetVirtualWidth' : '.virtual_width',
     'StringLength' : 'string_size',
     'Find' : 'string_find',
     'ReverseFind' : 'string_rfind',

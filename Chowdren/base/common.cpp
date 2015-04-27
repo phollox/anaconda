@@ -87,6 +87,17 @@ Background::Background()
 {
 }
 
+#ifdef CHOWDREN_PASTE_BROADPHASE
+void clear_back_vec(Broadphase & items)
+{
+    BackgroundItems::iterator it;
+    for (it = items.begin(); it != items.end(); ++it) {
+        BackgroundItem * item = *it;
+        delete item;
+    }
+    items.clear();
+}
+#else
 void clear_back_vec(BackgroundItems & items)
 {
     BackgroundItems::iterator it;
@@ -96,6 +107,7 @@ void clear_back_vec(BackgroundItems & items)
     }
     items.clear();
 }
+#endif
 
 Background::~Background()
 {
@@ -105,14 +117,46 @@ Background::~Background()
 
 void Background::reset(bool clear_items)
 {
-    if (clear_items) {
-        clear_back_vec(col_items);
-        clear_back_vec(items);
-    }
+    if (!clear_items)
+        return;
+
+    clear_back_vec(col_items);
+    clear_back_vec(items);
 }
+
+struct RemoveBackgroundCallback
+{
+    int x, y;
+
+    RemoveBackgroundCallback(int x, int y)
+    : x(x), y(y)
+    {
+    }
+
+    bool on_callback(void * data)
+    {
+        BackgroundItem * item = (BackgroundItem*)data;
+        if (!collides(item->dest_x, item->dest_y,
+                      item->dest_x + item->src_width,
+                      item->dest_y + item->src_height,
+                      x, y, x+1, y+1))
+        {
+            return true;
+        }
+
+        delete item;
+        return false;
+    }    
+};
 
 void Background::destroy_at(int x, int y)
 {
+#ifdef CHOWDREN_PASTE_BROADPHASE
+    int v[4] = {x, y, x+1, y+1};
+    RemoveBackgroundCallback callback(x, y);
+    items.remove_query(v, callback);
+    col_items.remove_query(v, callback);
+#else
     BackgroundItems::iterator it = items.begin();
     while (it != items.end()) {
         BackgroundItem * item = *it;
@@ -138,7 +182,64 @@ void Background::destroy_at(int x, int y)
         } else
             ++it;
     }
+#endif
 }
+
+inline bool compare_aabb(int a[4], int b[4])
+{
+    return memcmp(&a[0], &b[0], sizeof(int)*4) == 0;
+}
+
+#ifdef CHOWDREN_PASTE_BROADPHASE
+struct RemoveExactCallback
+{
+    BackgroundItem * item;
+
+    RemoveBackgroundExactCallback(BackgroundItem * item, bool check_image)
+    : item(item)
+    {
+    }
+
+    bool on_callback(void * data)
+    {
+        BackgroundItem * other = (BackgroundItem*)data;
+        if (other == item)
+            return true;
+        if (!compare_aabb(item->aabb, other->aabb) ||
+            (check_image && other->image != img))
+            return true;
+        delete other;
+        return false;
+    }    
+};
+
+inline void remove_paste_item(BackgroundItem * item, Broadphase & broadphase,
+                              bool check_image)
+{
+    RemoveExactCallback callback(item, check_image);
+    broadphase.remove_query(item->aabb, broadphase);
+}
+#else
+inline void remove_paste_item(BackgroundItem * item, BackgroundItems & items,
+                              bool check_image)
+{
+    BackgroundItems::iterator it = items.begin();
+    while (it != items.end()) {
+        BackgroundItem * other = *it;
+        if (other == item) {
+            ++it;
+            continue;
+        }
+        if (!compare_aabb(item->aabb, other->aabb) ||
+            (check_image && other->image != img))
+        {
+            ++it;
+            continue;
+        }
+        it = items.erase(it);
+    }
+}
+#endif
 
 void Background::paste(Image * img, int dest_x, int dest_y,
                        int src_x, int src_y, int src_width, int src_height,
@@ -162,7 +263,13 @@ void Background::paste(Image * img, int dest_x, int dest_y,
                                                    color);
         if (collision_type == 3)
             item->flags |= (LADDER_OBSTACLE | BOX_COLLISION);
+
+#ifdef CHOWDREN_PASTE_BROADPHASE
+        col_items.add(item, item->aabb);
+#else
         col_items.push_back(item);
+#endif
+
 #ifndef CHOWDREN_OBSTACLE_IMAGE
         return;
 #endif
@@ -171,14 +278,29 @@ void Background::paste(Image * img, int dest_x, int dest_y,
     if (color.a == 0 || color.a == 1)
         return;
 
-    items.push_back(new BackgroundItem(img, dest_x, dest_y,
-                                       src_x, src_y,
-                                       src_width, src_height,
-                                       color));
+    BackgroundItem * item = new BackgroundItem(img, dest_x, dest_y,
+                                               src_x, src_y,
+                                               src_width, src_height,
+                                               color);
+
+#ifdef CHOWDREN_PASTE_BROADPHASE
+    items.add(item, item->aabb);
+#else
+    items.push_back(item);
+#endif
+
+#ifdef CHOWDREN_PASTE_REMOVE
+    if (collision_type == 0 || collision_type == 4) {
+        remove_paste_item(item, col_items);
+        remove_paste_item(item, items);
+    }
+#endif
 }
 
 void Background::draw(int v[4])
 {
+#ifdef CHOWDREN_PASTE_BROADPHASE
+#else
     BackgroundItems::const_iterator it;
     for (it = items.begin(); it != items.end(); ++it) {
         BackgroundItem * item = *it;
@@ -186,21 +308,28 @@ void Background::draw(int v[4])
             continue;
         item->draw();
     }
+#endif
 }
 
 CollisionBase * Background::collide(CollisionBase * a)
 {
+#ifdef CHOWDREN_PASTE_BROADPHASE
+#else
     BackgroundItems::iterator it;
     for (it = col_items.begin(); it != col_items.end(); ++it) {
         BackgroundItem * item = *it;
         if (::collide(a, item))
             return item;
     }
+
     return NULL;
+#endif
 }
 
 CollisionBase * Background::overlaps(CollisionBase * a)
 {
+#ifdef CHOWDREN_PASTE_BROADPHASE
+#else
     BackgroundItems::iterator it;
     for (it = col_items.begin(); it != col_items.end(); ++it) {
         BackgroundItem * item = *it;
@@ -210,6 +339,7 @@ CollisionBase * Background::overlaps(CollisionBase * a)
             return item;
     }
     return NULL;
+#endif
 }
 
 // Layer
@@ -1011,7 +1141,8 @@ bool Frame::update()
     if (timer_base == 0) {
         timer_mul = 1.0f;
     } else {
-        timer_mul = manager.dt * timer_base;
+        // timer_mul = manager.dt * timer_base;
+        timer_mul = (1.0f / FRAMERATE) * timer_base;
     }
 
     if (loop_count == 0) {
@@ -1450,11 +1581,11 @@ bool FrameObject::overlaps_background()
         return false;
     if (flags & HAS_COLLISION_CACHE)
         return (flags & HAS_COLLISION) != 0;
-    flags |= HAS_COLLISION_CACHE;
-    if (layer->back != NULL && layer->back->overlaps(collision)) {
-        flags |= HAS_COLLISION;
+    // XXX also cache pasted collisions? will need ID to see if
+    // pasted items were changed
+    if (layer->back != NULL && layer->back->overlaps(collision))
         return true;
-    }
+    flags |= HAS_COLLISION_CACHE;
     BackgroundOverlapCallback callback(collision);
     if (!layer->broadphase.query_static(collision->proxy, callback)) {
         flags |= HAS_COLLISION;
@@ -1751,7 +1882,8 @@ void FrameObject::set_movement(int i)
     if (movement != NULL && (i < 0 || i >= movement_count))
         return;
     movement = movements[i];
-    movement->start();
+    if (movement->flags & Movement::MOVE_AT_START)
+        movement->start();
 }
 
 Movement * FrameObject::get_movement()
@@ -1807,6 +1939,24 @@ const std::string & FrameObject::get_name()
 void FrameObject::look_at(int x, int y)
 {
     set_direction(get_direction_int(this->x, this->y, x, y));
+}
+
+void FrameObject::wrap_pos()
+{
+    int * box = collision->aabb;
+    int x1 = box[0] + layer->off_x;
+    int y1 = box[1] + layer->off_y;
+    int x2 = box[2] + layer->off_x;
+    int y2 = box[3] + layer->off_y;
+    if (x1 > frame->width)
+        set_x(get_x() - frame->width);
+    else if (x2 < 0)
+        set_x(get_x() + frame->width);
+
+    if (y1 > frame->height)
+        set_x(get_y() - frame->height);
+    else if (y2 < 0)
+        set_x(get_y() + frame->height);
 }
 
 void FrameObject::rotate_toward(int dir)
@@ -2049,6 +2199,24 @@ const std::string & File::get_appdata_directory()
     return platform_get_appdata_dir();
 }
 
+#ifdef CHOWDREN_IS_DESKTOP
+
+#ifdef _WIN32
+#include <direct.h>
+#define chdir _chdir
+#else
+#include <unistd.h>
+#endif
+
+#endif
+
+void File::change_directory(const std::string & path)
+{
+#ifdef CHOWDREN_IS_DESKTOP
+    chdir(path.c_str());
+#endif
+}
+
 void File::create_directory(const std::string & path)
 {
     platform_create_directories(path);
@@ -2090,6 +2258,12 @@ bool File::copy_file(const std::string & src, const std::string & dst)
     fp.write(&data[0], data.size());
     fp.close();
     return true;
+}
+
+void File::rename_file(const std::string & src, const std::string & dst)
+{
+    copy_file(src, dst);
+    delete_file(src);
 }
 
 // MathHelper
@@ -2248,4 +2422,25 @@ int get_joystick_x(int n)
 int get_joystick_y(int n)
 {
     return get_joystick_axis(n, CHOWDREN_AXIS_LEFTY) * 1000.0f;
+}
+
+struct RumbleEffect
+{
+    float delay, l, r;
+    int duration;
+};
+
+static hash_map<std::string, RumbleEffect> rumble_effects;
+
+void create_joystick_rumble(int n, float delay, float duration,
+                            float l, float r, const std::string & name)
+{
+    RumbleEffect effect = {delay, l * 100.0f, r * 100.0f, duration * 1000.0f};
+    rumble_effects[name] = effect;
+}
+
+void start_joystick_rumble(int n, const std::string & name, int times)
+{
+    RumbleEffect & effect = rumble_effects[name];
+    joystick_vibrate(n, effect.l, effect.r, effect.duration);
 }

@@ -333,10 +333,10 @@ void TextBlitter::draw()
     else
         image = draw_image;
 
-    if (!replacer.empty()) {
+    if (!replacer.empty())
         draw_image = image = replacer.apply(image, this->image);
-        draw_image->upload_texture();
-    }
+
+    image->upload_texture();
 
     begin_draw();
 

@@ -34,10 +34,12 @@ GameManager manager;
 #include <emscripten/emscripten.h>
 #endif
 
-#if !defined(NDEBUG)
+// #define CHOWDREN_USER_PROFILER
+
+// #if !defined(NDEBUG)
 #define CHOWDREN_SHOW_DEBUGGER
 #define SHOW_STATS
-#endif
+// #endif
 
 GameManager::GameManager()
 : frame(NULL), window_created(false), fullscreen(false), off_x(0), off_y(0),
@@ -50,8 +52,20 @@ GameManager::GameManager()
 
 static Frames static_frames;
 
+#ifdef CHOWDREN_30_TO_60
+static int in_update = 0;
+#endif
+
+#ifdef CHOWDREN_USER_PROFILER
+static FSFile user_log;
+#endif
+
 void GameManager::init()
 {
+#ifdef CHOWDREN_USER_PROFILER
+    user_log.open("log.txt", "w");
+#endif
+
 #ifdef CHOWDREN_USE_PROFILER
     PROFILE_SET_DAMPING(0.0);
 #endif
@@ -89,7 +103,7 @@ void GameManager::init()
     cross_srand((unsigned int)platform_get_global_time());
 
     fps_limit.start();
-    fps_limit.set(FRAMERATE);
+    set_framerate(FRAMERATE);
 
     int start_frame = 0;
 #if defined(CHOWDREN_IS_AVGN)
@@ -194,10 +208,12 @@ int GameManager::update_frame()
 #endif
     double dt = fps_limit.dt;
 
-#ifdef SHOW_STATS
-    if (dt > (1.2 / fps_limit.framerate))
-        std::cout << "Bad frame: " << dt << " " << (1.0 / dt) << std::endl;
-#endif
+// #ifdef SHOW_STATS
+//     if (dt > (1.2 / fps_limit.framerate)) {
+//         std::cout << "Bad frame: " << dt << " " << (1.0 / dt) << std::endl;
+//         std::cout << last_events << " " << last_draw << std::endl;
+//     }
+// #endif
 
     if (fade_dir != 0.0f) {
         fade_value += fade_dir * (float)dt;
@@ -249,7 +265,23 @@ int GameManager::update_frame()
 
 void GameManager::set_framerate(int framerate)
 {
+#ifdef CHOWDREN_30_TO_60
+    if (framerate == 30)
+        framerate = 60;
+#endif
     fps_limit.set(framerate);
+#ifdef CHOWDREN_VSYNC
+    static bool vsync_temp = false;
+    if (framerate < 100) {
+        if (!vsync_temp)
+            return;
+        platform_set_vsync(true);
+        vsync_temp = false;
+        return;
+    }
+    vsync_temp = true;
+    platform_set_vsync(false);
+#endif
 }
 
 #ifdef CHOWDREN_IS_DEMO
@@ -391,6 +423,11 @@ void GameManager::set_frame(int index)
 
     std::cout << "Setting frame: " << index << std::endl;
 
+#ifdef CHOWDREN_USER_PROFILER
+    std::string logline = "Setting frame: " + number_to_string(index) + "\n";
+    user_log.write(&logline[0], logline.size());
+#endif
+
     frame->set_index(index);
 
     std::cout << "Frame set" << std::endl;
@@ -529,11 +566,31 @@ bool GameManager::update()
     }
 #endif
 
+#ifdef CHOWDREN_USER_PROFILER
+    static int frame = 0;
+    frame++;
+    std::stringstream ss;
+    ss << "Frame " << frame << ": " << fps_limit.dt << " ";
+#endif
+
+#ifdef CHOWDREN_30_TO_60
+    static float dt_acc = 0.0f;
+    in_update = (in_update + 1) % 2;
+    if (in_update == 0) {
+        platform_swap_buffers();
+        dt_acc = fps_limit.dt;
+    } else {
+#endif
+
     // update input
     keyboard.update();
     mouse.update();
 
     platform_poll_events();
+
+#ifdef CHOWDREN_30_TO_60
+    fps_limit.dt += dt_acc;
+#endif
 
     // player controls
     int new_control = get_player_control_flags(1);
@@ -622,6 +679,9 @@ bool GameManager::update()
 
         int ret = update_frame();
 
+#ifdef CHOWDREN_USER_PROFILER
+        ss << (platform_get_time() - event_update_time) << " ";
+#endif
 #ifdef SHOW_STATS
         if (show_stats)
             std::cout << "Event update took " <<
@@ -641,6 +701,10 @@ bool GameManager::update()
 
     draw();
 
+#ifdef CHOWDREN_USER_PROFILER
+    ss << (platform_get_time() - draw_time) << " ";
+#endif
+
 #ifdef SHOW_STATS
     if (show_stats) {
         std::cout << "Draw took " << platform_get_time() - draw_time
@@ -652,7 +716,17 @@ bool GameManager::update()
     }
 #endif
 
+#ifdef CHOWDREN_30_TO_60
+    }
+#endif
+
     fps_limit.finish();
+
+#ifdef CHOWDREN_USER_PROFILER
+    ss << "\n";
+    std::string logline = ss.str();
+    user_log.write(&logline[0], logline.size());
+#endif
 
 #ifdef CHOWDREN_USE_PROFILER
     static int profile_time = 0;

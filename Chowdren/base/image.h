@@ -135,6 +135,7 @@ public:
 
     void replace(const Color & from, const Color & to);
     Image * apply(Image * image, Image * src_image);
+    Image * apply_direct(Image * image, Image * src_image);
 
     bool empty()
     {

@@ -74,9 +74,15 @@ class Active(ObjectWriter):
                               scale_method)
         writer.end_brace()
         flags = common.newFlags
-        writer.putln(to_c('collision_box = %s;', flags['CollisionBox']))
-        writer.putlnc('auto_rotate = %s;', bool(flags['AutomaticRotation']))
-        writer.putlnc('transparent = %s;', self.get_transparent())
+
+        fade = common.fadeOut
+        if fade and fade.name == 'FADE':
+            writer.putlnc('fade_duration = %s;', fade.duration / 1000.0)
+
+        if flags['AutomaticRotation']:
+            writer.putlnc('active_flags |= AUTO_ROTATE;')
+        if self.get_transparent():
+            writer.putlnc('active_flags |= TRANSPARENT;')
         writer.putln('animation = %s;' % get_animation_name(min(animations)))
         if APPEARING in animations:
             writer.putln('forced_animation = current_animation = APPEARING;')
@@ -86,7 +92,7 @@ class Active(ObjectWriter):
             writer.putln('flags |= FADEOUT;')
             self.destruct = True
 
-        writer.putln('initialize_active();')
+        writer.putlnc('initialize_active(%s);', flags['CollisionBox'])
 
     def has_updates(self):
         if not self.converter.config.use_update_filtering():
@@ -130,8 +136,9 @@ class Active(ObjectWriter):
         prefix = self.new_class_name.lower()
         for animation_index in sorted(animations):
             animation = animations[animation_index]
-            single_loop = animation.getName() in ('Appearing', 'Disappearing')
-            # writer.putmeth('void init_anim_%s' % animation_index)
+            anim_name = animation.getName()
+            if anim_name == 'Appearing' and direction.repeat == 0:
+                print 'Problematic appearing?', self.data.name
             directions = animation.loadedDirections
             animation_name = get_animation_name(animation.index)
             direction_map = {}
@@ -148,8 +155,6 @@ class Active(ObjectWriter):
                 loop_count = direction.repeat
                 if loop_count == 0:
                     loop_count = -1
-                if single_loop and loop_count == -1:
-                    loop_count = 1
 
                 direction_name = 'direction_%s' % dir_prefix
                 writer.putlnc('static Direction %s = {%s, %s, %s, %s, %s, %s, '

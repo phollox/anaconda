@@ -63,6 +63,9 @@ public:
     template <typename T>
     bool query(int v[4], T & callback);
 
+    template <typename T>
+    bool remove_query(int v[4], T & callback);
+
     void get_pos(int in[4], int out[4]);
     void set_pos(int in[4], GridItem & item);
 };
@@ -169,6 +172,41 @@ inline bool UniformGrid::query(int v[4], T & callback)
         }
     }
     return true;
+}
+
+template <typename T>
+inline bool UniformGrid::remove_query(int v[4], T & callback)
+{
+    vector<int>::iterator it;
+    bool res = false;
+    int vv[4];
+    get_pos(v, vv);
+
+    query_id++;
+
+    for (int y = vv[1]; y < vv[3]; y++)
+    for (int x = vv[0]; x < vv[2]; x++) {
+        GridItemList & list = grid[GRID_INDEX(x, y)];
+
+        it = list.items.begin();
+        while (it != list.items.end()) {
+            int index = *it;
+            GridItem & vv = store[index];
+            if (vv.last_query_id == query_id) {
+                ++it;
+                continue;
+            }
+            vv.last_query_id = query_id;
+            if (callback.on_callback(vv.data)) {
+                ++it;
+                continue;
+            }
+            res = true;
+            it = list.items.erase(it);
+            remove(index);
+        }
+    }
+    return res;
 }
 
 #endif // CHOWDREN_GRID_H

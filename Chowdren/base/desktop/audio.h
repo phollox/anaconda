@@ -22,6 +22,8 @@
 
 #define BUFFER_COUNT 3
 
+#define USE_THREAD_PRELOAD
+
 namespace ChowdrenAudio {
 
 #ifndef CHOWDREN_IS_EMSCRIPTEN
@@ -97,6 +99,10 @@ public:
     SDL_Thread * streaming_thread;
     SDL_mutex * stream_mutex;
     volatile bool closing;
+#ifdef USE_THREAD_PRELOAD
+    SDL_cond * stream_cond;
+    SDL_mutex * stream_cond_mutex;
+#endif
 
     void open();
     static int _stream_update(void * data);
@@ -501,12 +507,15 @@ public:
     SoundDecoder * file;
     bool playing;
     SoundBuffer buffers[BUFFER_COUNT];
-    unsigned int channels;
     unsigned int sample_rate;
     bool loop;
     uint64_t samples_processed;
     bool end_buffers[BUFFER_COUNT];
     bool stopping;
+
+#ifdef USE_THREAD_PRELOAD
+    bool fill_now;
+#endif
 
     SoundStream(size_t offset, Media::AudioType type, size_t size)
     : SoundBase()
@@ -526,7 +535,7 @@ public:
     void init(SoundDecoder * decoder)
     {
         file = decoder;
-        playing = loop = stopping = false;
+        playing = loop = stopping = fill_now = false;
         format = get_format(file->channels);
 
         for (int i = 0; i < BUFFER_COUNT; ++i)
@@ -569,9 +578,15 @@ public:
             end_buffers[i] = false;
         }
 
+#ifdef USE_THREAD_PRELOAD
+        fill_now = true;
+        SDL_LockMutex(global_device.stream_cond_mutex);
+        SDL_CondBroadcast(global_device.stream_cond);
+        SDL_UnlockMutex(global_device.stream_cond_mutex);
+#else
         stopping = fill_queue();
         al_check(alSourcePlay(source));
-
+#endif
         playing = true;
     }
 
@@ -614,13 +629,23 @@ public:
             time * file->sample_rate * file->channels);
         for (int i = 0; i < BUFFER_COUNT; ++i)
             end_buffers[i] = false;
+#ifdef USE_THREAD_PRELOAD
+        fill_now = true;
+        SDL_LockMutex(global_device.stream_cond_mutex);
+        SDL_CondBroadcast(global_device.stream_cond);
+        SDL_UnlockMutex(global_device.stream_cond_mutex);
+#else
         stopping = fill_queue();
         al_check(alSourcePlay(source));
+#endif
         UNLOCK_STREAM;
+
     }
 
     double get_playing_offset()
     {
+        if (get_status() == Stopped)
+            return get_duration();
         ALfloat secs = 0.0f;
         al_check(alGetSourcef(source, AL_SEC_OFFSET, &secs));
         return secs + static_cast<float>(samples_processed
@@ -629,7 +654,7 @@ public:
 
     double get_duration()
     {
-        return double(file->samples) / file->sample_rate / channels;
+        return double(file->samples) / file->sample_rate / file->channels;
     }
 
     void set_loop(bool loop)
@@ -651,6 +676,13 @@ public:
     {
         if (!playing)
             return;
+
+        if (fill_now) {
+            fill_now = false;
+            stopping = fill_queue();
+            al_check(alSourcePlay(source));
+            return;
+        }
 
         ALint status;
         al_check(alGetSourcei(source, AL_SOURCE_STATE, &status));
@@ -828,6 +860,11 @@ void AudioDevice::open()
     stream_update();
 #else
     stream_mutex = SDL_CreateMutex();
+
+#ifdef USE_THREAD_PRELOAD
+    stream_cond = SDL_CreateCond();
+    stream_cond_mutex = SDL_CreateMutex();
+#endif
     streaming_thread = SDL_CreateThread(_stream_update, "Stream thread",
                                         (void*)this);
 #endif
@@ -867,7 +904,14 @@ void AudioDevice::stream_update()
         for (it = streams.begin(); it != streams.end(); ++it)
             (*it)->update();
         SDL_UnlockMutex(stream_mutex);
+
+#ifdef USE_THREAD_PRELOAD
+        SDL_LockMutex(stream_cond_mutex);
+        SDL_CondWaitTimeout(stream_cond, stream_cond_mutex, 125);
+        SDL_UnlockMutex(stream_cond_mutex);
+#else
         platform_sleep(0.125);
+#endif
     }
 #endif
 }

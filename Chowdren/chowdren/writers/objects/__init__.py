@@ -14,6 +14,7 @@ class ObjectWriter(BaseWriter):
     has_color = False
     update = False
     movement_count = 0
+    has_shoot = False
     default_instance = None
     has_collision_events = False
     disable_kill = False
@@ -65,7 +66,7 @@ class ObjectWriter(BaseWriter):
         return ByteReader(self.common.extensionData)
 
     def has_movements(self):
-        return self.movement_count > 0
+        return self.movement_count > 0 or self.has_shoot
 
     def has_sleep(self):
         try:

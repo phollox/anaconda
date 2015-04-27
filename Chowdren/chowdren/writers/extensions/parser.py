@@ -13,6 +13,7 @@ class StringParser(ObjectWriter):
 actions = make_table(ActionMethodWriter, {
     0 : 'set',
     2 : 'load',
+    5 : 'reset_delimiters',
     6 : 'add_delimiter'
 })
 

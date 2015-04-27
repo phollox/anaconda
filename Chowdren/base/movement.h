@@ -19,6 +19,12 @@ public:
     FlatObjectList collisions;
     bool back_col;
     unsigned int directions;
+    int flags;
+
+    enum MovementFlags
+    {
+        MOVE_AT_START = 1 << 0
+    };
 
     Movement(FrameObject * instance);
     virtual ~Movement();
@@ -130,6 +136,8 @@ class BallMovement : public Movement
 public:
     int deceleration;
     double speed_change;
+    int randomizer;
+    bool has_back_col; // XXX hack
 
     BallMovement(FrameObject * instance);
     void update();

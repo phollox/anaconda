@@ -20,6 +20,7 @@ public:
     void load(const std::string & filename);
     void set(const std::string & value);
     void add_delimiter(const std::string & delim);
+    void reset_delimiters();
     const std::string & get_element(int index);
     std::string set_element(const std::string & value, int index);
     const std::string & get_last_element();

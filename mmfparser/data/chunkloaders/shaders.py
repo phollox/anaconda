@@ -16,7 +16,6 @@
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
 from mmfparser.bytereader import ByteReader
-
 from mmfparser.loader import DataLoader
 
 class Parameter(object):

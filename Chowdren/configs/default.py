@@ -89,6 +89,12 @@ def get_loop_name(converter, parameter):
 def get_loop_call_names(converter, name):
     return None
 
+def get_dynamic_loop_call_name(converter, parameter):
+    return None
+
+def get_dynamic_loop_index(converter, exp):
+    return None
+
 def get_fonts(converter):
     return ('SmallFonts',)
 
@@ -115,3 +121,6 @@ def init_array_set_value(converter, event_writer):
 
 def get_missing_image(converter, image):
     raise NotImplementedError('invalid image: %s' % image)
+
+def write_loop(converter, loop_name, event_writer, writer):
+    pass

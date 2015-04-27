@@ -134,6 +134,7 @@ class File
 {
 public:
     static const std::string & get_appdata_directory();
+    static void change_directory(const std::string & path);
     static void create_directory(const std::string & path);
     static bool file_exists(const std::string & path);
     static bool name_exists(const std::string & path);
@@ -141,6 +142,7 @@ public:
     static void delete_file(const std::string & path);
     static bool file_readable(const std::string & path);
     static bool copy_file(const std::string & src, const std::string & dst);
+    static void rename_file(const std::string & src, const std::string & dst);
 };
 
 #include "extensions.h"
@@ -448,6 +450,10 @@ inline float get_joystick_dummy(float value, int n)
 {
     return value;
 }
+
+void create_joystick_rumble(int n, float delay, float duration,
+                            float l, float r, const std::string & name);
+void start_joystick_rumble(int n, const std::string & name, int times);
 
 inline int get_ascii(const std::string & value)
 {

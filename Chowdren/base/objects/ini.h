@@ -33,6 +33,7 @@ public:
     std::string filename;
     std::string encrypt_key;
     unsigned int search_time;
+    bool changed;
 
     INI(int x, int y, int type_id);
     static void reset_global_data();

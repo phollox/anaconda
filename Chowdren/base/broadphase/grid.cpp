@@ -21,13 +21,33 @@ void UniformGrid::init()
 
 UniformGrid::~UniformGrid()
 {
+    vector<int>::iterator it;
+    for (int i = 0; i < width*height; i++) {
+        GridItemList & list = grid[i];
+        for (it = list.items.begin(); it != list.items.end(); ++it) {
+            GridItem & item = store[*it];
+            if (item.data == NULL)
+                continue;
+            item.data = NULL;
+            free_list.push_back(*it);
+        }
+    }
     delete[] grid;
 }
 
 void UniformGrid::clear()
 {
+    vector<int>::iterator it;
     for (int i = 0; i < width*height; i++) {
-        grid[i].items.clear();
+        GridItemList & list = grid[i];
+        for (it = list.items.begin(); it != list.items.end(); ++it) {
+            GridItem & item = store[*it];
+            if (item.data == NULL)
+                continue;
+            item.data = NULL;
+            free_list.push_back(*it);
+        }
+        list.items.clear();
     }
 }
 

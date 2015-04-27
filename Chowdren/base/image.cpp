@@ -574,9 +574,14 @@ void ReplacedImages::replace(const Color & from, const Color & to)
 
 Image * ReplacedImages::apply(Image * image, Image * src_image)
 {
-    int count = index;
+    Image * ret = apply_direct(image, src_image);
     index = 0;
+    return ret;
+}
 
+Image * ReplacedImages::apply_direct(Image * image, Image * src_image)
+{
+    int count = index;
     int hash = 0;
     int hash_index = 0;
 

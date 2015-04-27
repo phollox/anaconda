@@ -19,6 +19,12 @@ void StringParser::add_delimiter(const std::string & v)
     delimiters += v;
 }
 
+void StringParser::reset_delimiters()
+{
+    delimiters.clear();
+    has_split = false;
+}
+
 void StringParser::load(const std::string & filename)
 {
     if (filename[0] == '[')

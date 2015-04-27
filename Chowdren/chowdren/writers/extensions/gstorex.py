@@ -25,6 +25,7 @@ conditions = make_table(StaticConditionWriter, {
 })
 
 expressions = make_table(StaticExpressionWriter, {
+    2 : 'strings.get'
 })
 
 def get_object():

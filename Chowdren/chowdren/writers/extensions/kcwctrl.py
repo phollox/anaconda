@@ -4,7 +4,7 @@ from chowdren.common import get_animation_name, to_c, make_color
 
 from chowdren.writers.events import (StaticActionWriter, StaticConditionWriter,
     ExpressionMethodWriter, StaticExpressionWriter, make_table,
-    ActionMethodWriter)
+    ActionMethodWriter, EmptyAction)
 
 class WindowControl(ObjectWriter):
     class_name = 'WindowControl'
@@ -33,6 +33,7 @@ actions = make_table(StaticActionWriter, {
     2 : 'set_placement',
     3 : 'set_width',
     4 : 'set_height',
+    7 : EmptyAction, # always on top, not portable
     9 : 'set_visible(true)',
     10 : 'set_visible(false)',
     11 : 'minimize',

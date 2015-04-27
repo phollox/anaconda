@@ -318,15 +318,18 @@ public:
             new_hotspot_x = hotspot_x;
             new_hotspot_y = hotspot_y;
             x_t = y_t = 0;
-            if (flags & BOX_COLLISION)
-                type = SPRITE_BOX;
-            else
-                type = SPRITE_COLLISION;
+            if (type != NONE_COLLISION) {            
+                if (flags & BOX_COLLISION)
+                    type = SPRITE_BOX;
+                else
+                    type = SPRITE_COLLISION;
+            }
             update_aabb();
             return;
         }
 
-        type = TRANSFORM_SPRITE_COLLISION;
+        if (type != NONE_COLLISION)
+            type = TRANSFORM_SPRITE_COLLISION;
 
         float xx = image->width * x_scale;
         float yy = image->height * y_scale;

@@ -1948,7 +1948,6 @@ class Converter(object):
 
         shader_name = None
         if frameitem.shaderId is not None:
-            # raise NotImplementedError('has shader')
             ink_effect = SHADER_EFFECT
         else:
             ink_effect = frameitem.inkEffect
@@ -2251,7 +2250,7 @@ class Converter(object):
             writer.putlnc('movement_count = %s;', count)
             writer.putlnc('movements = new Movement*[%s];', count)
         has_init = False
-        move_start = True
+        global_move_start = True
         for movement_index, movement in enumerate(movements):
             def set_start_dir(direction):
                 if movement_index != 0 or not direction:
@@ -2260,10 +2259,11 @@ class Converter(object):
                               parse_direction(direction))
 
             movement_name = movement.getName()
+            move_start = movement.movingAtStart != 0
             if movement_name == 'Extension':
                 movement_name = movement.loader.name.lower()
             elif movement_index == 0:
-                move_start = movement.movingAtStart != 0
+                global_move_start = move_start
             set_start_dir(movement.directionAtStart)
             sets = {}
             extra = []
@@ -2271,6 +2271,7 @@ class Converter(object):
                 movement_class = 'BallMovement'
                 sets['max_speed'] = movement.loader.speed
                 sets['deceleration'] = movement.loader.deceleration
+                extra.append('randomizer = %s' % movement.loader.randomizer)
             elif movement_name == 'Path':
                 movement_class = 'PathMovement'
                 path = movement.loader
@@ -2341,17 +2342,19 @@ class Converter(object):
             has_init = True
             writer.putlnc('%s = new %s(this);', name, movement_class)
             writer.putlnc('%s->index = %s;', name, movement_index)
+            if move_start:
+                writer.putlnc('%s->flags |= Movement::MOVE_AT_START;',
+                              name)
             name = '((%s*)%s)' % (movement_class, name)
             for k, v in sets.iteritems():
                 writer.putlnc('%s->set_%s(%s);', name, k, v)
             for line in extra:
                 writer.putlnc('%s->%s;', name, line)
 
-        # XXX: we don't support "move at start == false" for multi movements
         if has_init:
             if has_list:
                 writer.putlnc('set_movement(0);')
-            elif move_start:
+            elif global_move_start:
                 writer.putlnc('movement->start();')
             obj.movement_count = count
         else:
@@ -2429,8 +2432,10 @@ class Converter(object):
                      pre_calls=None, post_calls=None):
         names = pre_calls or []
         selections = self.has_single_selection
+        col_objs = self.collision_objects
         for new_groups in self.iterate_groups(groups):
             self.has_single_selection = selections
+            self.collision_objects = col_objs
             names.append(self.write_event_function(writer, new_groups,
                                                    triggered))
 
@@ -2458,17 +2463,15 @@ class Converter(object):
 
     def get_event_code(self, group, triggered=False):
         group.set_groups(self, self.current_groups)
+        self.is_triggered = triggered
         self.current_group = group
         self.current_event_id = group.global_id
         actions = group.actions
-        conditions = group.conditions
         container = group.container
         has_container_check = False
         if container:
             is_static = all([item.is_static for item in container.tree])
             has_container_check = not is_static
-        if triggered:
-            conditions = conditions[1:]
         writer = CodeWriter()
         writer.putln('// event %s' % TEMPORARY_GROUP_ID)
         event_break = self.event_break = 'goto %s_end;' % group.name
@@ -2488,6 +2491,11 @@ class Converter(object):
             writer.putlnc('PROFILE_BLOCK(event_%s);', group.global_id)
 
         self.config.write_pre(writer, group)
+
+        conditions = group.conditions
+        if triggered:
+            conditions = conditions[1:]
+
         if conditions or has_container_check:
             if has_container_check:
                 condition = self.get_container_check(container)
