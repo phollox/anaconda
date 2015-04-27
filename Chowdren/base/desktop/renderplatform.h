@@ -1,6 +1,7 @@
 #include "include_gl.h"
 #include "shadercommon.h"
 #include "mathcommon.h"
+#include <string.h>
 
 // XXX consider merging drawcalls
 #define RENDER_BUFFER 1
