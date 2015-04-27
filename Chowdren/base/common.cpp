@@ -231,7 +231,7 @@ inline void remove_paste_item(BackgroundItem * item, BackgroundItems & items,
             continue;
         }
         if (!compare_aabb(item->aabb, other->aabb) ||
-            (check_image && other->image != img))
+            (check_image && other->image != item->image))
         {
             ++it;
             continue;
