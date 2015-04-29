@@ -4,11 +4,8 @@
 #include "include_gl.h"
 #include "shadercommon.h"
 #include "mathcommon.h"
-<<<<<<< HEAD
 #include <string.h>
-=======
 #include "glslshader.h"
->>>>>>> d3d
 
 // XXX consider merging drawcalls
 #define RENDER_BUFFER 1
