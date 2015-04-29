@@ -20,7 +20,7 @@ class Platform(object):
             image.save(temp, 'PNG')
             return temp.getvalue()
 
-    def get_shader(self, vertex, fragment):
+    def get_shader(self, name, vertex, fragment):
         raise NotImplementedError()
 
     def initialize(self):

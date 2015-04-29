@@ -3,7 +3,16 @@
 
 #ifdef CHOWDREN_IS_DESKTOP
 
-#ifdef CHOWDREN_USE_GL
+#ifdef CHOWDREN_USE_D3D
+#define NOMINMAX
+
+#ifndef NDEBUG
+#define D3D_DEBUG_INFO
+#endif
+
+#include <d3d9.h>
+
+#elif CHOWDREN_USE_GL
 #include <SDL_opengl.h>
 
 extern PFNGLBLENDEQUATIONSEPARATEEXTPROC __glBlendEquationSeparateEXT;

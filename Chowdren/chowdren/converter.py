@@ -1198,7 +1198,7 @@ class Converter(object):
             with open(frag_path, 'rb') as fp:
                 frag = fp.read()
 
-            data = self.platform.get_shader(vert, frag)
+            data = self.platform.get_shader(shader, vert, frag)
             self.assets.add_shader(shader, data)
 
         for font in self.config.get_fonts():

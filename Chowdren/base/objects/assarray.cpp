@@ -250,8 +250,9 @@ void AssociateArray::save(const std::string & path, int method)
         std::cout << "Could not save associate array: " << path << std::endl;
         return;
     }
-    FileStream stream(fp);
+    WriteStream stream;
     save(stream, method);
+    stream.save(fp);
     fp.close();
 }
 

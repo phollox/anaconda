@@ -39,11 +39,12 @@ static int blend_status = 0;
 
 void shader_set_texture()
 {
-    if (blend_status == 1)
+    if (blend_status == 1) {
         set_blend_func(FUNC_SRC_ALPHA, FUNC_ONE_MINUS_SRC_ALPHA);
-    else if (blend_status == 2)
+    } else if (blend_status == 2) {
         set_blend_func_eq(FUNC_SRC_ALPHA, FUNC_ONE_MINUS_SRC_ALPHA,
                           EQ_ADD, EQ_ADD);
+    }
     blend_status = 0;
     
     texture_shader.begin(NULL, 0, 0);
@@ -52,11 +53,12 @@ void shader_set_texture()
 void shader_set_effect(int effect, FrameObject * obj,
                        int width, int height)
 {
-    if (blend_status == 1)
+    if (blend_status == 1) {
         set_blend_func(FUNC_SRC_ALPHA, FUNC_ONE_MINUS_SRC_ALPHA);
-    else if (blend_status == 2)
+    } else if (blend_status == 2) {
         set_blend_func_eq(FUNC_SRC_ALPHA, FUNC_ONE_MINUS_SRC_ALPHA,
                           EQ_ADD, EQ_ADD);
+    }
     blend_status = 0;
 
     switch (effect) {

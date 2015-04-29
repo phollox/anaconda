@@ -213,6 +213,28 @@ public:
     }
 };
 
+class WriteStream : public DataStream
+{
+public:
+    WriteStream()
+    : DataStream(*(new std::stringstream()))
+    {
+    }
+
+    ~WriteStream()
+    {
+        delete (&stream);
+    }
+
+    void save(FSFile & fp)
+    {
+        std::string data = stream.str();
+        if (data.empty())
+            return;
+        fp.write(&data[0], data.size());
+    }
+};
+
 class StringStream : public BaseStream
 {
 public:
