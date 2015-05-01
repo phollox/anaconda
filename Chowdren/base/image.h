@@ -41,10 +41,6 @@ public:
     BitArray alpha;
 #endif
 
-#ifdef CHOWDREN_NO_NPOT
-    short pot_w, pot_h;
-#endif
-
     Image();
     Image(int hot_x, int hot_y, int act_x, int act_y);
     Image(int handle);

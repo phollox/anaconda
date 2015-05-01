@@ -57,6 +57,7 @@ PFNGLBLENDFUNCSEPARATEEXTPROC __glBlendFuncSeparateEXT;
 PFNGLACTIVETEXTUREARBPROC __glActiveTextureARB;
 PFNGLCLIENTACTIVETEXTUREARBPROC __glClientActiveTextureARB;
 PFNGLGENFRAMEBUFFERSEXTPROC __glGenFramebuffersEXT;
+PFNGLDELETEFRAMEBUFFERSEXTPROC __glDeleteFramebuffersEXT;
 PFNGLFRAMEBUFFERTEXTURE2DEXTPROC __glFramebufferTexture2DEXT;
 PFNGLBINDFRAMEBUFFEREXTPROC __glBindFramebufferEXT;
 
@@ -153,7 +154,8 @@ void remove_joystick(int instance);
 void on_joystick_button(int instance, int button, bool state);
 void on_controller_button(int instance, int button, bool state);
 void d3d_reset(int w, int h);
-void reset_d3d_state();
+void d3d_reset_state();
+void d3d_set_backtex_size(int w, int h);
 
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
@@ -298,15 +300,21 @@ void platform_poll_events()
             case SDL_QUIT:
                 has_closed = true;
                 break;
-#ifdef CHOWDREN_USE_D3D
-            case SDL_WINDOWEVENT:
+            case SDL_WINDOWEVENT: {
                 if (e.window.windowID != global_window_id)
                     break;
                 if (e.window.event != SDL_WINDOWEVENT_SIZE_CHANGED)
                     break;
-                d3d_reset(e.window.data1, e.window.data2);
-                break;
+                int w = e.window.data1;
+                int h = e.window.data2;
+#ifdef CHOWDREN_USE_D3D
+                d3d_reset(w, h);
 #endif
+                Render::set_view(0, 0, w, h);
+                Render::set_offset(0, 0);
+                Render::clear(0, 0, 0, 255);
+                break;
+            }
             default:
                 break;
         }
@@ -421,6 +429,8 @@ static void create_d3d_device()
 
 void d3d_reset(int w, int h)
 {
+    std::cout << "Reset D3D device: " << w << " " << h << std::endl;
+
     pparams.BackBufferWidth = w;
     pparams.BackBufferHeight = h;
 
@@ -435,6 +445,9 @@ void d3d_reset(int w, int h)
 
     render_data.default_target->Release();
 
+    render_data.textures[render_data.back_tex].texture->Release();
+    render_data.textures[render_data.back_tex].texture = NULL;
+
     render_data.device->Reset(&pparams);
 
     for (int i = 0; i < 32; ++i) {
@@ -446,7 +459,10 @@ void d3d_reset(int w, int h)
 
     render_data.device->GetRenderTarget(0, &render_data.default_target);
 
-    reset_d3d_state();
+    d3d_reset_state();
+
+    render_data.backtex_width = render_data.backtex_height = 0;
+    d3d_set_backtex_size(1, 1);
 }
 #endif
 
@@ -569,6 +585,9 @@ void platform_create_display(bool fullscreen)
     __glGenFramebuffersEXT =
         (PFNGLGENFRAMEBUFFERSEXTPROC)
         SDL_GL_GetProcAddress("glGenFramebuffersEXT");
+    __glDeleteFramebuffersEXT =
+        (PFNGLDELETEFRAMEBUFFERSEXTPROC)
+        SDL_GL_GetProcAddress("glDeleteFramebuffersEXT");
     __glFramebufferTexture2DEXT =
         (PFNGLFRAMEBUFFERTEXTURE2DEXTPROC)
         SDL_GL_GetProcAddress("glFramebufferTexture2DEXT");
@@ -742,7 +761,9 @@ void platform_set_fullscreen(bool value)
 
 void platform_begin_draw()
 {
+#ifdef CHOWDREN_USE_D3D
     render_data.device->BeginScene();
+#endif
     screen_fbo.bind();
 }
 
@@ -784,7 +805,6 @@ void platform_swap_buffers()
     // resize the window contents if necessary (fullscreen mode)
     Render::set_view(0, 0, window_width, window_height);
     Render::set_offset(0, 0);
-    Render::clear(0, 0, 0, 255);
 
     int x2 = draw_x_off + draw_x_size;
     int y2 = draw_y_off + draw_y_size;

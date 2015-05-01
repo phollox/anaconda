@@ -83,16 +83,29 @@ void QuickBackdrop::draw()
         int full_end_x = x + full_width;
         int full_end_y = y + full_height;
 
+        TextureData & td = render_data.texture_list[image->tex];
+        float wf = image_width;
+        float hf = image_height;
+        float old_u = td.u;
+        float old_v = td.v;
+
+        begin_draw();
+
         for (int xx = x; xx < end_x; xx += image_width)
         for (int yy = y; yy < end_y; yy += image_height) {
+            short w = image_width;
+            short h = image_height;
+
             if (xx >= full_end_x)
-                image->width = end_x - xx;
+                w = end_x - xx;
             if (yy >= full_end_y)
-                image->height = end_y - yy;
-            draw_image(image, xx + image->hotspot_x, yy + image->hotspot_y);
-            image->width = image_width;
-            image->height = image_height;
+                h = end_y - yy;
+
+            Render::draw_tex(xx, yy, xx + w, yy + h, blend_color, image->tex,
+                             0.0f, 0.0f, w / wf, h / hf);
         }
+
+        end_draw();
 #else
 		Render::enable_scissor(x, y, width, height);
         for (int xx = x; xx < x + width; xx += image->width)

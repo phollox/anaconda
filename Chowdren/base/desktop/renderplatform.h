@@ -39,6 +39,8 @@ struct RenderData
     Vertex vertices[6];
     D3DTEXTUREFILTERTYPE last_sampler;
     float adjust_x, adjust_y;
+    bool has_sse2;
+    int backtex_width, backtex_height;
 #else
     float positions[(RENDER_BUFFER * 3) * 6];
     unsigned int colors[RENDER_BUFFER * 6];
@@ -53,16 +55,15 @@ struct RenderData
 
 extern RenderData render_data;
 
+#ifndef CHOWDREN_USE_D3D
 inline void set_tex(Texture t)
 {
-#ifdef CHOWDREN_USE_D3D
-#else
     if (render_data.last_tex != t) {
         glBindTexture(GL_TEXTURE_2D, t);
         render_data.last_tex = t;
     }
-#endif
 }
+#endif
 
 inline void Render::set_offset(int x, int y)
 {
@@ -442,11 +443,11 @@ inline void begin_draw(Texture t)
         render_data.device->SetSamplerState(0, D3DSAMP_MINFILTER,
                                             td.sampler);
     }
-#elif
-    if (render_data.last_tex != t) {
-        glBindTexture(GL_TEXTURE_2D, t);
-        render_data.last_tex = t;
-    }
+#else
+    if (render_data.last_tex == t)
+        return;
+    render_data.last_tex = t;
+    glBindTexture(GL_TEXTURE_2D, t);
 #endif
 }
 
@@ -463,7 +464,7 @@ inline void Render::draw_quad(float * p, Color c)
 #ifdef CHOWDREN_USE_D3D
 inline void draw_tex_impl(Texture t)
 {
-    render_data.device->DrawPrimitiveUP(D3DPT_TRIANGLELIST, 6,
+    render_data.device->DrawPrimitiveUP(D3DPT_TRIANGLELIST, 2,
                                         &render_data.vertices[0],
                                         sizeof(RenderData::Vertex));
 }
@@ -567,22 +568,22 @@ inline void Render::disable_effect()
     render_data.effect = NONE;
 }
 
+#ifndef CHOWDREN_USE_D3D
+
 inline Texture Render::copy_rect(int x1, int y1, int x2, int y2)
 {
     int width = x2 - x1;
     int height = y2 - y1;
 
     int y = WINDOW_HEIGHT - y2;
-
-#ifdef CHOWDREN_USE_D3D
-#else
     set_tex(render_data.back_tex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height,
                  0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, x1, y, width, height);
-#endif
     return render_data.back_tex;
 }
+
+#endif
 
 inline void Render::enable_blend()
 {

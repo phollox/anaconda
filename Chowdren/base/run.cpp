@@ -291,14 +291,12 @@ FTTextureFont * get_font(int size);
 
 void GameManager::draw()
 {
-    if (!window_created)
-        return;
-
     int window_width, window_height;
     platform_get_size(&window_width, &window_height);
     if (window_width <= 0 || window_height <= 0)
         // for some reason, GLFW sets these properties to 0 when minimized.
         return;
+
 
 #ifdef CHOWDREN_FORCE_REMOTE
     platform_set_remote_value(CHOWDREN_REMOTE_TARGET);
@@ -577,6 +575,7 @@ bool GameManager::update()
     static float dt_acc = 0.0f;
     in_update = (in_update + 1) % 2;
     if (in_update == 0) {
+        platform_begin_draw();
         platform_swap_buffers();
         dt_acc = fps_limit.dt;
     } else {
@@ -693,7 +692,7 @@ bool GameManager::update()
         else if (ret == 2)
             return true;
 
-        if (window_created && platform_display_closed())
+        if (platform_display_closed())
             return false;
     }
 

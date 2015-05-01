@@ -26,8 +26,6 @@ BaseShader::BaseShader(unsigned int id, int flags,
 
 static AssetFile fp;
 
-
-
 void BaseShader::initialize()
 {
     if (!fp.is_open())
@@ -220,7 +218,7 @@ void BaseShader::set_vec4(FrameObject * instance, int src, int uniform)
 #ifdef CHOWDREN_USE_D3D
     render_data.device->SetPixelShaderConstantF(uniform, &v[0], 1);
 #else
-    glUniform4f((GLint)uniform, a, b, c, d);
+    glUniform4f((GLint)uniform, v[0], v[1], v[2], v[3]);
 #endif
 }
 
@@ -283,3 +281,34 @@ int BaseShader::get_uniform(const char * value)
 #define commit_parameters(x)
 
 #include "shadercommon.cpp"
+
+#ifdef CHOWDREN_USE_D3D
+
+void set_scale_uniform(float width, float height, float x_scale, float y_scale)
+{
+    float v[4];
+    v[0] = x_scale;
+    render_data.device->SetPixelShaderConstantF(pixelscale_shader.x_scale,
+                                                &v[0], 1);
+    v[0] = y_scale;
+    render_data.device->SetPixelShaderConstantF(pixelscale_shader.y_scale,
+                                                &v[0], 1);
+    v[0] = width;
+    render_data.device->SetPixelShaderConstantF(pixelscale_shader.x_size,
+                                                &v[0], 1);
+    v[0] = height;
+    render_data.device->SetPixelShaderConstantF(pixelscale_shader.y_size,
+                                                &v[0], 1);
+}
+
+#else
+
+void set_scale_uniform(float width, float height, float x_scale, float y_scale)
+{
+    glUniform1f(pixelscale_shader.x_scale, x_scale);
+    glUniform1f(pixelscale_shader.y_scale, y_scale);
+    glUniform1f(pixelscale_shader.x_size, width);
+    glUniform1f(pixelscale_shader.y_size, height);
+}
+
+#endif

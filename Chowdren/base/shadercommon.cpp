@@ -91,6 +91,7 @@ void shader_set_effect(int effect, FrameObject * obj,
         HANDLE_SHADER(PERSPECTIVE, perspective_shader);
         HANDLE_SHADER(MONOCHROME, monochrome_shader);
         HANDLE_SHADER(ZOOMOFFSET, zoomoffset_shader);
+        HANDLE_SHADER(OFFSET, offset_shader);
         HANDLE_SHADER(PIXELOUTLINE, pixeloutline_shader);
         HANDLE_SHADER(COLDIRBLUR, coldirblur_shader);
         HANDLE_SHADER(CHANNELBLUR, channelblur_shader);

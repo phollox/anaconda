@@ -216,38 +216,8 @@ void Image::upload_texture()
 #endif
     int gl_width, gl_height;
 
-#ifdef CHOWDREN_NO_NPOT
-    pot_w = std::max(8, round_pow2(width));
-    pot_h = std::max(8, round_pow2(height));
-
-    if (pot_w >= 1024 || pot_h >= 1024) {
-        pot_w = std::min<short>(1024, pot_w);
-        pot_h = std::min<short>(1024, pot_h);
-    }
-
-    gl_width = pot_w;
-    gl_height = pot_h;
-
-    if (pot_w != width || pot_h != height) {
-        unsigned int * old_image =(unsigned int*)image;
-        image = (unsigned char*)malloc(pot_w * pot_h * 4);
-        unsigned int * image_arr = (unsigned int*)image;
-
-        // in case the image is being cut off due to dimension restrictions
-        int ww = std::min(width, pot_w);
-        int hh = std::min(height, pot_h);
-
-        for (int x = 0; x < ww; x++)
-        for (int y = 0; y < hh; y++) {
-            image_arr[x + y * pot_w] = old_image[x + y * width];
-        }
-
-        stbi_image_free(old_image);
-    }
-#else
     gl_width = width;
     gl_height = height;
-#endif
 
     tex = Render::create_tex(image, Render::RGBA, gl_width, gl_height);
     Render::set_filter(tex, (flags & LINEAR_FILTER) != 0);
@@ -275,19 +245,19 @@ void Image::set_filter(bool linear)
     Render::set_filter(tex, linear);
 }
 
-const float flipped_texcoords[8] = {
-    1.0f, 0.0f,
-    0.0f, 0.0f,
-    0.0f, 1.0f,
-    1.0f, 1.0f
-};
+// const float flipped_texcoords[8] = {
+//     1.0f, 0.0f,
+//     0.0f, 0.0f,
+//     0.0f, 1.0f,
+//     1.0f, 1.0f
+// };
 
-const float normal_texcoords[8] = {
-    0.0f, 0.0f,
-    1.0f, 0.0f,
-    1.0f, 1.0f,
-    0.0f, 1.0f
-};
+// const float normal_texcoords[8] = {
+//     0.0f, 0.0f,
+//     1.0f, 0.0f,
+//     1.0f, 1.0f,
+//     0.0f, 1.0f
+// };
 
 #ifndef CHOWDREN_IS_WIIU
 // XXX change glc_copy_color_buffer_rect so this isn't necessary

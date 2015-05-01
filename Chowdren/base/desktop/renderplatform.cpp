@@ -1,5 +1,6 @@
 #include "render.h"
 #include "glslshader.h"
+#include "fbo.h"
 
 RenderData render_data;
 
@@ -17,7 +18,7 @@ float render_texcoords2[12] = {
 
 static LPDIRECT3DVERTEXDECLARATION9 decl_instance = 0;
 
-void reset_d3d_state()
+void d3d_reset_state()
 {
     BaseShader::current = NULL;
     render_data.last_sampler = (D3DTEXTUREFILTERTYPE)-1;
@@ -34,27 +35,6 @@ void reset_d3d_state()
     render_data.device->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
     render_data.device->SetRenderState(D3DRS_LIGHTING, FALSE);
 
-    D3DMATRIX matrix;
-    matrix.m[0][0] = 1.0f;
-    matrix.m[0][1] = 0.0f;
-    matrix.m[0][2] = 0.0f;
-    matrix.m[0][3] = 0.0f;
-    matrix.m[1][0] = 0.0f;
-    matrix.m[1][1] = 1.0f;
-    matrix.m[1][2] = 0.0f;
-    matrix.m[1][3] = 0.0f;
-    matrix.m[2][0] = 0.0f;
-    matrix.m[2][1] = 0.0f;
-    matrix.m[2][2] = 1.0f;
-    matrix.m[2][3] = 0.0f;
-    matrix.m[3][0] = 0.0f;
-    matrix.m[3][1] = 0.0f;
-    matrix.m[3][2] = 0.0f;
-    matrix.m[3][3] = 1.0f;
-    render_data.device->SetTransform(D3DTS_WORLD, &matrix);
-    render_data.device->SetTransform(D3DTS_VIEW, &matrix);
-    render_data.device->SetTransform(D3DTS_PROJECTION, &matrix);
-
     render_data.device->SetSamplerState(0, D3DSAMP_ADDRESSU,
                                         D3DTADDRESS_CLAMP);
     render_data.device->SetSamplerState(0, D3DSAMP_ADDRESSV,
@@ -64,11 +44,33 @@ void reset_d3d_state()
     render_data.device->SetSamplerState(1, D3DSAMP_ADDRESSV,
                                         D3DTADDRESS_CLAMP);
 }
+
+void d3d_set_backtex_size(int w, int h)
+{
+    if (render_data.backtex_width == w && render_data.backtex_height == h)
+        return;
+    render_data.backtex_width = w;
+    render_data.backtex_height = h;
+    TextureData & td = render_data.textures[render_data.back_tex];
+    if (td.texture != NULL)
+        td.texture->Release();
+    render_data.device->CreateTexture(w, h, 1, D3DUSAGE_RENDERTARGET,
+                                      D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT,
+                                      &td.texture, NULL);
+}
 #endif
 
 void Render::init()
 {
 #ifdef CHOWDREN_USE_D3D
+    int info[4];
+    __cpuid(info, 0);
+    render_data.has_sse2 = false;
+    if (info[0] >= 1) {
+        __cpuid(info, 1);
+        render_data.has_sse2 = (info[3] >> 26) & 1;
+    }
+
     D3DVERTEXELEMENT9 decl[] = {
         {0, 0, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT,
          D3DDECLUSAGE_POSITION, 0},
@@ -82,7 +84,31 @@ void Render::init()
     };
     render_data.device->CreateVertexDeclaration(decl, &decl_instance);
 
-    reset_d3d_state();
+    d3d_reset_state();
+
+    for (int i = 0; i < MAX_TEX; ++i) {
+        if (render_data.textures[i].texture == NULL) {
+            render_data.back_tex = i;
+            break;
+        }
+    }
+
+    d3d_set_backtex_size(1, 1);
+
+    const float back_texcoords[12] = {
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f,
+
+        1.0f, 1.0f,
+        0.0f, 1.0f,
+        0.0f, 0.0f,
+    };
+
+    for (int i = 0; i < 6; ++i) {
+        render_data.vertices[i].texcoord2[0] = back_texcoords[i*2];
+        render_data.vertices[i].texcoord2[1] = back_texcoords[i*2+1];
+    }
 #else
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
@@ -119,7 +145,6 @@ void Render::init()
 
     glClientActiveTexture(GL_TEXTURE0);
 
-
     glGenTextures(1, &render_data.back_tex);
     glBindTexture(GL_TEXTURE_2D, render_data.back_tex);
 #ifdef CHOWDREN_QUICK_SCALE
@@ -140,21 +165,73 @@ void Render::init()
 
 #ifdef CHOWDREN_USE_D3D
 
+#include <emmintrin.h>
+
+static void load_bgra_sse(int width, int height,
+                          unsigned char *input,
+                          unsigned char *output, int output_pitch)
+{
+    __m128i brMask = _mm_set1_epi32(0x00ff00ff);
+
+    unsigned int * source = (unsigned int*)input;
+
+    for (int y = 0; y < height; y++) {
+        unsigned int *dest = (unsigned int*)&output[y * output_pitch];
+
+        int x = 0;
+
+        for (; ((intptr_t(&dest[x]) & 15) != 0) && x < width; x++) {
+            unsigned int rgba = source[x];
+            dest[x] = (_rotl(rgba, 16) & 0x00ff00ff) | (rgba & 0xff00ff00);
+        }
+
+        for (; x + 3 < width; x += 4) {
+            __m128i sourceData = _mm_loadu_si128((const __m128i*)&source[x]);
+            __m128i gaComponents = _mm_andnot_si128(brMask, sourceData);
+            __m128i brComponents = _mm_and_si128(sourceData, brMask);
+            __m128i brSwapped = _mm_shufflehi_epi16(
+                _mm_shufflelo_epi16(brComponents,
+                                    _MM_SHUFFLE(2, 3, 0, 1)),
+                                    _MM_SHUFFLE(2, 3, 0, 1));
+            __m128i result = _mm_or_si128(gaComponents, brSwapped);
+            _mm_store_si128((__m128i*)&dest[x], result);
+        }
+
+        for (; x < width; x++) {
+            unsigned int rgba = source[x];
+            dest[x] = (_rotl(rgba, 16) & 0x00ff00ff) | (rgba & 0xff00ff00);
+        }
+
+        source += width;
+    }
+}
+
+static void load_bgra(int width, int height, unsigned char * input,
+                      unsigned char *output, int output_pitch)
+{
+    unsigned int * input2 = (unsigned int*)input;
+
+    for (int y = 0; y < height; ++y) {
+        unsigned int * output2 = (unsigned int*)&output[y * output_pitch];
+
+        for (int x = 0; x < width; ++x) {
+            unsigned int rgba = input2[x];
+            output2[x] = (_rotl(rgba, 16) & 0x00ff00ff) | (rgba & 0xff00ff00);
+        }
+
+        input2 += width;
+    }
+}
+
 static void set_rgba_data(void * in_pixels, D3DLOCKED_RECT * rect,
                           int width, int height)
 {
-    int w_b = width * 4;
-    if (rect->Pitch == w_b) {
-        memcpy(rect->pBits, in_pixels, width * height * 4);
-        return;
-    }
     unsigned char * data = (unsigned char*)rect->pBits;
     unsigned char * pixels = (unsigned char*)in_pixels;
-    for (int y = 0; y < height; y++) {
-        memcpy(data, pixels, w_b);
-        data += rect->Pitch;
-        pixels += w_b;
-    }
+    if (render_data.has_sse2)
+        load_bgra_sse(width, height, pixels, data, rect->Pitch);
+    else
+        load_bgra(width, height, pixels, data, rect->Pitch);
 }
 
 static void set_alpha_data(void * in_pixels, D3DLOCKED_RECT * rect,
@@ -209,6 +286,29 @@ Texture Render::create_tex(void * pixels, Format f, int width, int height)
     }
     t.texture->UnlockRect(0);
     return tex;
+}
+
+Texture Render::copy_rect(int x1, int y1, int x2, int y2)
+{
+    int xx1, yy1, xx2, yy2;
+    intersect(0, 0, current_fbo->w, current_fbo->h, x1, y1, x2, y2,
+              xx1, yy1, xx2, yy2);
+    TextureData & tex = render_data.textures[render_data.back_tex];
+    int w, h;
+    w = x2 - x1;
+    h = y2 - y1;
+
+    RECT src = {xx1, yy1, xx2, yy2};
+    RECT dst = {xx1 - x1, yy1 - y1, xx2 - x1, yy2 - y1};
+
+    d3d_set_backtex_size(w, h);
+    IDirect3DSurface9 * surface;
+    TextureData & td = render_data.textures[render_data.back_tex];
+    td.texture->GetSurfaceLevel(0, &surface);
+    render_data.device->StretchRect(current_fbo->fbo, &src, surface, &dst,
+                                    D3DTEXF_NONE);
+    surface->Release();
+    return render_data.back_tex;
 }
 
 #endif

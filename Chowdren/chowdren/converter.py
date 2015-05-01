@@ -651,9 +651,11 @@ class Converter(object):
         copyright = fix_quotes(args.copyright or game.author)
         self.base_path = get_base_path()
         self.root_path = get_root_path()
-        self.info_dict = dict(company = company, version = version,
-            copyright = copyright, description = game.name,
-            version_number = version_number, name = game.name)
+        self.platform_name = args.platform or 'generic'
+        self.info_dict = dict(company=company, version=version,
+                              copyright=copyright, description=game.name,
+                              version_number=version_number, name=game.name,
+                              platform=self.platform_name)
 
         base_path = self.base_path
         if args.copy_base:
@@ -666,7 +668,6 @@ class Converter(object):
         self.info_dict['base_path'] = base_path
 
         # assets, platform and config
-        self.platform_name = args.platform or 'generic'
         self.config = ConfigurationFile(self, args.config)
         self.config.init()
         self.assets = Assets(self, args.skipassets)
@@ -2065,10 +2066,10 @@ class Converter(object):
             if PROFILE:
                 objects_file.putlnc('PROFILE_BLOCK(%s_draw);', class_name)
             if depth is not None:
-                objects_file.putlnc('glc_set_depth(%s);', depth)
+                objects_file.putlnc('Render::set_depth(%s);', depth)
             objects_file.putlnc('%s::draw();', subclass)
             if depth is not None:
-                objects_file.putlnc('glc_set_depth(0.0f);')
+                objects_file.putlnc('Render::set_depth(0.0f);')
             objects_file.end_brace()
 
         objects_file.end_brace(True)

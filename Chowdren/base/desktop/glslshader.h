@@ -40,4 +40,7 @@ public:
     static void set_image(FrameObject * instance, int src);
 };
 
+void set_scale_uniform(float width, float height,
+                       float x_scale, float y_scale);
+
 #endif // CHOWDREN_GLSLSHADER_H

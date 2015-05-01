@@ -516,24 +516,24 @@ void Layer::update_position()
         return;
     }
 
-    int x = frame->off_x;
-    int y = frame->off_y;
-    int w = frame->width;
-    int h = frame->height;
+    int frame_x = frame->off_x;
+    int frame_y = frame->off_y;
+    int w = frame->virtual_width;
+    int h = frame->virtual_height;
 
-    int x1 = x - INACTIVE_X;
+    int x1 = frame_x - INACTIVE_X;
     if (x1 < 0)
         x1 = -KILL_X;
 
-    int x2 = x + WINDOW_WIDTH + INACTIVE_X;
+    int x2 = frame_x + WINDOW_WIDTH + INACTIVE_X;
     if (x2 > w)
         x2 = w + KILL_X;
 
-    int y1 = y - INACTIVE_Y;
+    int y1 = frame_y - INACTIVE_Y;
     if (y1 < 0)
         y1 = -KILL_Y;
 
-    int y2 = y + WINDOW_HEIGHT + INACTIVE_Y;
+    int y2 = frame_y + WINDOW_HEIGHT + INACTIVE_Y;
     if (y2 > h)
         y2 = h + KILL_Y;
 
@@ -546,7 +546,6 @@ void Layer::update_position()
     kill_box[2] = w + KILL_X - off_x;
     kill_box[1] = -KILL_Y - off_y;
     kill_box[3] = h + KILL_Y - off_y;
-
 }
 
 void Layer::add_background_object(FrameObject * instance)
@@ -816,7 +815,7 @@ void Layer::draw(int display_x, int display_y)
                        -floor(display_y * coeff_y - y));
 
 #ifdef CHOWDREN_IS_3DS
-    glc_set_global_depth(depth);
+    Render::set_global_depth(depth);
 #endif
 
     // draw backgrounds

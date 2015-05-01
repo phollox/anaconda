@@ -421,22 +421,10 @@ void BallMovement::update()
 
 void BallMovement::bounce(bool collision)
 {
-#if 0 
-    if (collision)
-        push_out();
-
-    // fix_position();
+#ifdef CHOWDREN_IS_AVGN
+    fix_position();
 
     int direction = instance->direction;
-    // int random = randrange(100);
-    // if (random < randomizer) {
-    //     random >>= 2;
-    //     if (random < 25) {
-    //         random -= 12;
-    //         random &= 31;
-    //         direction = random;
-    //     }
-    // }
 
     float angle = rad(direction * 11.25f);
 
@@ -455,7 +443,6 @@ void BallMovement::bounce(bool collision)
     }
 
     if (found_a == -1.0f) {
-        std::cout << "no a found" << std::endl;
         instance->set_direction((instance->direction + 16) % 32, false);
         return;
     }
@@ -466,8 +453,10 @@ void BallMovement::bounce(bool collision)
 
     instance->set_direction(deg(angle) / 11.25f, false);
 
-    if (test_offset(0, 0))
-        fix_position();
+    if (back_col)
+        instance->flags &= ~REPEAT_BACK_COLLISION;
+    else
+        instance->collision_flags = 0;
 #else
     add_x = add_y = 0;
 

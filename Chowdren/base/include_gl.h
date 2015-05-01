@@ -21,6 +21,7 @@ extern PFNGLBLENDFUNCSEPARATEEXTPROC __glBlendFuncSeparateEXT;
 extern PFNGLACTIVETEXTUREARBPROC __glActiveTextureARB;
 extern PFNGLCLIENTACTIVETEXTUREARBPROC __glClientActiveTextureARB;
 extern PFNGLGENFRAMEBUFFERSEXTPROC __glGenFramebuffersEXT;
+extern PFNGLDELETEFRAMEBUFFERSEXTPROC __glDeleteFramebuffersEXT;
 extern PFNGLFRAMEBUFFERTEXTURE2DEXTPROC __glFramebufferTexture2DEXT;
 extern PFNGLBINDFRAMEBUFFEREXTPROC __glBindFramebufferEXT;
 
@@ -46,6 +47,7 @@ extern PFNGLGETUNIFORMLOCATIONARBPROC __glGetUniformLocationARB;
 #define glActiveTexture __glActiveTextureARB
 #define glClientActiveTexture __glClientActiveTextureARB
 #define glGenFramebuffers __glGenFramebuffersEXT
+#define glDeleteFramebuffers __glDeleteFramebuffersEXT
 #define glBindFramebuffer __glBindFramebufferEXT
 #define glFramebufferTexture2D __glFramebufferTexture2DEXT
 
@@ -72,6 +74,8 @@ extern PFNGLGETUNIFORMLOCATIONARBPROC __glGetUniformLocationARB;
 #include <SDL_opengles2.h>
 
 #endif // CHOWDREN_USE_GL
+
+#undef TRANSPARENT
 
 #endif // CHOWDREN_IS_DESKTOP
 

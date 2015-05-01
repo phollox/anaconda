@@ -86,3 +86,6 @@ def get_object_depth(converter, obj):
 
 def use_webp(converter):
     return False
+
+def use_global_alterables(converter, obj):
+    return False

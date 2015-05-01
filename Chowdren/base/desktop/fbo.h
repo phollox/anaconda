@@ -4,6 +4,9 @@
 #include "include_gl.h"
 #include "render.h"
 
+class Framebuffer;
+extern Framebuffer * current_fbo;
+
 class Framebuffer
 {
 public:

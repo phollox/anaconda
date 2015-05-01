@@ -1,21 +1,25 @@
 #include "fbo.h"
 #include "chowconfig.h"
 
-static Framebuffer * current_fbo = NULL;
+Framebuffer * current_fbo = NULL;
 
 #ifdef CHOWDREN_USE_D3D
 Framebuffer * Framebuffer::fbos[32];
 #endif
 
 Framebuffer::Framebuffer(int w, int h)
-: fbo_index(-1)
 {
+#ifdef CHOWDREN_USE_D3D
+    fbo_index = -1;
+#endif
     init(w, h);
 }
 
 Framebuffer::Framebuffer()
-: fbo_index(-1)
 {
+#ifdef CHOWDREN_USE_D3D
+    fbo_index = -1;
+#endif
 }
 
 Framebuffer::~Framebuffer()
@@ -26,8 +30,8 @@ Framebuffer::~Framebuffer()
     TextureData & t = render_data.textures[tex];
     t.texture->Release();
 #else
-    glDestroyTextures(1, &tex);
-    // XXX delete framebuffer
+    glDeleteTextures(1, &tex);
+    glDeleteFramebuffers(1, &fbo);
 #endif
 }
 
@@ -57,9 +61,9 @@ void Framebuffer::init(int w, int h)
     HRESULT hr = render_data.device->CreateTexture(w, h, 1,
                                                    D3DUSAGE_RENDERTARGET,
                                                    D3DFMT_A8R8G8B8,
-                                                   D3DPOOL_DEFAULT, &t.texture,
-												   NULL); D3DERR_INVALIDCALL;
-    std::cout << "render target hr: " << hr << std::endl;
+                                                   D3DPOOL_DEFAULT,
+                                                   &t.texture,
+                                                   NULL);
 #ifdef CHOWDREN_POINT_FILTER
     t.sampler = D3DTEXF_POINT;
 #else

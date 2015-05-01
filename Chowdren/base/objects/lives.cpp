@@ -28,12 +28,10 @@ void Lives::update()
 
 void Lives::draw()
 {
-    blend_color.apply();
-
     int xx = x;
     int i = 0;
     while (i < manager.lives) {
-        image->draw(xx, y);
+        image->draw(xx, y, blend_color);
         xx += image->width;
         i++;
     }
