@@ -58,6 +58,7 @@ NATIVE_SHADERS = {
     'PixelOutline_alphacoef support.fx' : 'pixeloutline',
     'BrightnessSaturationBg.fx' : 'brightsatbg',
     'BgBlur.fx' : 'bgblur',
+    'Blur.fx' : 'blur',
 
     # missing effects
     'CRT.fx' : None,

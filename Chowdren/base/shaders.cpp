@@ -954,6 +954,28 @@ int PixelScaleShader::y_scale;
 int PixelScaleShader::x_size;
 int PixelScaleShader::y_size;
 
+class BlurShader : public BaseShader
+{
+public:
+    static int radius;
+    
+    BlurShader()
+    : BaseShader(SHADER_BLUR, SHADER_HAS_TEX_SIZE)
+    {
+    }
+    
+    void initialize_parameters()
+    {
+        radius = get_uniform("radius");
+    }
+    
+    static void set_parameters(FrameObject * instance)
+    {
+        BaseShader::set_float(instance, SHADER_PARAM_RADIUS, radius);
+    }
+};
+int BlurShader::radius;
+
 class TextureShader : public BaseShader
 {
 public:
@@ -1018,5 +1040,6 @@ PixelOutlineShader pixeloutline_shader;
 BrightSatBgShader brightsatbg_shader;
 BgBlurShader bgblur_shader;
 PixelScaleShader pixelscale_shader;
+BlurShader blur_shader;
 TextureShader texture_shader;
 FontShader font_shader;
