@@ -88,8 +88,8 @@ void shader_set_effect(int effect, FrameObject * obj,
         case Render::FONT:
             font_shader.begin(NULL, 0, 0);
             break;
-        case Render::CHANNELBLURADD:
-            DO_SHADER(channelblur_shader);
+        case Render::BLURADD:
+            DO_SHADER(blur_shader);
             SET_BLEND_FUNC(FUNC_SRC_ALPHA, FUNC_ONE);
             break;
         HANDLE_SHADER(PERSPECTIVE, perspective_shader);
@@ -119,5 +119,6 @@ void shader_set_effect(int effect, FrameObject * obj,
         HANDLE_SHADER(PATTERNOVERLAY, patternoverlay_shader);
         HANDLE_SHADER(BGBLOOM, bgbloom_shader);
         HANDLE_SHADER(MIXER, mixer_shader);
+        HANDLE_SHADER(BLUR, blur_shader);
     }
 }
