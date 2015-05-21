@@ -147,7 +147,7 @@ void SurfaceObject::draw()
             return;
 
         if (use_blur)
-            effect = Render::CHANNELBLURADD;
+            effect = Render::BLURADD;
 
         SurfaceImage & m = *displayed_image;
         Image * hh = m.handle;
@@ -433,12 +433,8 @@ void SurfaceObject::apply_matrix(double div, double offset, double iterations,
                                  double x3y1, double x3y2, double x3y3)
 {
     use_blur = true;
-    set_shader_parameter("fCoeff", 0.005);
-    set_shader_parameter("iR", 1.0);
-    set_shader_parameter("iG", 1.0);
-    set_shader_parameter("iB", 1.0);
-    set_shader_parameter("iA", 1.0);
-    std::cout << "Apply matrix not implemented" << std::endl;
+    set_shader_parameter("radius", 2.25f);
+    //std::cout << "Apply matrix not implemented" << std::endl;
 }
 
 void SurfaceObject::save(const std::string & filename,
