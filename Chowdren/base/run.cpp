@@ -38,7 +38,7 @@ GameManager manager;
 
 // #if !defined(NDEBUG)
 #define CHOWDREN_SHOW_DEBUGGER
-#define SHOW_STATS
+// #define SHOW_STATS
 // #endif
 
 GameManager::GameManager()
@@ -51,10 +51,6 @@ GameManager::GameManager()
 }
 
 static Frames static_frames;
-
-#ifdef CHOWDREN_30_TO_60
-static int in_update = 0;
-#endif
 
 #ifdef CHOWDREN_USER_PROFILER
 static FSFile user_log;
@@ -81,6 +77,8 @@ void GameManager::init()
     axis_moved = false;
     last_axis = -1;
     deadzone = 0.4f;
+    pad_selected = false;
+    pad_disconnected = false;
     for (int i = 0; i < CHOWDREN_BUTTON_MAX-1; i++)
         key_mappings[i] = -1;
     for (int i = 0; i < CHOWDREN_AXIS_MAX-1; i++) {
@@ -113,7 +111,9 @@ void GameManager::init()
 #elif defined(CHOWDREN_IS_FP)
     player_died = false;
     lives = 3;
-    start_frame = 55;
+    start_frame = 56;
+#elif defined(CHOWDREN_IS_NAH)
+    platform_set_scale_type(2);
 #else
     start_frame = 0;
 #endif
@@ -265,10 +265,6 @@ int GameManager::update_frame()
 
 void GameManager::set_framerate(int framerate)
 {
-#ifdef CHOWDREN_30_TO_60
-    if (framerate == 30)
-        framerate = 60;
-#endif
     fps_limit.set(framerate);
 #ifdef CHOWDREN_VSYNC
     static bool vsync_temp = false;
@@ -296,7 +292,6 @@ void GameManager::draw()
     if (window_width <= 0 || window_height <= 0)
         // for some reason, GLFW sets these properties to 0 when minimized.
         return;
-
 
 #ifdef CHOWDREN_FORCE_REMOTE
     platform_set_remote_value(CHOWDREN_REMOTE_TARGET);
@@ -550,6 +545,27 @@ void GameManager::map_axis(int axis,
     axis_pos_mappings[axis-1] = key;
 }
 
+void GameManager::reset_map()
+{
+    for (int i = 0; i < CHOWDREN_BUTTON_MAX-1; i++) {
+        int old_key = key_mappings[i];
+        if (old_key != -1)
+            keyboard.remove(old_key);
+        key_mappings[i] = -1;
+    }
+    for (int i = 0; i < CHOWDREN_AXIS_MAX-1; i++) {
+        int old_key = axis_pos_mappings[i];
+        if (old_key != -1)
+            keyboard.remove(old_key);
+        axis_pos_mappings[i] = -1;
+        old_key = axis_neg_mappings[i];
+        if (old_key != -1)
+            keyboard.remove(old_key);
+        axis_neg_mappings[i] = -1;
+        axis_values[i] = 0;
+    }
+}
+
 #endif
 
 bool GameManager::update()
@@ -571,25 +587,11 @@ bool GameManager::update()
     ss << "Frame " << frame << ": " << fps_limit.dt << " ";
 #endif
 
-#ifdef CHOWDREN_30_TO_60
-    static float dt_acc = 0.0f;
-    in_update = (in_update + 1) % 2;
-    if (in_update == 0) {
-        platform_begin_draw();
-        platform_swap_buffers();
-        dt_acc = fps_limit.dt;
-    } else {
-#endif
-
     // update input
     keyboard.update();
     mouse.update();
 
     platform_poll_events();
-
-#ifdef CHOWDREN_30_TO_60
-    fps_limit.dt += dt_acc;
-#endif
 
     // player controls
     int new_control = get_player_control_flags(1);
@@ -659,6 +661,12 @@ bool GameManager::update()
 
         last_move = new_move;
     }
+
+    static bool last_connected = false;
+    bool connected = is_joystick_attached(1);
+    pad_selected = connected && last_connected != connected;
+    pad_disconnected = !connected && last_connected != connected;
+    last_connected = connected;
 #endif
 
     // update mouse position
@@ -712,10 +720,6 @@ bool GameManager::update()
         print_instance_stats();
 #endif
         platform_print_stats();
-    }
-#endif
-
-#ifdef CHOWDREN_30_TO_60
     }
 #endif
 

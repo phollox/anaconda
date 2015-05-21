@@ -31,8 +31,8 @@ filename = sys.argv[1]
 import os
 
 cwd = os.getcwd()
-path = 'C:\\Programs\\Multimedia Fusion Developer 2\\Extensions\\%s' % filename
-os.chdir('C:\\Programs\\Multimedia Fusion Developer 2\\Data\\Runtime')
+path = 'C:\\Program Files (x86)\\Multimedia Fusion Developer 2\\Extensions\\%s' % filename
+os.chdir('C:\\Program Files (x86)\\Multimedia Fusion Developer 2\\Data\\Runtime')
 loadedExtension = LoadedExtension(loadLibrary(path))
 os.chdir(cwd)
 

@@ -10,19 +10,12 @@ Viewport * Viewport::instance = NULL;
 Viewport::Viewport(int x, int y, int type_id)
 : FrameObject(x, y, type_id)
 {
-    // glGenTextures(1, &texture);
-    // glBindTexture(GL_TEXTURE_2D, texture);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     collision = new InstanceBox(this);
     instance = this;
 }
 
 Viewport::~Viewport()
 {
-    // glDeleteTextures(1, &texture);
     delete collision;
     instance = NULL;
 }

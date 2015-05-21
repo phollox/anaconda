@@ -19,7 +19,7 @@ SurfaceObject::SurfaceObject(int x, int y, int type_id)
   load_failed(false), dest_width(0), dest_height(0), dest_x(0), dest_y(0),
   stretch_mode(0), blit_effect(0), selected_image(NULL), displayed_image(NULL),
   use_fbo_blit(false), use_image_blit(false), vert_index(0), src_width(-1),
-  src_height(-1)
+  src_height(-1), use_blur(false)
 {
     if (!has_fbo) {
         has_fbo = true;
@@ -146,6 +146,9 @@ void SurfaceObject::draw()
         if (displayed_image->handle == NULL)
             return;
 
+        if (use_blur)
+            effect = Render::CHANNELBLURADD;
+
         SurfaceImage & m = *displayed_image;
         Image * hh = m.handle;
 
@@ -217,6 +220,10 @@ void SurfaceObject::resize_canvas(int x1, int y1, int x2, int y2)
                                              y2);
 }
 
+#ifdef CHOWDREN_USE_CAPTURE
+#include "objects/capture.h"
+#endif
+
 void SurfaceObject::load(const std::string & filename,
                          const std::string & ignore_ext)
 {
@@ -227,10 +234,17 @@ void SurfaceObject::load(const std::string & filename,
     selected_image->transparent = Color(255, 0, 255); // old_trans;
 
     std::string path = convert_path(filename);
-    Image * image = get_image_cache(path, 0, 0, 0, 0,
-                                    selected_image->transparent);
+    Image * image = NULL;
+#ifdef CHOWDREN_USE_CAPTURE
+    if (!CaptureObject::filename.empty() &&
+        CaptureObject::filename == path)
+    {
+        image = &CaptureObject::image;
+    }
+#endif
+    if (image == NULL)
+        image = get_image_cache(path, 0, 0, 0, 0, selected_image->transparent);
     selected_image->set_image(image);
-
     if (image == NULL)
         load_failed = true;
 
@@ -277,8 +291,8 @@ void SurfaceObject::scroll(int x, int y, int wrap)
             SurfaceBlit & img = *it;
             img.scroll_x += x;
             img.scroll_y += y;
-            wrap_pos(img.scroll_x, img.x, img.image->width, image->width);
-            wrap_pos(img.scroll_y, img.y, img.image->height, image->height);
+            ::wrap_pos(img.scroll_x, img.x, img.image->width, image->width);
+            ::wrap_pos(img.scroll_y, img.y, img.image->height, image->height);
         }
         return;
     } else if (image == NULL || image->handle == NULL)
@@ -418,6 +432,12 @@ void SurfaceObject::apply_matrix(double div, double offset, double iterations,
                                  double x2y1, double x2y2, double x2y3,
                                  double x3y1, double x3y2, double x3y3)
 {
+    use_blur = true;
+    set_shader_parameter("fCoeff", 0.005);
+    set_shader_parameter("iR", 1.0);
+    set_shader_parameter("iG", 1.0);
+    set_shader_parameter("iB", 1.0);
+    set_shader_parameter("iA", 1.0);
     std::cout << "Apply matrix not implemented" << std::endl;
 }
 

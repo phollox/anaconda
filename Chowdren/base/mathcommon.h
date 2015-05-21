@@ -167,6 +167,18 @@ inline T clamp(T val)
     return x < 0 ? 0 : x;
 }
 
+inline double int_pow(double value, int ex)
+{
+    double result = 1.0;
+    while (ex) {
+        if (ex & 1)
+            result *= value;
+        ex >>= 1;
+        value *= value;
+    }
+    return result;
+}
+
 inline int get_abs(int v)
 {
     return abs(v);

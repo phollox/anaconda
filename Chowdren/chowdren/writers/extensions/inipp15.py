@@ -96,11 +96,14 @@ class FileOperation(ActionMethodWriter):
         if load != LOAD_FILE:
             raise NotImplementedError()
         if path != KEEP_PATH:
-            raise NotImplementedError()
+            print 'inipp15: path %s not implemented' % path
+            # raise NotImplementedError()
         if clear != KEEP_PATH:
-            raise NotImplementedError()
+            print 'inipp15: clear %s not implemented' % clear
+            # raise NotImplementedError()
         if flags != READ_ONLY:
-            raise NotImplementedError()
+            print 'inipp15: read only == false not implemented'
+            # raise NotImplementedError()
         writer.put(to_c('load_file(%s, true, true, true);', filename))
 
 SORT_BY_VALUE = 0

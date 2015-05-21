@@ -124,6 +124,12 @@ void Movement::set_direction(int value)
 
 }
 
+void Movement::init()
+{
+    if (flags & MOVE_AT_START)
+        start();
+}
+
 void Movement::start()
 {
     if (max_speed == 0 || speed > 0)
@@ -138,15 +144,11 @@ void Movement::reverse()
 
 void Movement::stop(bool collision)
 {
-    if (speed != 0)
-        max_speed = speed;
     set_speed(0);
 }
 
 void Movement::bounce(bool collision)
 {
-    if (speed != 0)
-        max_speed = speed;
     set_speed(0);
 }
 
@@ -335,9 +337,17 @@ StaticMovement::StaticMovement(FrameObject * instance)
 // BallMovement
 
 BallMovement::BallMovement(FrameObject * instance)
-: Movement(instance), speed_change(0.0)
+: Movement(instance), speed_change(0.0), stop_speed(0)
 {
 
+}
+
+void BallMovement::init()
+{
+    if (flags & MOVE_AT_START)
+        set_speed(max_speed);
+    else
+        stop_speed = max_speed;
 }
 
 const int rebond_list[] = {
@@ -373,9 +383,10 @@ const int plus_angles_try[] = {-4, 4, -4, 4, -4, 4};
 
 void BallMovement::update()
 {
-    if (speed == 0)
+    if (stop_speed != 0 || speed == 0) {
         instance->set_animation(STOPPED);
-    else
+        return;
+    } else
         instance->set_animation(WALKING);
     double add_x, add_y;
     get_dir(instance->direction, add_x, add_y);
@@ -416,11 +427,35 @@ void BallMovement::update()
                         * instance->frame->timer_mul;
     int change = (int)speed_change;
     speed_change -= change;
-    set_speed(int_max(0, speed + change));
+    speed = int_max(0, speed + change);
+}
+
+void BallMovement::start()
+{
+    if (stop_speed == 0)
+        return;
+    speed = stop_speed;
+    stop_speed = 0;
+}
+
+void BallMovement::set_speed(int speed)
+{
+    this->speed = speed;
+    stop_speed = 0;
+}
+
+void BallMovement::stop(bool collision)
+{
+    if (stop_speed != 0)
+        return;
+    stop_speed = speed;
+    speed = 0;
 }
 
 void BallMovement::bounce(bool collision)
 {
+    if (stop_speed != 0)
+        return;
 #ifdef CHOWDREN_IS_AVGN
     fix_position();
 
@@ -538,7 +573,6 @@ void BallMovement::set_deceleration(int value)
 VectorMovement::VectorMovement(FrameObject * instance)
 : Movement(instance), angle(0.0)
 {
-
 }
 
 void VectorMovement::update()
@@ -711,15 +745,16 @@ void PathMovement::reverse()
 // PinballMovement
 
 PinballMovement::PinballMovement(FrameObject * instance)
-: Movement(instance), x_speed(0.0f), y_speed(0.0f), stopped(true)
+: Movement(instance), x_speed(0.0f), y_speed(0.0f)
 {
+    flags |= MOVE_STOPPED;
 }
 
 void PinballMovement::start()
 {
-    if (!stopped)
+    if (!(flags & MOVE_STOPPED))
         return;
-    stopped = false;
+    flags &= ~MOVE_STOPPED;
     Movement::start();
     get_dir(instance->direction, x_speed, y_speed);
     x_speed *= speed;
@@ -729,9 +764,7 @@ void PinballMovement::start()
 
 void PinballMovement::stop(bool collision)
 {
-    if (stopped)
-        return;
-    stopped = true;
+    flags |= MOVE_STOPPED;
 }
 
 void PinballMovement::set_direction(int value)
@@ -755,7 +788,7 @@ float get_pinball_angle(float x, float y)
 
 void PinballMovement::update()
 {
-    if (stopped) {
+    if (flags & MOVE_STOPPED) {
         instance->set_animation(STOPPED);       
         return;
     }

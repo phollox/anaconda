@@ -27,6 +27,18 @@ Shaders:
 Files:
     uint32 size
     data
+
+Texture map proposal:
+Images:
+    X, Y hotspot (short)
+    X, Y action point (short)
+    Texture_map (short)
+    X, Y pos in map (short)
+    W, H size in map (short)
+
+Texture maps:
+    W, H map size
+    PNG image (or zlib data?)
 """
 
 NONE_TYPE, WAV_TYPE, OGG_TYPE, NATIVE_TYPE = xrange(4)
@@ -37,6 +49,7 @@ AUDIO_TYPES = {
 }
 
 import os
+import sys
 from chowdren.shader import get_shader_programs
 from chowdren.common import get_method_name, get_sized_data
 from chowdren.stringhash import get_string_int_map
@@ -206,8 +219,10 @@ class Assets(object):
     def get_sound_id(self, name):
         return self.sound_ids.get(name.lower(), 'INVALID_ASSET_ID')
 
-    def add_image(self, hot_x, hot_y, act_x, act_y, data):
+    def add_image(self, width, height, hot_x, hot_y, act_x, act_y, data):
         writer = ByteReader()
+        writer.writeShort(width, True)
+        writer.writeShort(height, True)
         writer.writeShort(hot_x)
         writer.writeShort(hot_y)
         writer.writeShort(act_x)

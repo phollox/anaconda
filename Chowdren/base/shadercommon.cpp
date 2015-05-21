@@ -88,6 +88,10 @@ void shader_set_effect(int effect, FrameObject * obj,
         case Render::FONT:
             font_shader.begin(NULL, 0, 0);
             break;
+        case Render::CHANNELBLURADD:
+            DO_SHADER(channelblur_shader);
+            SET_BLEND_FUNC(FUNC_SRC_ALPHA, FUNC_ONE);
+            break;
         HANDLE_SHADER(PERSPECTIVE, perspective_shader);
         HANDLE_SHADER(MONOCHROME, monochrome_shader);
         HANDLE_SHADER(ZOOMOFFSET, zoomoffset_shader);

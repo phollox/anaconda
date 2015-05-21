@@ -68,6 +68,7 @@ public:
     void set_sample_pan(unsigned int id, double pan);
     void set_sample_position(unsigned int id, double pos);
     void set_sample_frequency(unsigned int id, double freq);
+    double get_sample_volume(unsigned int id);
     double get_sample_position(unsigned int id);
     double get_sample_duration(unsigned int id);
     void stop_sample(unsigned int id);

@@ -117,6 +117,10 @@ Background::~Background()
 
 void Background::reset(bool clear_items)
 {
+#ifdef CHOWDREN_PASTE_CACHE
+    dirty = true;
+#endif
+
     if (!clear_items)
         return;
 
@@ -164,6 +168,10 @@ void Background::destroy_at(int x, int y)
                      item->dest_x + item->src_width,
                      item->dest_y + item->src_height,
                      x, y, x+1, y+1)) {
+#ifdef CHOWDREN_PASTE_CACHE
+            if (collides(item->aabb, cache_pos))
+                dirty = true;
+#endif
             delete item;
             it = items.erase(it);
         } else {
@@ -278,10 +286,16 @@ void Background::paste(Image * img, int dest_x, int dest_y,
     if (color.a == 0 || color.a == 1)
         return;
 
+
     BackgroundItem * item = new BackgroundItem(img, dest_x, dest_y,
                                                src_x, src_y,
                                                src_width, src_height,
                                                color);
+
+#ifdef CHOWDREN_PASTE_CACHE
+    if (collides(cache_pos, item->aabb) && fbo.tex != 0)
+        new_paste.push_back(item);
+#endif
 
 #ifdef CHOWDREN_PASTE_BROADPHASE
     items.add(item, item->aabb);
@@ -297,8 +311,75 @@ void Background::paste(Image * img, int dest_x, int dest_y,
 #endif
 }
 
+inline bool contains(int b1[4], int b2[4])
+{
+    return b2[0] >= b1[0] && b2[1] >= b1[1] &&
+           b2[2] <= b1[2] && b2[3] <= b1[3];
+}
+
 void Background::draw(int v[4])
 {
+#ifdef CHOWDREN_PASTE_CACHE
+    if (dirty || !contains(cache_pos, v)) {
+        new_paste.clear();
+        dirty = false;
+        const int cache_off_x = (1024 - WINDOW_WIDTH) / 2;
+        const int cache_off_y = (1024 - WINDOW_HEIGHT) / 2;
+
+        cache_pos[0] = v[0] - cache_off_x;
+        cache_pos[1] = v[1] - cache_off_y;
+        cache_pos[2] = v[2] + cache_off_x;
+        cache_pos[3] = v[3] + cache_off_y;
+        
+        if (fbo.tex == 0)
+            fbo.init(cache_pos[2] - cache_pos[0], cache_pos[3] - cache_pos[1]);
+
+        fbo.bind();
+        Render::set_view(0, 0,
+                         cache_pos[2] - cache_pos[0],
+                         cache_pos[3] - cache_pos[1]);
+		int old_offset[2] = {Render::offset[0], Render::offset[1]};
+        Render::set_offset(-cache_pos[0], -cache_pos[1]);
+        Render::clear(0, 0, 0, 0);
+
+        BackgroundItems::const_iterator it;
+        for (it = items.begin(); it != items.end(); ++it) {
+            BackgroundItem * item = *it;
+            if (!collides(item->aabb, cache_pos))
+                continue;
+            item->draw();
+        }
+
+        fbo.unbind();
+
+        Render::set_view(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        Render::set_offset(old_offset[0], old_offset[1]);
+    } else if (!new_paste.empty()) {
+        fbo.bind();
+        Render::set_view(0, 0,
+                         cache_pos[2] - cache_pos[0],
+                         cache_pos[3] - cache_pos[1]);
+        int old_offset[2] = {Render::offset[0], Render::offset[1]};
+        Render::set_offset(-cache_pos[0], -cache_pos[1]);
+
+        BackgroundItems::const_iterator it;
+        for (it = new_paste.begin(); it != new_paste.end(); ++it) {
+            BackgroundItem * item = *it;
+            item->draw();
+        }
+        fbo.unbind();
+        Render::set_view(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        Render::set_offset(old_offset[0], old_offset[1]);
+
+        new_paste.clear();
+    }
+
+    Texture t = fbo.get_tex();
+    Render::draw_tex(cache_pos[0], cache_pos[1],
+                     cache_pos[2], cache_pos[3],
+                     Color(), t);
+#else
+
 #ifdef CHOWDREN_PASTE_BROADPHASE
 #else
     BackgroundItems::const_iterator it;
@@ -308,6 +389,8 @@ void Background::draw(int v[4])
             continue;
         item->draw();
     }
+#endif
+
 #endif
 }
 
@@ -1212,6 +1295,11 @@ void Frame::draw(int remote)
         layer.draw(off_x, off_y);
     }
 
+#ifdef CHOWDREN_USE_CAPTURE
+    if (remote != CHOWDREN_REMOTE_ONLY)
+        CaptureObject::on_capture();
+#endif
+
 // #ifdef CHOWDREN_USE_BOX2D
 //     Box2D::draw_debug();
 // #endif
@@ -1309,6 +1397,12 @@ void Frame::reset()
     off_x = new_off_x = 0;
     off_y = new_off_y = 0;
     frame_time = 0.0;
+
+#ifdef CHOWDREN_USE_BACKMAGIC
+    for (unsigned int i = 0; i < MAX_BACK_ID; ++i) {
+        back_instances[i].clear();
+    }
+#endif
 }
 
 // FrameObject
@@ -1881,8 +1975,7 @@ void FrameObject::set_movement(int i)
     if (movement != NULL && (i < 0 || i >= movement_count))
         return;
     movement = movements[i];
-    if (movement->flags & Movement::MOVE_AT_START)
-        movement->start();
+    movement->init();
 }
 
 Movement * FrameObject::get_movement()
@@ -2265,10 +2358,6 @@ void File::rename_file(const std::string & src, const std::string & dst)
     delete_file(src);
 }
 
-// MathHelper
-
-MathHelper math_helper;
-
 // joystick
 
 int remap_button(int n)
@@ -2289,6 +2378,25 @@ int remap_button(int n)
             return n;
     }
     return n;
+#elif defined(CHOWDREN_JOYSTICK2_CONTROLLER)
+    switch (n) {
+        case 5:
+            return CHOWDREN_BUTTON_LEFTSHOULDER; // 10
+        case 6:
+            return CHOWDREN_BUTTON_RIGHTSHOULDER; // 11
+        case 7:
+            return CHOWDREN_BUTTON_BACK; // 5
+        case 8:
+            return CHOWDREN_BUTTON_START; // 7
+        case 9:
+            return CHOWDREN_BUTTON_LEFTSTICK; // 8
+        case 10:
+            return CHOWDREN_BUTTON_RIGHTSTICK; // 9
+        case 11:
+            return CHOWDREN_BUTTON_GUIDE; // 6
+        default:
+            return n;
+    }
 #else
     return n;
 #endif
@@ -2403,6 +2511,11 @@ int get_joystick_degrees(int n)
     return dir * 45;
 }
 
+int get_joystick_z(int n)
+{
+    return get_joystick_axis(n, CHOWDREN_AXIS_TRIGGERRIGHT) * -1000.0f;
+}
+
 int get_joystick_rt(int n)
 {
     return get_joystick_axis(n, CHOWDREN_AXIS_TRIGGERRIGHT) * 100.0f;
@@ -2421,6 +2534,45 @@ int get_joystick_x(int n)
 int get_joystick_y(int n)
 {
     return get_joystick_axis(n, CHOWDREN_AXIS_LEFTY) * 1000.0f;
+}
+
+#define UNIFIED_AXIS_SIZE 2
+#define UNIFIED_POV_SIZE 4
+#define UNIFIED_BUTTON_MAX (128)
+#define UNIFIED_AXIS_MAX   (UNIFIED_AXIS_SIZE * 8) //16
+#define UNIFIED_AXIS_0   UNIFIED_BUTTON_MAX
+#define UNIFIED_POV_0    (UNIFIED_AXIS_0 + UNIFIED_AXIS_MAX)
+
+std::string get_joytokey_name(int id)
+{
+    std::ostringstream s;
+
+    int directionToHat[4] = {1, 2, 4, 8};
+    
+    if (id >= UNIFIED_POV_0)
+    {
+        s << 'h';
+        int localID = (id - UNIFIED_POV_0) / UNIFIED_POV_SIZE;
+        int direction = (id - UNIFIED_AXIS_0) % UNIFIED_POV_SIZE;
+        s << localID;
+        s << '.';
+        s << directionToHat[direction];
+    }
+    else if (id >= UNIFIED_AXIS_0)
+    {
+        s << 'a';
+        int localID = (id - UNIFIED_AXIS_0) / UNIFIED_AXIS_SIZE;
+        int direction = (id - UNIFIED_AXIS_0) % UNIFIED_AXIS_SIZE;
+        s << localID;
+        s << (char)(direction ? '-' : '+');
+    }
+    else
+    {
+        s << 'b';
+        s << id;
+    }
+
+    return s.str();
 }
 
 struct RumbleEffect

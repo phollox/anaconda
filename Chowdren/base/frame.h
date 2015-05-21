@@ -13,6 +13,10 @@
 #include "color.h"
 #include "instancemap.h"
 
+#ifdef CHOWDREN_PASTE_CACHE
+#include "fbo.h"
+#endif
+
 class BackgroundItem;
 class CollisionBase;
 
@@ -27,6 +31,13 @@ public:
 #else
     BackgroundItems items;
     BackgroundItems col_items;
+#endif
+
+#ifdef CHOWDREN_PASTE_CACHE
+    bool dirty;
+    BackgroundItems new_paste;
+    int cache_pos[4];
+    Framebuffer fbo;
 #endif
 
     Background();
@@ -129,6 +140,7 @@ typedef hash_map<std::string, DynamicLoop> DynamicLoops;
 class GameManager;
 class GlobalValues;
 class GlobalStrings;
+class Backdrop;
 
 class FrameData
 {
@@ -171,6 +183,11 @@ public:
     double frame_time;
     int timer_base;
     float timer_mul;
+
+#ifdef CHOWDREN_USE_BACKMAGIC
+    FlatObjectList back_instances[MAX_BACK_ID];
+    Backdrop * back_obj;
+#endif
 
     FrameObject * col_instance_1;
     FrameObject * col_instance_2;

@@ -9,6 +9,7 @@ Framebuffer * Framebuffer::fbos[32];
 
 Framebuffer::Framebuffer(int w, int h)
 {
+    tex = 0;
 #ifdef CHOWDREN_USE_D3D
     fbo_index = -1;
 #endif
@@ -17,6 +18,7 @@ Framebuffer::Framebuffer(int w, int h)
 
 Framebuffer::Framebuffer()
 {
+    tex = 0;
 #ifdef CHOWDREN_USE_D3D
     fbo_index = -1;
 #endif
@@ -75,7 +77,7 @@ void Framebuffer::init(int w, int h)
 #else
     // for fullscreen or window resize
     glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
+    set_tex(tex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                  NULL);
 #ifdef CHOWDREN_POINT_FILTER

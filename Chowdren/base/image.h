@@ -88,6 +88,7 @@ public:
     FileImage(const std::string & filename, int hot_x, int hot_y,
               int act_x, int act_y, TransparentColor transparent);
     void load_file();
+    void set_transparent_color(TransparentColor color);
 };
 
 Image * get_internal_image(unsigned int i);

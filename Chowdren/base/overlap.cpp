@@ -444,7 +444,8 @@ bool check_overlap(QualifierList & list1, QualifierList & list2)
 
 // ObjectList vs ObjectList
 
-bool check_not_overlap(ObjectList & list1, ObjectList & list2)
+bool check_not_overlap_impl(ObjectList & list1, ObjectList & list2,
+                            bool & checked)
 {
     for (ObjectIterator it1(list1); !it1.end(); ++it1) {
         FrameObject * instance = *it1;
@@ -452,6 +453,7 @@ bool check_not_overlap(ObjectList & list1, ObjectList & list2)
             continue;
         ObjectList::iterator it2;
         for (it2 = list2.begin(); it2 != list2.end(); ++it2) {
+            checked = true;
             FrameObject * other = it2->obj;
             if (!instance->overlaps(other))
                 continue;
@@ -461,37 +463,49 @@ bool check_not_overlap(ObjectList & list1, ObjectList & list2)
     return true;
 }
 
+bool check_not_overlap(ObjectList & list1, ObjectList & list2)
+{
+    bool checked = false;
+    if (!check_not_overlap_impl(list1, list2, checked))
+        return false;
+    return checked;
+}
+
 // QualifierList vs ObjectList
 
 bool check_not_overlap(QualifierList & list1, ObjectList & list2)
 {
+    bool checked = false;
     for (int i = 0; i < list1.count; i++) {
-        if (!check_not_overlap(*list1.items[i], list2))
+        if (!check_not_overlap_impl(*list1.items[i], list2, checked))
             return false;
     }
-    return true;
+    return checked;
 }
 
 bool check_not_overlap(ObjectList & list1, QualifierList & list2)
 {
+    bool checked = false;
     for (int i = 0; i < list2.count; i++) {
-        if (!check_not_overlap(list1, *list2.items[i]))
+        if (!check_not_overlap_impl(list1, *list2.items[i], checked))
             return false;
     }
-    return true;
+    return checked;
 }
 
 // QualifierList vs QualifierList
 
 bool check_not_overlap(QualifierList & list1, QualifierList & list2)
 {
+    bool checked = false;
     for (int i = 0; i < list1.count; i++) {
         for (int ii = 0; ii < list2.count; ii++) {
-            if (!check_not_overlap(*list1.items[i], *list2.items[ii]))
+            if (!check_not_overlap_impl(*list1.items[i], *list2.items[ii],
+                                        checked))
                 return false;
         }
     }
-    return true;
+    return checked;
 }
 
 // FrameObject vs ObjectList
@@ -502,13 +516,15 @@ bool check_not_overlap(FrameObject * obj, ObjectList & list)
     if (col == NULL)
         return true;
     ObjectList::iterator it;
+    bool checked = false;
     for (it = list.begin(); it != list.end(); ++it) {
+        checked = true;
         FrameObject * other = it->obj;
         if (!obj->overlaps(other))
             continue;
         return false;
     }
-    return true;
+    return checked;
 }
 
 // FrameObject vs QualifierList
@@ -518,18 +534,19 @@ bool check_not_overlap(FrameObject * obj, QualifierList & list)
     CollisionBase * col = obj->collision;
     if (col == NULL)
         return true;
+    bool checked = false;
     for (int i = 0; i < list.count; i++) {
         ObjectList & list2 = *list.items[i];
-
         ObjectList::iterator it;
         for (it = list2.begin(); it != list2.end(); ++it) {
+            checked = true;
             FrameObject * other = it->obj;
             if (!obj->overlaps(other))
                 continue;
             return false;
         }
     }
-    return true;
+    return checked;
 }
 
 // on collision

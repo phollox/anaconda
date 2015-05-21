@@ -38,7 +38,11 @@ static D3DPRESENT_PARAMETERS pparams;
 static SDL_GLContext global_context = NULL;
 #endif
 
+static int clear_backbuffer = 0;
+static bool in_reset = false;
 static bool is_fullscreen = false;
+static int fullscreen_width = -1;
+static int fullscreen_height = -1;
 static bool hide_cursor = false;
 static bool has_closed = false;
 static Uint64 start_time;
@@ -48,6 +52,8 @@ static int draw_x_size = 0;
 static int draw_y_size = 0;
 static int draw_x_off = 0;
 static int draw_y_off = 0;
+
+#define CHOWDREN_DESKTOP_FULLSCREEN
 
 #ifdef CHOWDREN_USE_GL
 // opengl function pointers
@@ -237,18 +243,36 @@ void platform_init()
 
 static int vsync_value = -2;
 static double vsync_fail_time = 0.0;
+static bool disable_resize_shader = false;
 
-void check_vsync()
+void check_slowdown()
 {
+    int window_flags = SDL_GetWindowFlags(global_window);
+    if (window_flags & (SDL_WINDOW_MINIMIZED | SDL_WINDOW_HIDDEN))
+        return;
+
     double expected = 1.0 / manager.fps_limit.framerate;
-    if (manager.fps_limit.dt - expected > 0.0015) {
+    if (manager.fps_limit.dt - expected > 0.0025) {
         vsync_fail_time += expected;
     } else {
         vsync_fail_time = 0.0;
         return;
     }
 
-    if (vsync_fail_time > 2.0) {
+    if (vsync_fail_time <= 2.0)
+        return;
+
+    vsync_fail_time = 0.0;
+
+#ifdef CHOWDREN_SPECIAL_POINT_FILTER
+    if (!disable_resize_shader) {
+        std::cout << "Disable resize shader, too slow " << std::endl;
+        disable_resize_shader = true;
+        return;
+    }
+#endif
+
+    if (vsync_value == 1) {
         std::cout << "Swap interval causing slowdown, turning off vsync"
             << std::endl;
         vsync_fail_time = 0.0;
@@ -258,8 +282,7 @@ void check_vsync()
 
 void platform_poll_events()
 {
-    if (vsync_value == 1)
-        check_vsync();
+    check_slowdown();
 
 #ifdef CHOWDREN_USE_EDITOBJ
     manager.input.clear();
@@ -303,17 +326,15 @@ void platform_poll_events()
             case SDL_WINDOWEVENT: {
                 if (e.window.windowID != global_window_id)
                     break;
-                if (e.window.event != SDL_WINDOWEVENT_SIZE_CHANGED)
-                    break;
-                int w = e.window.data1;
-                int h = e.window.data2;
+                if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
 #ifdef CHOWDREN_USE_D3D
-                d3d_reset(w, h);
+                    int w = e.window.data1;
+                    int h = e.window.data2;
+                    d3d_reset(w, h);
 #endif
-                Render::set_view(0, 0, w, h);
-                Render::set_offset(0, 0);
-                Render::clear(0, 0, 0, 255);
-                break;
+                    clear_backbuffer = 5;
+                    break;
+                }
             }
             default:
                 break;
@@ -427,28 +448,104 @@ static void create_d3d_device()
     exit(EXIT_FAILURE);
 }
 
+static D3DFORMAT
+PixelFormatToD3DFMT(Uint32 format)
+{
+    switch (format) {
+    case SDL_PIXELFORMAT_RGB565:
+        return D3DFMT_R5G6B5;
+    case SDL_PIXELFORMAT_RGB888:
+        return D3DFMT_X8R8G8B8;
+    case SDL_PIXELFORMAT_ARGB8888:
+        return D3DFMT_A8R8G8B8;
+    case SDL_PIXELFORMAT_YV12:
+    case SDL_PIXELFORMAT_IYUV:
+        return D3DFMT_L8;
+    default:
+        return D3DFMT_UNKNOWN;
+    }
+}
+
+static bool last_fullscreen = false;
+static int last_w = 0;
+static int last_h = 0;
+static bool last_failed = false;
+
+void d3d_set_window(int w, int h)
+{
+    last_fullscreen = false;
+    pparams.BackBufferWidth = w;
+    pparams.BackBufferHeight = h;
+    pparams.Windowed = TRUE;
+    pparams.FullScreen_RefreshRateInHz = 0;
+    pparams.BackBufferFormat = D3DFMT_UNKNOWN;
+}
+
 void d3d_reset(int w, int h)
 {
-    std::cout << "Reset D3D device: " << w << " " << h << std::endl;
+	if (is_fullscreen && (w != fullscreen_width || h != fullscreen_height))
+		return;
+
+    if (!last_failed && last_fullscreen == is_fullscreen
+        && last_w == w && last_h == h)
+        return;
+
+    in_reset = true;
+    std::cout << "Reset D3D device: " << w << " " << h << " " << is_fullscreen
+        << std::endl;
 
     pparams.BackBufferWidth = w;
     pparams.BackBufferHeight = h;
 
+    if (is_fullscreen) {
+        SDL_DisplayMode mode;
+        int display = SDL_GetWindowDisplayIndex(global_window);
+        SDL_GetDesktopDisplayMode(display, &mode);
+        pparams.Windowed = FALSE;
+        pparams.FullScreen_RefreshRateInHz = mode.refresh_rate;
+        pparams.BackBufferFormat = PixelFormatToD3DFMT(mode.format);
+    } else {
+        pparams.Windowed = TRUE;
+        pparams.FullScreen_RefreshRateInHz = 0;
+        pparams.BackBufferFormat = D3DFMT_UNKNOWN;
+    }
+
     for (int i = 0; i < 32; ++i) {
         Framebuffer * fbo = Framebuffer::fbos[i];
-        if (fbo == NULL)
+        if (fbo == NULL || fbo->fbo == NULL)
             continue;
         fbo->fbo->Release();
+        fbo->fbo = NULL;
         TextureData & t = render_data.textures[fbo->tex];
         t.texture->Release();
     }
-
+  
     render_data.default_target->Release();
-
+    render_data.default_target = NULL;
     render_data.textures[render_data.back_tex].texture->Release();
     render_data.textures[render_data.back_tex].texture = NULL;
 
-    render_data.device->Reset(&pparams);
+    last_fullscreen = is_fullscreen;
+    last_w = w;
+    last_h = h;
+
+    if (is_fullscreen && last_failed) {
+        std::cout << "Last failed, set windowed" << std::endl;
+        d3d_set_window(w, h);
+    }
+
+    bool show = false;
+    HRESULT hr = render_data.device->Reset(&pparams);
+    if (hr == D3DERR_DEVICELOST || hr == D3DERR_INVALIDCALL) {
+        if (is_fullscreen) {
+            std::cout << "Failing fullscreen due to device lost" << std::endl;
+            d3d_set_window(w, h);
+        }
+
+        while (hr == D3DERR_DEVICELOST || hr == D3DERR_DEVICENOTRESET) {
+            hr = render_data.device->Reset(&pparams);
+        }
+    }
 
     for (int i = 0; i < 32; ++i) {
         Framebuffer * fbo = Framebuffer::fbos[i];
@@ -463,6 +560,24 @@ void d3d_reset(int w, int h)
 
     render_data.backtex_width = render_data.backtex_height = 0;
     d3d_set_backtex_size(1, 1);
+
+    last_failed = false;
+    in_reset = false;
+
+    clear_backbuffer = 5;
+
+#ifdef CHOWDREN_PASTE_CACHE
+    vector<Layer>::iterator it;
+    for (it = manager.frame->layers.begin();
+         it != manager.frame->layers.end();
+         ++it)
+    {
+        Background * back = it->back;
+        if (back == NULL)
+            continue;
+        back->dirty = true;
+    }
+#endif
 }
 #endif
 
@@ -498,10 +613,19 @@ void platform_create_display(bool fullscreen)
 #endif
 
 #endif // CHOWDREN_USE_D3D
+
+    int start_width = WINDOW_WIDTH;
+    int start_height = WINDOW_HEIGHT;
+
+#ifdef CHOWDREN_DEFAULT_SCALE
+    start_width *= CHOWDREN_DEFAULT_SCALE;
+    start_height *= CHOWDREN_DEFAULT_SCALE;
+#endif
+
     global_window = SDL_CreateWindow(NAME,
                                      SDL_WINDOWPOS_CENTERED,
                                      SDL_WINDOWPOS_CENTERED,
-                                     WINDOW_WIDTH, WINDOW_HEIGHT,
+                                     start_width, start_height,
                                      flags);
     global_window_id = SDL_GetWindowID(global_window);
 
@@ -525,8 +649,8 @@ void platform_create_display(bool fullscreen)
     SDL_VERSION(&window_info.version);
     SDL_GetWindowWMInfo(global_window, &window_info);
     pparams.hDeviceWindow = window_info.info.win.window;
-    pparams.BackBufferWidth = WINDOW_WIDTH;
-    pparams.BackBufferHeight = WINDOW_HEIGHT;
+    pparams.BackBufferWidth = start_width;
+    pparams.BackBufferHeight = start_height;
     pparams.BackBufferCount = 1;
     pparams.SwapEffect = D3DSWAPEFFECT_DISCARD;
     pparams.Windowed = TRUE;
@@ -727,8 +851,6 @@ bool platform_get_vsync()
 #endif
 }
 
-#define CHOWDREN_DESKTOP_FULLSCREEN
-
 void platform_set_fullscreen(bool value)
 {
     if (value == is_fullscreen)
@@ -747,11 +869,20 @@ void platform_set_fullscreen(bool value)
         int display = SDL_GetWindowDisplayIndex(global_window);
         SDL_DisplayMode mode;
         SDL_GetDesktopDisplayMode(display, &mode);
+        // SDL_GetWindowDisplayMode(global_window, &mode);
         SDL_SetWindowDisplayMode(global_window, &mode);
     } else
         flags = 0;
 #endif
     SDL_SetWindowFullscreen(global_window, flags);
+
+#ifdef CHOWDREN_USE_D3D
+    if (in_reset)
+        return;
+    SDL_GetWindowSize(global_window, &fullscreen_width, &fullscreen_height);
+    d3d_reset(fullscreen_width, fullscreen_height);
+#endif
+
     if (value)
         return;
     SDL_SetWindowPosition(global_window,
@@ -805,6 +936,10 @@ void platform_swap_buffers()
     // resize the window contents if necessary (fullscreen mode)
     Render::set_view(0, 0, window_width, window_height);
     Render::set_offset(0, 0);
+    if (clear_backbuffer > 0) {
+        clear_backbuffer--;
+        Render::clear(0, 0, 0, 255);
+    }
 
     int x2 = draw_x_off + draw_x_size;
     int y2 = draw_y_off + draw_y_size;
@@ -812,12 +947,15 @@ void platform_swap_buffers()
 #ifdef CHOWDREN_SPECIAL_POINT_FILTER
     float x_scale = draw_x_size / float(WINDOW_WIDTH);
     float y_scale = draw_y_size / float(WINDOW_WIDTH);
-    float use_effect = true;
+    float use_effect = draw_x_size >= WINDOW_WIDTH &&
+                       draw_y_size >= WINDOW_HEIGHT &&
+                       (draw_x_size % WINDOW_WIDTH != 0 ||
+                        draw_y_size % WINDOW_HEIGHT != 0) &&
+                       !disable_resize_shader;
     if (use_effect) {        
         Render::set_effect(Render::PIXELSCALE);
         set_scale_uniform(WINDOW_WIDTH, WINDOW_HEIGHT,
-                          draw_x_size / float(WINDOW_WIDTH),
-                          draw_y_size / float(WINDOW_HEIGHT));
+                          x_scale, y_scale);
     }
 #endif
 
@@ -838,7 +976,11 @@ void platform_swap_buffers()
 
 #ifdef CHOWDREN_USE_D3D
     render_data.device->EndScene();
-    render_data.device->Present(NULL, NULL, NULL, NULL);
+    if (FAILED(render_data.device->Present(NULL, NULL, NULL, NULL))) {
+        std::cout << "Failed present: " << is_fullscreen << std::endl;
+        last_failed = true;
+        d3d_reset(window_width, window_height);
+    }
 #else
     SDL_GL_SwapWindow(global_window);
 #endif
@@ -847,7 +989,8 @@ void platform_swap_buffers()
 void platform_get_size(int * width, int * height)
 {
 #ifdef CHOWDREN_USE_D3D
-    SDL_GetWindowSize(global_window, width, height);
+    *width = pparams.BackBufferWidth;
+    *height = pparams.BackBufferHeight;
 #else
     SDL_GL_GetDrawableSize(global_window, width, height);
 #endif
@@ -1325,7 +1468,24 @@ const std::string & get_joystick_name(int n)
     if (joy.controller == NULL)
         ret = SDL_JoystickName(joy.joy);
     else
+#ifdef CHOWDREN_FORCE_X360
+        ret = "X360 Controller";
+#else
         ret = SDL_GameControllerName(joy.controller);
+#endif
+    return ret;
+}
+
+const std::string & get_joystick_guid(int n)
+{
+    if (!is_joystick_attached(n))
+        return empty_string;
+    static std::string ret;
+    ret.resize(64);
+    JoystickData & joy = get_joy(n);
+    SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy.joy);
+    SDL_JoystickGetGUIDString(guid, &ret[0], 64);
+    ret.resize(strlen(&ret[0]));
     return ret;
 }
 

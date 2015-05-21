@@ -8,6 +8,7 @@ def init(converter):
     converter.add_define('CHOWDREN_INI_FILTER_QUOTES')
     converter.add_define('CHOWDREN_INI_KEEP_ORDER')
     converter.add_define('CHOWDREN_FORCE_TRANSPARENT')
+    converter.add_define('CHOWDREN_16BIT_IMAGE')
     converter.add_define('CHOWDREN_VSYNC')
     converter.add_define('CHOWDREN_IS_HFA')
     converter.add_define('CHOWDREN_OBSTACLE_IMAGE')
@@ -62,7 +63,8 @@ def use_image_preload(converter):
 
 global_objects = [
     'Scrolling',
-    'Map_MainObject'
+    'Map_MainObject',
+    'joy2key'
 ]
 
 def use_global_alterables(converter, obj):

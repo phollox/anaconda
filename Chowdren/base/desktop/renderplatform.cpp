@@ -93,6 +93,12 @@ void Render::init()
         }
     }
 
+#ifdef CHOWDREN_QUICK_SCALE
+    render_data.textures[render_data.back_tex].sampler = D3DTEXF_POINT;
+#else
+    render_data.textures[render_data.back_tex].sampler = D3DTEXF_LINEAR;
+#endif
+
     d3d_set_backtex_size(1, 1);
 
     const float back_texcoords[12] = {
@@ -146,7 +152,7 @@ void Render::init()
     glClientActiveTexture(GL_TEXTURE0);
 
     glGenTextures(1, &render_data.back_tex);
-    glBindTexture(GL_TEXTURE_2D, render_data.back_tex);
+    set_tex(render_data.back_tex);
 #ifdef CHOWDREN_QUICK_SCALE
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

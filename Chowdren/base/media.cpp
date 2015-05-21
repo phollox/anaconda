@@ -404,6 +404,14 @@ double Media::get_sample_position(unsigned int id)
     return channel->get_position();
 }
 
+double Media::get_sample_volume(unsigned int id)
+{
+    Channel * channel = get_sample(id);
+    if (channel == NULL)
+        return 0.0;
+    return channel->volume;
+}
+
 double Media::get_sample_duration(unsigned int id)
 {
     Channel * channel = get_sample(id);

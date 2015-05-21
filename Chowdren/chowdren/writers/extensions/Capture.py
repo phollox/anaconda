@@ -9,6 +9,7 @@ class CaptureObject(ObjectWriter):
     class_name = 'CaptureObject'
     filename = 'capture'
     static = True
+    defines = ['CHOWDREN_USE_CAPTURE']
 
     def write_init(self, writer):
         pass

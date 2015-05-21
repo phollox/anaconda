@@ -58,7 +58,7 @@ expressions = make_table(GlobalExpressionWriter, {
     1 : 'get_joystick_y',
     # on a 360, this is RT analog value
     # joystick2_get_axis_values_raw_z_value_2
-    2 : '.get_joystick_dummy(0.0f, ',
+    2 : 'get_joystick_z',
     # on a 360, this is the rotation value on the right thumb stick
     # joystick2_get_axis_values_raw_x_rotation_3
     3 : '.get_joystick_dummy(0.0f, ',

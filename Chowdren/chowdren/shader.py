@@ -62,9 +62,19 @@ NATIVE_SHADERS = {
     # missing effects
     'CRT.fx' : None,
     'FlipY.fx' : None,
-    'ChannelBlurAdd.fx' : None,
+    'ChannelBlurAdd.fx' : 'channelbluradd',
     'DualGlow.fx' : None,
     'DropShadow.fx' : None,
+
+    # new HFA missing effects
+    'OffsetStationaryParam.fx' : None,
+    'Colorizer with blur.fx' : None,
+    'BrightnessSaturation.fx' : None,
+
+    # missing effects (TE)
+    'Display.fx' : None,
+    'PixelOutline.fx' : None,
+    'LinearBurn.fx' : None,
 
     # unsupported in HWA
     'XOR' : None,

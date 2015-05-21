@@ -23,11 +23,13 @@ public:
 
     enum MovementFlags
     {
-        MOVE_AT_START = 1 << 0
+        MOVE_AT_START = 1 << 0,
+        MOVE_STOPPED = 1 << 1
     };
 
     Movement(FrameObject * instance);
     virtual ~Movement();
+    virtual void init();
     virtual void update();
     virtual void set_max_speed(int speed);
     virtual void set_speed(int speed);
@@ -118,7 +120,6 @@ public:
     int deceleration;
     int gravity;
     float x_speed, y_speed;
-    bool stopped;
 
     PinballMovement(FrameObject * instance);
     void start();
@@ -138,11 +139,16 @@ public:
     double speed_change;
     int randomizer;
     bool has_back_col; // XXX hack
+    int stop_speed;
 
     BallMovement(FrameObject * instance);
+    void init();
     void update();
     void bounce(bool collision);
+    void stop(bool collision);
+    void start();
     void set_deceleration(int value);
+    void set_speed(int speed);
 };
 
 class VectorMovement : public Movement

@@ -9,11 +9,17 @@ class UltimateFullcsreen(ObjectWriter):
     class_name = 'Fullscreen'
     static = True
 
-actions = make_table(ActionMethodWriter, {
+class Action(ActionMethodWriter):
+    has_object = False
+
+actions = make_table(Action, {
     1 : 'manager.set_window(false)',
     0 : 'manager.set_window(true)',
     5 : 'manager.set_window_scale',
-    4 : 'manager.set_scale_type'
+    4 : 'manager.set_scale_type',
+    11 : 'manager.set_rectangle_width',
+    12 : 'manager.set_rectangle_height',
+    13 : 'manager.refresh_rect'
 })
 
 conditions = make_table(ConditionMethodWriter, {

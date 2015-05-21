@@ -55,6 +55,7 @@ class SoundItem(BaseSound):
         self.flags = SOUND_FLAGS.copy()
 
     def read(self, reader):
+        start = reader.tell()
         self.handle = reader.readInt(True)
         self.checksum = reader.readInt()
         self.references = reader.readInt()
@@ -62,7 +63,8 @@ class SoundItem(BaseSound):
         self.flags.setFlags(reader.readInt(True))
         reserved = reader.readInt()
         nameLenght = reader.readInt()
-        if self.settings.get('compressed', True):
+        if (self.settings.get('compressed', True) and
+                not self.flags['PlayFromDisk']):
             size = reader.readInt()
             data = ByteReader(zlib.decompress(reader.read(size)))
         else:

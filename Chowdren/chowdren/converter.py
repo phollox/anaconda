@@ -47,6 +47,7 @@ import audioop
 import struct
 import hashlib
 import cPickle
+import multiprocessing
 
 WRITE_SOUNDS = True
 PROFILE = False
@@ -154,7 +155,7 @@ EXTENSION_ALIAS = {
 }
 
 IGNORE_EXTENSIONS = set([
-    'kcwctrl', 'SteamChowdren', 'ChowdrenFont', 'INI++'
+    'kcwctrl', 'SteamChowdren', 'ChowdrenFont', 'INI++', 'MMKPathPlanner'
 ])
 
 def load_native_extension(name):
@@ -649,6 +650,7 @@ class Converter(object):
         version = args.version or '1.0.0.0'
         version_number = ', '.join(version.split('.'))
         copyright = fix_quotes(args.copyright or game.author)
+        self.build = game.productBuild
         self.base_path = get_base_path()
         self.root_path = get_root_path()
         self.platform_name = args.platform or 'generic'
@@ -760,6 +762,7 @@ class Converter(object):
         self.object_lists = {}
         self.object_cache = {}
         self.global_object_data = {}
+        self.back_ids = {}
 
         self.extension_includes = set()
         self.extension_sources = set()
@@ -1020,6 +1023,8 @@ class Converter(object):
         config_file.putdefine('WINDOW_HEIGHT', header.windowHeight)
         config_file.putdefine('FRAMERATE', header.frameRate)
         config_file.putdefine('MAX_OBJECT_ID', self.max_type_id)
+        config_file.putdefine('MAX_BACK_ID', len(self.back_ids))
+        config_file.putdefine('CHOWDREN_FUSION_BUILD', self.build)
         if header.newFlags['SamplesOverFrames']:
             config_file.putln('#define CHOWDREN_SAMPLES_OVER_FRAMES')
         if header.newFlags['VSync']:
@@ -1036,7 +1041,9 @@ class Converter(object):
             config_file.putdefine('CHOWDREN_DEFER_COLLISIONS')
 
         for (name, value) in self.defines:
-            config_file.putdefine(name, value or '')
+            if value is None:
+                value = ''
+            config_file.putdefine(name, value)
 
         config_file.close_guard("CHOWDREN_CONFIG_H")
         config_file.close()
@@ -1141,18 +1148,45 @@ class Converter(object):
         # for file_index, rects in enumerate(maxrects):
         #     rects.get().save('./testmaxrects/atlas%s.png' % file_index)
 
+        from chowdren.imageworker import worker
+        in_queue = multiprocessing.Queue()
+        worker_count = 8
+        workers = []
+        for _ in xrange(worker_count):
+            p = multiprocessing.Process(target=worker, args=(in_queue,))
+            p.start()
+            workers.append(p)
+
+        def get_image_path(image_hash):
+            image_hash = image_hash.encode('hex')
+            return self.get_filename('image_cache',
+                                     '%s_%s.dat' % (image_hash,
+                                                    self.platform_name))
+
         for i, (image, image_hash) in enumerate(new_entries):
-            # image_hash = image_hash.encode('hex')
-            # cache_path = self.get_filename('image_cache',
-            #                                '%s_%s.png' % (image_hash,
-            #                                               self.platform_name))
-            # if os.path.isfile(cache_path):
+            cache_path = get_image_path(image_hash)
+            if not os.path.isfile(cache_path):
+                pil_image = maxrects_images[i]
+                p = (i * 100) / len(new_entries)
+                in_queue.put((pil_image.tobytes(), i, p, cache_path))
             #     temp = open(cache_path, 'rb').read()
             # else:
+            #     p = (i * 100) / len(new_entries)
+            #     print 'Caching image', image.handle, '(%s%%)' % p
             #     temp = self.platform.get_image(maxrects_images[i])
             #     open(cache_path, 'wb').write(temp)
-            temp = self.platform.get_image(maxrects_images[i])
-            arg = (image.xHotspot, image.yHotspot,
+
+        for i in xrange(worker_count):
+            in_queue.put(None)
+
+        for worker in workers:
+            worker.join()
+
+        for i, (image, image_hash) in enumerate(new_entries):
+            cache_path = get_image_path(image_hash)
+            temp = open(cache_path, 'rb').read()
+            arg = (image.width, image.height,
+                   image.xHotspot, image.yHotspot,
                    image.actionX, image.actionY, temp)
             self.assets.add_image(*arg)
 
@@ -1841,6 +1875,7 @@ class Converter(object):
             object_writer.type_id = object_type_id
             object_writer.game_index = self.game_index
 
+            self.config.init_obj(object_writer)
             object_code = self.write_object(object_writer).get_data()
 
             object_hash_data = object_code.replace(class_name, '')
@@ -2355,8 +2390,8 @@ class Converter(object):
         if has_init:
             if has_list:
                 writer.putlnc('set_movement(0);')
-            elif global_move_start:
-                writer.putlnc('movement->start();')
+            else:
+                writer.putlnc('((%s*)movement)->init();', movement_class)
             obj.movement_count = count
         else:
             obj.movement_count = 0
@@ -2680,7 +2715,6 @@ class Converter(object):
                     action_index += 1
 
                 write_actions = actions[start_index:action_index+1]
-
                 list_name = self.create_list(obj, writer)
                 iter_type = self.get_iter_type(obj)
                 writer.putlnc('for (%s it(%s); !it.end(); '
@@ -3165,6 +3199,7 @@ class Converter(object):
         except Exception, e:
             data = self.get_object_writer(obj).data
             name = self.get_type_name(data.objectType)
+            # print name
             raise e
 
     def get_object_class(self, object_type, star=True):
@@ -3222,7 +3257,7 @@ class Converter(object):
                     try:
                         menu_entry = menu_dict[num]
                     except KeyError, e:
-                        print 'could not load menu', num, extension_name, key
+                        # print 'could not load menu', num, extension_name, key
                         menu_entry = []
                 # print 'unnamed:', extension_name, num, menu_entry, key
                 # print '%r' % menu_entry

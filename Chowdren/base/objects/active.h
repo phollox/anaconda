@@ -85,7 +85,6 @@ public:
     void set_angle(int angle, int quality = 0);
     int get_angle();
     int get_frame();
-    int get_speed();
     Direction * get_direction_data();
     int get_animation(int anim);
     void set_animation(int value);

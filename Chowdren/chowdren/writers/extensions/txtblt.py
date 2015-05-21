@@ -131,8 +131,9 @@ class TextBlitter(ObjectWriter):
         type_name = ANIMATION_NAMES[self.animation_type]
 
         if type_name not in ('None', 'Sin Wave'):
-            raise NotImplementedError('invalid blitter animation: %s'
-                                      % type_name)
+            print 'invalid blitter animation: %s' % type_name
+            # raise NotImplementedError('invalid blitter animation: %s'
+            #                           % type_name)
 
         if type_name == 'Sin Wave':
             writer.putln('anim_type = BLITTER_ANIMATION_SINWAVE;')
@@ -151,9 +152,7 @@ class TextBlitter(ObjectWriter):
         writer.putlnc('x_off = %s;', self.image_offset[0])
         writer.putlnc('y_off = %s;', self.image_offset[1])
         writer.putln('image = %s;' % self.converter.get_image(self.image))
-        writer.putlnc('image_width = %s;', (self.image_size[0] /
-                                            self.char_size[0]) *
-                                            self.char_size[0])
+        writer.putlnc('image_width = %s;', self.image_size[0])
         align_flags = []
         if self.horizontal_align == 0:
             align_flags.append('ALIGN_LEFT')
@@ -184,6 +183,7 @@ class TextBlitter(ObjectWriter):
         if self.flags & FLAGS_TRANSPARENT:
             writer.putlnc('transparent_color = %s;',
                           make_color(self.trans_color))
+
         writer.putlnc('wrap = %s;', bool(self.flags & FLAGS_WORDWRAPPING))
         writer.putlnc('set_text(%r);', self.text)
 
@@ -200,7 +200,7 @@ class ASCIIValue(ExpressionMethodWriter):
 
 actions = make_table(ActionMethodWriter, {
     0 : 'set_text',
-    4 : '.char_width = %s',
+    4 : 'set_char_width',
     5 : '.char_height = %s',
     6 : '.char_offset = %s',
     7 : 'set_charmap',

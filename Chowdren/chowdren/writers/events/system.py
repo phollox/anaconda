@@ -37,6 +37,7 @@ class SystemObject(ObjectWriter):
     def __init__(self, converter):
         self.converter = converter
         self.data = None
+        self.foreach_names = {}
 
     def write_frame(self, writer):
         self.write_group_activated(writer)
@@ -1829,7 +1830,7 @@ class DivideExpression(ConstantExpression):
 
     def get_string(self):
         if self.converter.config.use_safe_division():
-            return '/math_helper/'
+            return '/MathHelper()/'
         return self.value
 
 class ModulusExpression(ConstantExpression):
@@ -1942,6 +1943,9 @@ class SampleExpression(ExpressionWriter):
         name = converter.assets.get_sound_id(next_exp.loader.value)
         converter.item_index += 2
         return '%s(%s)' % (self.value, name)
+
+class GetSampleVolume(SampleExpression):
+    value = 'media.get_sample_volume'
 
 class GetSamplePosition(SampleExpression):
     value = 'media.get_sample_position'
@@ -2252,10 +2256,10 @@ expressions = make_table(ExpressionMethodWriter, {
     'Minus' : MinusExpression,
     'Virgule' : VirguleExpression,
     'Parenthesis' : ParenthesisExpression,
-    'Modulus' : '.%math_helper%',
-    'AND' : '.&math_helper&',
-    'OR' : '.|math_helper|',
-    'XOR' : '.^math_helper^',
+    'Modulus' : '.%MathHelper()%',
+    'AND' : '.&MathHelper()&',
+    'OR' : '.|MathHelper()|',
+    'XOR' : '.^MathHelper()^',
     'Random' : 'randrange_event',
     'ApplicationPath' : ApplicationPath,
     'AlterableValue' : AlterableValueExpression,
@@ -2304,7 +2308,7 @@ expressions = make_table(ExpressionMethodWriter, {
     'GetDirection' : 'get_direction()',
     'GetXScale' : '.x_scale',
     'GetYScale' : '.y_scale',
-    'Power' : '.*math_helper*',
+    'Power' : '.*MathHelper()*',
     'SquareRoot' : 'sqrt',
     'Asin' : 'asin_deg',
     'Atan2' : 'atan2_deg',
@@ -2320,6 +2324,7 @@ expressions = make_table(ExpressionMethodWriter, {
     'Ceil' : 'get_ceil',
     'GetMainVolume' : 'media.get_main_volume()',
     'GetChannelPosition' : '.media.get_channel_position(-1 +',
+    'GetSampleVolume' : GetSampleVolume,
     'GetSamplePosition' : GetSamplePosition,
     'GetSampleDuration' : GetSampleDuration,
     'GetChannelVolume' : '.media.get_channel_volume(-1 +',

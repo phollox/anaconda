@@ -6,7 +6,8 @@ from mmfparser.data.chunkloaders.objects import (COUNTER_FRAMES,
     VERTICAL_GRADIENT, HORIZONTAL_GRADIENT, RECTANGLE_SHAPE, SOLID_FILL,
     GRADIENT_FILL, FINE_COLLISION, NONE_OBSTACLE, FINE_COLLISION,
     LADDER_OBSTACLE, ANIMATION, APPEARING, DISAPPEARING)
-from chowdren.common import get_animation_name, to_c, make_color
+from chowdren.common import (get_animation_name, to_c, make_color,
+                             get_method_name)
 
 def get_closest_directions(direction, dir_dict):
     try:
@@ -218,6 +219,12 @@ class Backdrop(ObjectWriter):
             raise NotImplementedError
 
     def write_init(self, writer):
+        name_id = 'BACK_ID_' + get_method_name(self.data.name).upper()
+        writer.putraw('#ifdef %s' % name_id)
+        writer.putlnc('manager.frame->back_instances[%s].push_back(this);',
+                      name_id)
+        writer.putraw('#endif')
+
         image = self.converter.get_image(self.common.image)
         writer.putln('image = %s;' % image)
         if self.data.name.endswith('(DRC)'):

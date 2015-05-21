@@ -65,6 +65,12 @@ ext_modules.append(Extension('mmfparser.webp',
                              include_dirs=include_dirs + ['./mmfparser/webp'],
                              **kw))
 
+zopfli_srcs = glob.glob('./mmfparser/zopfli/zopfli/*.c')
+ext_modules.append(Extension('mmfparser.zopfli',
+                             ['./mmfparser/zopfli.pyx'] + zopfli_srcs,
+                             include_dirs=include_dirs + ['./mmfparser/zopfli'],
+                             **kw))
+
 setup(
     name = 'mmfparser extensions',
     ext_modules = cythonize(ext_modules, compile_time_env=compile_env)

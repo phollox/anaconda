@@ -134,24 +134,27 @@ void Image::load()
     image_file.set_item(handle, AssetFile::IMAGE_DATA);
     FileStream stream(image_file);
 
+    width = stream.read_uint16();
+    height = stream.read_uint16();
     hotspot_x = stream.read_int16();
     hotspot_y = stream.read_int16();
     action_x = stream.read_int16();
     action_y = stream.read_int16();
 
     int size = stream.read_uint32();
-
-    int w, h, channels;
-    image = load_image(image_file, size, &w, &h, &channels);
-
-    width = w;
-    height = h;
-
-    if (image == NULL) {
+    unsigned char * buf = new unsigned char[size];
+    image_file.read(buf, size);
+    int out_size = width*height*4;
+    image = (unsigned char*)STBI_MALLOC(out_size);
+    if (stbi_zlib_decode_buffer((char*)image, out_size, (const char*)buf,
+                                 size) < 0)
+    {
         std::cout << "Could not load image " << handle << std::endl;
         std::cout << stbi_failure_reason() << std::endl;
-        return;
+        stbi_image_free(image);
+        image = NULL;
     }
+    delete[] buf;
 }
 
 void Image::unload()
@@ -245,21 +248,7 @@ void Image::set_filter(bool linear)
     Render::set_filter(tex, linear);
 }
 
-// const float flipped_texcoords[8] = {
-//     1.0f, 0.0f,
-//     0.0f, 0.0f,
-//     0.0f, 1.0f,
-//     1.0f, 1.0f
-// };
-
-// const float normal_texcoords[8] = {
-//     0.0f, 0.0f,
-//     1.0f, 0.0f,
-//     1.0f, 1.0f,
-//     0.0f, 1.0f
-// };
-
-#ifndef CHOWDREN_IS_WIIU
+#if !defined(CHOWDREN_IS_WIIU) && !defined(CHOWDREN_USE_D3D)
 // XXX change glc_copy_color_buffer_rect so this isn't necessary
 
 const float back_texcoords[8] = {
@@ -428,11 +417,41 @@ void FileImage::load_file()
         return;
 #endif
 
+    set_transparent_color(transparent);
+}
+
+#ifdef CHOWDREN_16BIT_IMAGE
+inline unsigned char to_b5(unsigned char v)
+{
+    return v & 0xF8;
+}
+
+inline unsigned char to_b6(unsigned char v)
+{
+    return v & 0xFC;
+}
+#endif
+
+void FileImage::set_transparent_color(TransparentColor color)
+{
+    if (image == NULL)
+        return;
+
+#ifdef CHOWDREN_16BIT_IMAGE
+    unsigned char r = to_b5(color.r);
+    unsigned char g = to_b6(color.g);
+    unsigned char b = to_b5(color.b);
+#endif
+
     for (int i = 0; i < width * height; i++) {
         unsigned char * c = &image[i*4];
-        if (c[0] != transparent.r || c[1] != transparent.g ||
-            c[2] != transparent.b)
+#ifdef CHOWDREN_16BIT_IMAGE
+        if (to_b5(c[0]) != r || to_b6(c[1]) != g || to_b5(c[2]) != b)
             continue;
+#else
+        if (c[0] != color.r || c[1] != color.g || c[2] != color.b)
+            continue;
+#endif
         c[3] = 0;
     }
 }

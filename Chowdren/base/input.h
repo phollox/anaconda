@@ -103,6 +103,7 @@ int get_joystick_dpad_degrees(int n);
 int get_joystick_degrees(int n);
 int get_joystick_lt(int n);
 int get_joystick_rt(int n);
+int get_joystick_z(int n);
 int get_joystick_x(int n);
 int get_joystick_y(int n);
 bool is_joystick_pressed_once(int n, int button);

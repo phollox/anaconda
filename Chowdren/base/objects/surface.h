@@ -80,6 +80,7 @@ public:
     FRAMEOBJECT_HEAD(SurfaceObject)
 
     // Edit-time flags
+    bool use_blur;
     bool display_selected;
     bool use_abs_coords;
 
@@ -111,9 +112,6 @@ public:
     SurfaceQuad quad;
     vector<SurfaceQuad> quads;
     vector<SurfaceLine> lines;
-
-    // Image blit
-
 
     SurfaceObject(int x, int y, int type_id);
     ~SurfaceObject();

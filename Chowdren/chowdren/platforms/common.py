@@ -1,6 +1,9 @@
 from cStringIO import StringIO
 from mmfparser.bytereader import ByteReader
 from mmfparser.webp import encode
+from mmfparser import zopfli
+import zlib
+import sys
 
 class Platform(object):
     save_dir = '.'
@@ -8,6 +11,10 @@ class Platform(object):
     def __init__(self, converter):
         self.converter = converter
         self.initialize()
+        if hasattr(sys, 'frozen'):
+            self.compress = zlib.compress
+        else:
+            self.compress = zopfli.compress
         self.problem_images = 0
 
     def get_image(self, image):
@@ -15,10 +22,7 @@ class Platform(object):
             webp = encode(image.tobytes('raw', 'RGBA'),
                           image.size[0], image.size[1])
             return webp
-        else:
-            temp = StringIO()
-            image.save(temp, 'PNG')
-            return temp.getvalue()
+        return self.compress(image.tobytes(), 9)
 
     def get_shader(self, name, vertex, fragment):
         raise NotImplementedError()

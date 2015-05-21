@@ -11,11 +11,14 @@ def init(converter):
     converter.add_define('CHOWDREN_TEXTURE_GC')
     converter.add_define('CHOWDREN_CACHE_INI')
     converter.add_define('CHOWDREN_PASTE_REMOVE')
-    converter.add_define('CHOWDREN_30_TO_60')
     converter.add_define('CHOWDREN_ACTIVE_REPLACE_COLOR')
     converter.add_define('CHOWDREN_ACTIVE_LOAD_SINGLE')
     converter.add_define('CHOWDREN_ACTIVE_LOOPING_APPEARING')
     converter.add_define('CHOWDREN_SPECIAL_POINT_FILTER')
+    converter.add_define('CHOWDREN_JOYSTICK2_CONTROLLER')
+    converter.add_define('CHOWDREN_FORCE_X360')
+    converter.add_define('CHOWDREN_PASTE_CACHE')
+    converter.add_define('CHOWDREN_DEFAULT_SCALE', 2)
     # converter.add_define('CHOWDREN_PASTE_BROADPHASE')
 
 def get_loop_name(converter, parameter):
@@ -75,14 +78,22 @@ def use_alterable_int(converter, expression):
 def use_repeated_collisions(converter):
     return False
 
+def is_controller(value):
+    if not value.startswith('((Active*)get_instance(controller_'):
+        return False
+    if not value.endswith('_instances))->alterables->values.get(12)'):
+        return False
+    return True
+
+def is_global_fixed(value):
+    return value.startswith('global_values->get(15)')
+
 def write_pre(converter, writer, group):
     for condition in group.conditions:
         if condition.data.getName() != 'CompareFixedValue':
             continue
         value = condition.convert_index(0)
-        if not value.startswith('((Active*)get_instance(controller_'):
-            continue
-        if not value.endswith('_instances))->alterables->values.get(12)'):
+        if not is_controller(value) and not is_global_fixed(value):
             continue
         break
     else:
@@ -94,3 +105,8 @@ def write_pre(converter, writer, group):
         group.conditions.insert(1, condition)
     else:
         group.conditions.insert(0, condition)
+
+def get_string(converter, value):
+    if value == 'XBOX':
+        return 'X360'
+    return value

@@ -193,8 +193,8 @@ void BaseShader::set_int(FrameObject * instance, int src, int uniform)
 {
     int val = (int)instance->get_shader_parameter(src);
 #ifdef CHOWDREN_USE_D3D
-    int v[4] = {val, 0, 0, 0};
-    render_data.device->SetPixelShaderConstantI(uniform, &v[0], 1);
+    float v[4] = {val, 0, 0, 0};
+    render_data.device->SetPixelShaderConstantF(uniform, &v[0], 1);
 #else
     glUniform1i((GLint)uniform, val);
 #endif
@@ -256,6 +256,8 @@ int BaseShader::get_uniform(const char * value)
 #define set_blend_func_eq(a, b, c, d) \
     render_data.device->SetRenderState(D3DRS_SRCBLEND, a);\
     render_data.device->SetRenderState(D3DRS_DESTBLEND, b);\
+    render_data.device->SetRenderState(D3DRS_BLENDOP, c);\
+    render_data.device->SetRenderState(D3DRS_BLENDOPALPHA, d);
 
 
 #define set_blend_func(a, b) \

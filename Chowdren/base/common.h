@@ -158,8 +158,6 @@ inline void reset_global_data()
 
 #include "mathhelper.h"
 
-extern MathHelper math_helper;
-
 // get_single for ObjectList
 
 inline FrameObject * get_single(ObjectList & list)
@@ -450,6 +448,13 @@ inline float get_joystick_dummy(float value, int n)
 {
     return value;
 }
+
+inline int get_zero_dummy(const std::string value)
+{
+    return 0;
+}
+
+std::string get_joytokey_name(int value);
 
 void create_joystick_rumble(int n, float delay, float duration,
                             float l, float r, const std::string & name);

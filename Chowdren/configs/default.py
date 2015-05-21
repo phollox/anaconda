@@ -3,6 +3,8 @@ def init(converter):
     converter.add_define('CHOWDREN_QUICK_SCALE')
     converter.add_define('CHOWDREN_POINT_FILTER')
     converter.add_define('CHOWDREN_JOYSTICK2_CONTROLLER')
+    converter.add_define('CHOWDREN_FORCE_TRANSPARENT')
+    converter.add_define('CHOWDREN_16BIT_IMAGE')
 
 def init_container(converter, container):
     pass
@@ -14,6 +16,9 @@ def write_pre(converter, writer, group):
     pass
 
 def write_frame_post(converter, writer):
+    pass
+
+def init_obj(converter, obj):
     pass
 
 def get_scale_method(converter, obj):

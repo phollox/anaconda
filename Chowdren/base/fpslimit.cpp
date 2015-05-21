@@ -37,6 +37,7 @@ void FPSLimiter::finish()
     }
     next_update = std::max(current_time, next_update) + 1.0 / framerate;
 #endif
+
     dt = normalize(current_time - old_time);
     old_time = current_time;
     if (dt < 0.0)

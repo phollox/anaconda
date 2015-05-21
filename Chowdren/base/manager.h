@@ -83,6 +83,8 @@ public:
     int axis_values[CHOWDREN_AXIS_MAX-1];
     int last_axis;
     bool axis_moved;
+    bool pad_selected;
+    bool pad_disconnected;
 
     int simulate_count;
     struct SimulateKey
@@ -103,6 +105,7 @@ public:
     void simulate_key(int key);
     void map_button(int button, const std::string & key);
     void map_axis(int axis, const std::string & neg, const std::string & pos);
+    void reset_map();
 #endif
 };
 

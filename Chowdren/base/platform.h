@@ -60,6 +60,7 @@ void joystick_vibrate(int n, int l, int r, int d);
 float get_joystick_axis(int n, int axis);
 int get_joystick_last_press(int n);
 const std::string & get_joystick_name(int n);
+const std::string & get_joystick_guid(int n);
 
 // desktop
 void platform_set_display_scale(int scale);

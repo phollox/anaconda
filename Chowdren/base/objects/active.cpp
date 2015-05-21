@@ -234,7 +234,13 @@ void Active::update()
         return;
     }
 
-    counter += int(get_speed() * frame->timer_mul);
+    int anim_speed;
+    if (forced_speed != -1)
+        anim_speed = forced_speed;
+    else
+        anim_speed = direction_data->max_speed;
+
+    int counter = this->counter + int(anim_speed * frame->timer_mul);
     int old_frame = animation_frame;
 
     while (counter > 100) {
@@ -259,6 +265,8 @@ void Active::update()
         }
         return;
     }
+    this->counter = counter;
+
     if (animation_frame != old_frame)
         update_frame();
 }
@@ -365,13 +373,6 @@ int Active::get_frame()
     if (forced_frame != -1)
         return forced_frame;
     return animation_frame;
-}
-
-int Active::get_speed()
-{
-    if (forced_speed != -1)
-        return forced_speed;
-    return direction_data->max_speed;
 }
 
 Direction * Active::get_direction_data()

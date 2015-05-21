@@ -85,7 +85,7 @@ public:
     std::string get_line(int index);
     int get_line_count();
     std::string get_map_char(int index);
-    void replace_color(int from, int to);
+    void replace_color(Color from, Color to);
     void set_transparent_color(int color);
     void set_animation_parameter(int index, int value);
     void set_animation_type(int value);
@@ -95,6 +95,11 @@ public:
     const std::string & get_text()
     {
         return text;
+    }
+
+    void set_char_width(int width)
+    {
+        char_width = std::min(image_width, width);
     }
 
     virtual void call_char_callback();

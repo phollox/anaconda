@@ -1,4 +1,5 @@
 from chowdren.key import convert_key
+import os
 
 def init(converter):
     converter.add_define('CHOWDREN_IS_FP')
@@ -6,7 +7,7 @@ def init(converter):
     converter.add_define('CHOWDREN_POINT_FILTER')
     converter.add_define('CHOWDREN_OBSTACLE_IMAGE')
     converter.add_define('CHOWDREN_STEAM_APPID', 248310)
-    converter.add_define('CHOWDREN_JOYSTICK2_CONTROLLER')
+    # converter.add_define('CHOWDREN_JOYSTICK2_CONTROLLER')
     converter.add_define('CHOWDREN_TEXTURE_GC')
     converter.add_define('CHOWDREN_FORCE_REMOTE')
 
@@ -29,6 +30,9 @@ def init(converter):
                 values[index] = convert_key(values[index])
 
     values = converter.game.globalValues.items
+
+    if 'e3' in os.path.basename(converter.games[0].filename):
+        converter.add_define('CHOWDREN_DISABLE_WRITE')
     # values[0] = 1
     # values[1] = 4
     # values[4] = 1
