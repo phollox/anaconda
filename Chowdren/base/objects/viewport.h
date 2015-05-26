@@ -2,7 +2,7 @@
 #define CHOWDREN_VIEWPORT_H
 
 #include "frameobject.h"
-#include "include_gl.h"
+#include "render.h"
 
 class Viewport : public FrameObject
 {
@@ -11,7 +11,7 @@ public:
 
     int center_x, center_y;
     int src_width, src_height;
-    GLuint texture;
+    Texture texture;
     static Viewport * instance;
 
     Viewport(int x, int y, int type_id);

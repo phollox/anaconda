@@ -509,6 +509,28 @@ void GameManager::simulate_key(int key_int)
 
 void GameManager::map_button(int button, const std::string & key)
 {
+    if (button >= UNIFIED_AXIS_0 && button < UNIFIED_POV_0) {
+        button = button - UNIFIED_AXIS_0;
+        int axis = button / 2;
+        int is_neg = button - axis * 2;
+        axis++;
+        if (axis == CHOWDREN_AXIS_INVALID || axis >= CHOWDREN_AXIS_MAX)
+            return;
+        int old_key;
+        int key_int = -1;
+        if (!key.empty())
+            key_int = translate_string_to_key(key);
+        if (is_neg) {
+            old_key = axis_neg_mappings[axis-1];
+            axis_neg_mappings[axis-1] = key_int;
+        } else {
+            old_key = axis_pos_mappings[axis-1];
+            axis_pos_mappings[axis-1] = key_int;
+        }
+        if (old_key != -1 && old_key != key_int)
+            keyboard.remove(old_key);
+        return;
+    }
     button++;
     if (button == CHOWDREN_BUTTON_INVALID || button >= CHOWDREN_BUTTON_MAX)
         return;

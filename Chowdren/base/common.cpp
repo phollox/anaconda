@@ -2536,13 +2536,6 @@ int get_joystick_y(int n)
     return get_joystick_axis(n, CHOWDREN_AXIS_LEFTY) * 1000.0f;
 }
 
-#define UNIFIED_AXIS_SIZE 2
-#define UNIFIED_POV_SIZE 4
-#define UNIFIED_BUTTON_MAX (128)
-#define UNIFIED_AXIS_MAX   (UNIFIED_AXIS_SIZE * 8) //16
-#define UNIFIED_AXIS_0   UNIFIED_BUTTON_MAX
-#define UNIFIED_POV_0    (UNIFIED_AXIS_0 + UNIFIED_AXIS_MAX)
-
 std::string get_joytokey_name(int id)
 {
     std::ostringstream s;
@@ -2586,7 +2579,8 @@ static hash_map<std::string, RumbleEffect> rumble_effects;
 void create_joystick_rumble(int n, float delay, float duration,
                             float l, float r, const std::string & name)
 {
-    RumbleEffect effect = {delay, l * 100.0f, r * 100.0f, duration * 1000.0f};
+    RumbleEffect effect = {delay, l * 100.0f, r * 100.0f,
+                           int(duration * 1000.0f)};
     rumble_effects[name] = effect;
 }
 

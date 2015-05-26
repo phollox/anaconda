@@ -227,6 +227,11 @@ void SurfaceObject::resize_canvas(int x1, int y1, int x2, int y2)
 void SurfaceObject::load(const std::string & filename,
                          const std::string & ignore_ext)
 {
+    load(filename);
+}
+
+void SurfaceObject::load(const std::string & filename)
+{
     if (selected_image == NULL)
         return;
     Color old_trans = selected_image->transparent;

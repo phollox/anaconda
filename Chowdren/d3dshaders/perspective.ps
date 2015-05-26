@@ -8,12 +8,11 @@ static float4 gl_Color[1] =
 
 
 uniform bool _direction : register(c3);
-uniform int _effect : register(c4);
-uniform float _offset : register(c5);
-uniform int _sine_waves : register(c6);
+uniform int _offset : register(c4);
+uniform int _sine_waves : register(c5);
 uniform sampler2D _texture : register(s0);
-uniform float2 _texture_size : register(c7);
-uniform float _zoom : register(c8);
+uniform float2 _texture_size : register(c6);
+uniform int _zoom : register(c7);
 
 #define GL_USES_FRAG_COLOR
 float4 gl_texture2D(sampler2D s, float2 t)
@@ -32,7 +31,7 @@ float4 gl_texture2D(sampler2D s, float2 t)
 void gl_main()
 {
 {
-float _v = {0};
+float _wave_increment = ((float(_sine_waves) * 360.0) / (_texture_size.x / _texture_size.y));
 float2 _In = _texture_coordinate;
 float s0;
 {
@@ -58,11 +57,7 @@ else
 }
 }
 float _i = s1;
-if ((_effect == 3))
-{
-(_v = (sin((((_i * (float(_sine_waves) * 360.0)) - _offset) * 0.017453289)) * _zoom));
-}
-;
+float _v = (sin((((_i * _wave_increment) + float(_offset)) * 0.017453289)) * float(_zoom));
 if ((_direction == true))
 {
 (_In.y += (_v * _pixel));
@@ -99,7 +94,7 @@ if (!s2)
 }
 if (s2)
 {
-(_col = float4(0.0, 0.0, 0.0, 1.0));
+(_col = float4(0.0, 0.0, 0.0, 0.0));
 }
 else
 {

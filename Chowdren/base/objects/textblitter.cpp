@@ -248,8 +248,7 @@ void TextBlitter::replace_color(Color from, Color to)
 void TextBlitter::set_transparent_color(int v)
 {
     transparent_color = v;
-    if (image->flags & Image::FILE)
-        ((FileImage*)image)->set_transparent_color(transparent_color);
+    replacer.set_transparent(transparent_color);
 }
 
 void TextBlitter::update()

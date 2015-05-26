@@ -127,7 +127,8 @@ actions = make_table(ActionMethodWriter, {
     115 : 'set_src_size',
     116 : 'set_stretch_mode',
     17 : 'add_image',
-    119 : 'draw_rect'
+    119 : 'draw_rect',
+    153 : 'load'
 })
 
 conditions = make_table(ConditionMethodWriter, {

@@ -38,7 +38,6 @@ struct RenderData
 
     Vertex vertices[6];
     D3DTEXTUREFILTERTYPE last_sampler;
-    float adjust_x, adjust_y;
     bool has_sse2;
     int backtex_width, backtex_height;
 #else
@@ -48,12 +47,23 @@ struct RenderData
 #endif
     Texture last_tex, white_tex, back_tex;
     int effect;
+    float adjust_x, adjust_y;
     float trans_x, trans_y;
     float pos_x, pos_y;
     int viewport[4];
 };
 
 extern RenderData render_data;
+
+inline float transform_x(float x)
+{
+    return (x + render_data.pos_x) * render_data.trans_x;
+}
+
+inline float transform_y(float y)
+{
+    return (y + render_data.pos_y) * render_data.trans_y;
+}
 
 #ifndef CHOWDREN_USE_D3D
 inline void set_tex(Texture t)
@@ -69,8 +79,8 @@ inline void Render::set_offset(int x, int y)
 {
     offset[0] = x;
     offset[1] = y;
-    render_data.pos_x = x;
-    render_data.pos_y = y;
+    render_data.pos_x = x + render_data.adjust_x;
+    render_data.pos_y = y + render_data.adjust_y;
 }
 
 inline void Render::set_view(int x, int y, int w, int h)
@@ -84,18 +94,22 @@ inline void Render::set_view(int x, int y, int w, int h)
     viewport.MinZ = 0.0f;
     viewport.MaxZ = 1.0f;
     render_data.device->SetViewport(&viewport);
-    render_data.adjust_x = 1.0f / w;
-    render_data.adjust_y = 1.0f / h;
+    render_data.adjust_x = -(w + 1) / 2.0f;
+    render_data.adjust_y = -(h - 1) / 2.0f;
+    render_data.trans_x = 2.0f / w;
+    render_data.trans_y = 2.0f / h;
 #else
     glViewport(x, y, w, h);
+    render_data.adjust_x = -w / 2.0f;
+    render_data.adjust_y = h / 2.0f;
+    render_data.trans_x = 2.0f / w;
+    render_data.trans_y = -2.0f / h;
 #endif
+    set_offset(offset[0], offset[1]);
     render_data.viewport[0] = x;
     render_data.viewport[1] = y;
     render_data.viewport[2] = w;
     render_data.viewport[3] = h;
-
-    render_data.trans_x = 2.0f / w;
-    render_data.trans_y = 2.0f / h;
 }
 
 inline void Render::clear(Color c)
@@ -180,18 +194,6 @@ const float render_texcoords[12] = {
 };
 
 #ifdef CHOWDREN_USE_D3D
-
-inline float transform_x(float x)
-{
-    return (x + render_data.pos_x) * render_data.trans_x - 1.0f
-           - render_data.adjust_x;
-}
-
-inline float transform_y(float y)
-{
-    return 1.0f - (y + render_data.pos_y) * render_data.trans_y
-           + render_data.adjust_y;
-}
 
 inline void insert_quad(float * p)
 {
@@ -303,16 +305,6 @@ inline void insert_texcoord1(float fx1, float fy1, float fx2, float fy2)
 }
 
 #else
-
-inline float transform_x(float x)
-{
-    return (x + render_data.pos_x) * render_data.trans_x - 1.0f;
-}
-
-inline float transform_y(float y)
-{
-    return 1.0f - (y + render_data.pos_y) * render_data.trans_y;
-}
 
 inline void insert_quad(float * p)
 {
@@ -605,25 +597,6 @@ inline void Render::disable_blend()
 
 inline void Render::enable_scissor(int x, int y, int w, int h)
 {
-#ifdef CHOWDREN_USE_D3D
-    int w_x1 = int(x + offset[0]);
-    int w_y1 = int(y + offset[1]);
-    int w_x2 = w_x1 + w;
-    int w_y2 = w_y1 + h;
-
-    w_x1 = int_max(0, int_min(w_x1, WINDOW_WIDTH));
-    w_y1 = int_max(0, int_min(w_y1, WINDOW_HEIGHT));
-    w_x2 = int_max(0, int_min(w_x2, WINDOW_WIDTH));
-    w_y2 = int_max(0, int_min(w_y2, WINDOW_HEIGHT));
-
-    RECT r;
-    render_data.device->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
-    r.left = w_x1;
-    r.top = w_y1;
-    r.right = w_x2;
-    r.bottom = w_y2;
-    render_data.device->SetScissorRect(&r);
-#else
     int w_x1 = int(x + offset[0]);
     int w_y2 = int(WINDOW_HEIGHT - y - offset[1]);
     int w_x2 = w_x1 + w;
@@ -634,6 +607,15 @@ inline void Render::enable_scissor(int x, int y, int w, int h)
     w_x2 = int_max(0, int_min(w_x2, WINDOW_WIDTH));
     w_y2 = int_max(0, int_min(w_y2, WINDOW_HEIGHT));
 
+#ifdef CHOWDREN_USE_D3D
+    RECT r;
+    render_data.device->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
+    r.left = w_x1;
+    r.top = w_y1;
+    r.right = w_x2;
+    r.bottom = w_y2;
+    render_data.device->SetScissorRect(&r);
+#else
     glEnable(GL_SCISSOR_TEST);
     glScissor(w_x1, w_y1, w_x2 - w_x1, w_y2 - w_y1);
 #endif

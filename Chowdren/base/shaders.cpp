@@ -785,8 +785,8 @@ public:
     {
         BaseShader::set_int(instance, SHADER_PARAM_EFFECT, effect);
         BaseShader::set_int(instance, SHADER_PARAM_DIRECTION, direction);
-        BaseShader::set_float(instance, SHADER_PARAM_ZOOM, zoom);
-        BaseShader::set_float(instance, SHADER_PARAM_OFFSET, offset);
+        BaseShader::set_int(instance, SHADER_PARAM_ZOOM, zoom);
+        BaseShader::set_int(instance, SHADER_PARAM_OFFSET, offset);
         BaseShader::set_int(instance, SHADER_PARAM_SINE_WAVES, sine_waves);
     }
 };

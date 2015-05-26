@@ -19,6 +19,7 @@ public:
         PIXELOUTLINE,
         COLDIRBLUR,
         CHANNELBLUR,
+        CHANNELBLURADD,
         BLUR,
         BLURADD,
         ROTATESUB,

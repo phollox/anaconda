@@ -27,7 +27,19 @@ void CaptureObject::on_capture()
     int offset[2] = {Render::offset[0], Render::offset[1]};
     Render::set_offset(0, 0);
     fbo.bind();
-    Render::draw_tex(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, Color(), t);
+
+    float ty1;
+    float ty2;
+#ifdef CHOWDREN_FBO_FLIP
+    ty1 = back_texcoords[1];
+    ty2 = back_texcoords[5];
+#else
+    ty1 = back_texcoords[5];
+    ty2 = back_texcoords[1];
+#endif
+
+    Render::draw_tex(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, Color(), t,
+                     back_texcoords[0], ty1, back_texcoords[4], ty2);
     fbo.unbind();
     image.tex = fbo.get_tex();
     image.width = WINDOW_WIDTH;

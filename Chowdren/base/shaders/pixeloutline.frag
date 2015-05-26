@@ -6,22 +6,13 @@ uniform sampler2D texture;
 
 uniform vec4 color;
 
-// const vec2 dirs[8] = vec2[8](
-//     vec2(1.0, 0.0),
-//     vec2(1.0, 1.0),
-//     vec2(0.0, 1.0),
-//     vec2(-1.0, 1.0),
-//     vec2(-1.0, 0.0),
-//     vec2(-1.0, -1.0),
-//     vec2(0.0, -1.0),
-//     vec2(1.0, -1.0)
-// );
-
 #define SET_SOLID(dir) \
             col.a = texture2D(texture, texture_coordinate + \
                               dir * texture_size).a; \
-            if (col.a > 0.0) \
-                return col;
+            if (col.a > 0.0) { \
+                col.a *= gl_Color.a; \
+                return col; \
+            }
 
 vec4 getter(vec4 src)
 {
@@ -43,6 +34,5 @@ vec4 getter(vec4 src)
 void main()
 {
     vec4 src = texture2D(texture, texture_coordinate) * gl_Color;
-    src = getter(src);
-    gl_FragColor = src;
+    gl_FragColor = getter(src);
 }

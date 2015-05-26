@@ -26,11 +26,14 @@ Framebuffer::Framebuffer()
 
 Framebuffer::~Framebuffer()
 {
+    if (tex == 0)
+        return;
 #ifdef CHOWDREN_USE_D3D
     fbos[fbo_index] = NULL;
     fbo->Release();
     TextureData & t = render_data.textures[tex];
-    t.texture->Release();
+    if (t.texture != NULL)
+        t.texture->Release();
 #else
     glDeleteTextures(1, &tex);
     glDeleteFramebuffers(1, &fbo);

@@ -102,13 +102,13 @@ void Render::init()
     d3d_set_backtex_size(1, 1);
 
     const float back_texcoords[12] = {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f,
-
-        1.0f, 1.0f,
         0.0f, 1.0f,
+        1.0f, 1.0f,
+        1.0f, 0.0f,
+
+        1.0f, 0.0f,
         0.0f, 0.0f,
+        0.0f, 1.0f,
     };
 
     for (int i = 0; i < 6; ++i) {
@@ -294,8 +294,10 @@ Texture Render::create_tex(void * pixels, Format f, int width, int height)
     return tex;
 }
 
-Texture Render::copy_rect(int x1, int y1, int x2, int y2)
+Texture Render::copy_rect(int x1, int in_y1, int x2, int in_y2)
 {
+    int y1 = current_fbo->h - in_y2;
+    int y2 = current_fbo->h - in_y1;
     int xx1, yy1, xx2, yy2;
     intersect(0, 0, current_fbo->w, current_fbo->h, x1, y1, x2, y2,
               xx1, yy1, xx2, yy2);

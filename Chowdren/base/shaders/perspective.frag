@@ -16,15 +16,16 @@ uniform sampler2D texture;
 uniform vec2 texture_size;
 uniform int effect;
 uniform bool direction, perspective_dir;
-uniform float zoom, offset;
+uniform int zoom, offset;
 uniform int sine_waves;
 
 void main()
 {
-    // For some weird reason, the wave number calculation always uses the image height, no matter what the orientation is
-    float wave_increment = (float(sine_waves) * 360.0) / (texture_size.x / texture_size.y);
+    // For some weird reason, the wave number calculation always uses the
+    // image height, no matter what the orientation is
+    float wave_increment = (float(sine_waves) * 360.0) / (texture_size.x /
+                                                          texture_size.y);
 
-    float v;
     vec2 In = texture_coordinate;
 
     // What to use as input
@@ -33,19 +34,21 @@ void main()
 
     // Effect (hardcore optimization: this if is always true for now)
     //if (effect == SINEOFFSET)
-    v = sin((i * wave_increment + offset) * delta) * zoom;
+    float v = sin((i * wave_increment + float(offset)) * delta) * float(zoom);
 
-    // Fixes jitter
-    if (abs(zoom) > 0.01f) {
-        // What to use as output
-        if (direction == VERTICAL) In.y += v*pixel;
-        else In.x += v*pixel;
-    }
+    // What to use as output
+    if (direction == VERTICAL)
+        In.y += v*pixel;
+    else
+        In.x += v*pixel;
 
     vec4 col;
     if (In.x < 0.0 || In.x > 1.0 || In.y < 0.0|| In.y > 1.0)
-       col = vec4(0,0,0,0); // This is what the extension does, I guess it's not visible in the game anyway?
+        // This is what the extension does, I guess it's not visible in the
+        // game anyway?
+        col = vec4(0, 0, 0, 0);
     else
        col = texture2D(texture, In);
+
     gl_FragColor = col;
 }

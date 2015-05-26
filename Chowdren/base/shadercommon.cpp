@@ -37,6 +37,13 @@ static bool has_blend_eq = false;
 static bool has_blend_func = false;
 static int blend_status = 0;
 
+void shader_reset_blend()
+{
+    has_blend_eq = false;
+    has_blend_func = false;
+    blend_status = 2;
+}
+
 void shader_set_texture()
 {
     if (blend_status == 1) {
@@ -88,10 +95,15 @@ void shader_set_effect(int effect, FrameObject * obj,
         case Render::FONT:
             font_shader.begin(NULL, 0, 0);
             break;
+        case Render::CHANNELBLURADD:
+            DO_SHADER(channelblur_shader);
+            SET_BLEND_FUNC(FUNC_SRC_ALPHA, FUNC_ONE);
+            break;
         case Render::BLURADD:
             DO_SHADER(blur_shader);
             SET_BLEND_FUNC(FUNC_SRC_ALPHA, FUNC_ONE);
             break;
+        HANDLE_SHADER(BRIGHTSATBG, brightsatbg_shader);
         HANDLE_SHADER(PERSPECTIVE, perspective_shader);
         HANDLE_SHADER(MONOCHROME, monochrome_shader);
         HANDLE_SHADER(ZOOMOFFSET, zoomoffset_shader);
@@ -103,7 +115,6 @@ void shader_set_effect(int effect, FrameObject * obj,
         HANDLE_SHADER(SUBPX, subpx_shader);
         HANDLE_SHADER(SIMPLEMASK, simplemask_shader);
         HANDLE_SHADER(MULTIPLY, multiply_shader);
-        HANDLE_SHADER(BRIGHTSATBG, brightsatbg_shader);
         HANDLE_SHADER(NINEPATCH, ninepatch_shader);
         HANDLE_SHADER(HARDLIGHT, hardlight_shader);
         HANDLE_SHADER(UNDERWATER, underwater_shader);

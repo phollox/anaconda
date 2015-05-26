@@ -63,7 +63,7 @@ class InputNameToRaw(ExpressionMethodWriter):
             raise NotImplementedError()
         name = next_exp.loader.value
         converter.item_index += 2
-        return DPAD_VALUES[name]
+        return '(%s-1)' % DPAD_VALUES[name]
 
 expressions = make_table(ExpressionMethodWriter, {
     3 : 'get_joystick_axis(1, 1 + ',

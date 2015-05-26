@@ -248,7 +248,7 @@ void Image::set_filter(bool linear)
     Render::set_filter(tex, linear);
 }
 
-#if !defined(CHOWDREN_IS_WIIU) && !defined(CHOWDREN_USE_D3D)
+#if !defined(CHOWDREN_IS_WIIU)
 // XXX change glc_copy_color_buffer_rect so this isn't necessary
 
 const float back_texcoords[8] = {
@@ -378,6 +378,42 @@ bool Image::is_valid()
     return image != NULL || tex != 0;
 }
 
+#ifdef CHOWDREN_16BIT_IMAGE
+inline unsigned char to_b5(unsigned char v)
+{
+    return v & 0xF8;
+}
+
+inline unsigned char to_b6(unsigned char v)
+{
+    return v & 0xFC;
+}
+#endif
+
+void Image::set_transparent_color(TransparentColor color)
+{
+    if (image == NULL)
+        return;
+
+#ifdef CHOWDREN_16BIT_IMAGE
+    unsigned char r = to_b5(color.r);
+    unsigned char g = to_b6(color.g);
+    unsigned char b = to_b5(color.b);
+#endif
+
+    for (int i = 0; i < width * height; i++) {
+        unsigned char * c = &image[i*4];
+#ifdef CHOWDREN_16BIT_IMAGE
+        if (to_b5(c[0]) != r || to_b6(c[1]) != g || to_b5(c[2]) != b)
+            continue;
+#else
+        if (c[0] != color.r || c[1] != color.g || c[2] != color.b)
+            continue;
+#endif
+        c[3] = 0;
+    }
+}
+
 // FileImage
 
 FileImage::FileImage(const std::string & filename, int hot_x, int hot_y,
@@ -418,42 +454,6 @@ void FileImage::load_file()
 #endif
 
     set_transparent_color(transparent);
-}
-
-#ifdef CHOWDREN_16BIT_IMAGE
-inline unsigned char to_b5(unsigned char v)
-{
-    return v & 0xF8;
-}
-
-inline unsigned char to_b6(unsigned char v)
-{
-    return v & 0xFC;
-}
-#endif
-
-void FileImage::set_transparent_color(TransparentColor color)
-{
-    if (image == NULL)
-        return;
-
-#ifdef CHOWDREN_16BIT_IMAGE
-    unsigned char r = to_b5(color.r);
-    unsigned char g = to_b6(color.g);
-    unsigned char b = to_b5(color.b);
-#endif
-
-    for (int i = 0; i < width * height; i++) {
-        unsigned char * c = &image[i*4];
-#ifdef CHOWDREN_16BIT_IMAGE
-        if (to_b5(c[0]) != r || to_b6(c[1]) != g || to_b5(c[2]) != b)
-            continue;
-#else
-        if (c[0] != color.r || c[1] != color.g || c[2] != color.b)
-            continue;
-#endif
-        c[3] = 0;
-    }
 }
 
 static Image * internal_images[IMAGE_COUNT];
@@ -552,13 +552,25 @@ void preload_images()
 
 Image dummy_image;
 
-void ReplacedImages::replace(const Color & from, const Color & to)
+void ReplacedImages::replace(Color from, Color to)
 {
     if (index >= MAX_COLOR_REPLACE) {
         std::cout << "Max color replacements reached" << std::endl;
         return;
     }
+    from.disable();
     colors[index++] = Replacement(from, to);
+}
+
+void ReplacedImages::set_transparent(TransparentColor value)
+{
+    if (index >= MAX_COLOR_REPLACE) {
+        std::cout << "Max color replacements reached" << std::endl;
+        return;
+    }
+    Color c = Color(value);
+    c.enable();
+    colors[index++] = Replacement(c, Color(0, 0, 0, 0));
 }
 
 Image * ReplacedImages::apply(Image * image, Image * src_image)
@@ -575,8 +587,8 @@ Image * ReplacedImages::apply_direct(Image * image, Image * src_image)
     int hash_index = 0;
 
     for (int i = 0; i < count; i++) {
-        const Color & first = colors[i].first;
-        const Color & second = colors[i].second;
+        Color first = colors[i].first;
+        Color second = colors[i].second;
         hash += first.r * (++hash_index);
         hash += first.g * (++hash_index);
         hash += first.b * (++hash_index);
@@ -595,9 +607,12 @@ Image * ReplacedImages::apply_direct(Image * image, Image * src_image)
 
     Image * new_image = image->copy();
     for (int i = 0; i < count; i++) {
-        const Color & first = colors[i].first;
-        const Color & second = colors[i].second;
-        new_image->replace(first, second);
+        Color first = colors[i].first;
+        Color second = colors[i].second;
+        if (first.is_enabled()) {
+            new_image->set_transparent_color(first);
+        } else
+            new_image->replace(first, second);
     }
 
     images.push_back(ReplacedImage(src_image, new_image, hash));

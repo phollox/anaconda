@@ -160,6 +160,9 @@ def get_shader(source, ext, profile, vs_out=None):
 
     data_map.pop(None)
     data_map.pop('INFO LOG')
+    if 'OBJ CODE' not in data_map:
+        print data
+        raise NotImplementedError()
     source = '\n'.join(data_map.pop('OBJ CODE'))
     return HLSLShader(source, ext, profile, vs_out)
 

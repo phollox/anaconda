@@ -118,6 +118,7 @@ public:
     void update();
     void draw();
     void load(const std::string & filename, const std::string & ignore_ext);
+    void load(const std::string & filename);
     void resize(int w, int h);
     void resize_canvas(int x, int y, int w, int h);
     void set_stretch_mode(int mode);

@@ -129,15 +129,44 @@ def get_startup_instances(converter, instances):
         return new_instances
     return instances
 
+def find_obj(converter, name):
+    for item in converter.startup_instances:
+        frameitem = item[1]
+        if frameitem.name == name:
+            break
+    else:
+        raise KeyError()
+    handle = (frameitem.handle, frameitem.objectType, converter.game_index)
+    return handle
+
 def write_frame_post(converter, writer):
     if converter.current_frame_index != 26:
         return
-    for item in converter.startup_instances:
-        frameitem = item[1]
-        if frameitem.name == 'Active 4':
-            break
-    handle = (frameitem.handle, frameitem.objectType, converter.game_index)
-    writer.putlnc('%s->move_front();', converter.get_object(handle))
+
+    active_4 = find_obj(converter, 'Active 4')
+    writer.putlnc('%s->move_front();', converter.get_object(active_4))
+
+    # Layer:
+    # big_light: 1
+    # Active 5: 2
+    # Active 6: 3
+    # Active 7: 4
+    # Active 8: 5
+    # Demo fade out: 6
+    # FG Bloom: 7
+    # Demo fade out 2: 8
+    # Active 9: 10
+    # Active 11: 11
+    # light: 12
+    # Demo fade out main menu: 14
+
+    # need to fix order because of stupid MMF reordering
+    fg_bloom = find_obj(converter, 'FG Bloom effect')
+    demo_fade_out = find_obj(converter, 'Demo fade out')
+
+    writer.putlnc('%s->move_front(%s);', converter.get_object(fg_bloom),
+                  converter.get_object(demo_fade_out))
+
 
 def use_safe_create(converter):
     return True
@@ -156,7 +185,7 @@ def get_frames(converter, game, frames):
             indexes = indexes + (77,)
         # indexes = (6,)
     else:
-        indexes = (0, 1, 2, 3, 4, 5, 6, 7)
+        indexes = (0, 1, 2, 3, 4, 5, 6, 7, 8)
     for index in indexes:
         new_frames[index] = frames[index]
     return new_frames

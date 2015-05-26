@@ -59,6 +59,8 @@ public:
     bool is_valid();
     void unload();
     void set_filter(bool linear);
+    void set_transparent_color(TransparentColor color);
+
     // inline methods
 
     bool get_alpha(int x, int y)
@@ -88,7 +90,6 @@ public:
     FileImage(const std::string & filename, int hot_x, int hot_y,
               int act_x, int act_y, TransparentColor transparent);
     void load_file();
-    void set_transparent_color(TransparentColor color);
 };
 
 Image * get_internal_image(unsigned int i);
@@ -130,7 +131,8 @@ public:
     {
     }
 
-    void replace(const Color & from, const Color & to);
+    void replace(Color from, Color to);
+    void set_transparent(TransparentColor value);
     Image * apply(Image * image, Image * src_image);
     Image * apply_direct(Image * image, Image * src_image);
 

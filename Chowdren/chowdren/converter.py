@@ -1159,9 +1159,7 @@ class Converter(object):
 
         def get_image_path(image_hash):
             image_hash = image_hash.encode('hex')
-            return self.get_filename('image_cache',
-                                     '%s_%s.dat' % (image_hash,
-                                                    self.platform_name))
+            return self.get_filename('image_cache', '%s.dat' % image_hash)
 
         for i, (image, image_hash) in enumerate(new_entries):
             cache_path = get_image_path(image_hash)

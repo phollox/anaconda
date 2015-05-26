@@ -1,6 +1,5 @@
 #include "http.h"
 #include <iostream>
-#include "manager.h"
 
 // HTTPObject
 

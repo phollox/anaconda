@@ -185,6 +185,8 @@ void Active::update_direction(Direction * dir)
     if (animation_frame >= frame_count)
         animation_frame = 0;
 
+    if (active_flags & ANIMATION_STOPPED)
+        return;
     update_frame();
 }
 

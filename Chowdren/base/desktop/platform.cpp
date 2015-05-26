@@ -1008,9 +1008,16 @@ void platform_get_screen_size(int * width, int * height)
 
 void platform_set_display_scale(int scale)
 {
-    SDL_SetWindowSize(global_window,
-                      WINDOW_WIDTH * scale,
-                      WINDOW_HEIGHT * scale);
+    int nw = WINDOW_WIDTH * scale;
+    int nh = WINDOW_HEIGHT * scale;
+    int w, h;
+    SDL_GetWindowSize(global_window, &w, &h);
+    if (w == nw && h == nh)
+        return;
+    std::cout << "Set display scale: "
+        << w << " " << nw << " "
+        << h << " " << nh << std::endl;
+    SDL_SetWindowSize(global_window, nw, nh);
     SDL_SetWindowPosition(global_window,
                           SDL_WINDOWPOS_CENTERED,
                           SDL_WINDOWPOS_CENTERED);

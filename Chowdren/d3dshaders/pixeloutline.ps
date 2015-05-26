@@ -38,56 +38,88 @@ float4 _col = {0, 0, 0, 0};
 (_col.w = gl_texture2D(_texture, (_texture_coordinate + (float2(1.0, 0.0) * _texture_size))).w);
 if ((_col.w > 0.0))
 {
+{
+(_col.w *= _blend_color.w);
 return _col;
+;
+}
 ;
 }
 ;
 (_col.w = gl_texture2D(_texture, (_texture_coordinate + (float2(1.0, 1.0) * _texture_size))).w);
 if ((_col.w > 0.0))
 {
+{
+(_col.w *= _blend_color.w);
 return _col;
+;
+}
 ;
 }
 ;
 (_col.w = gl_texture2D(_texture, (_texture_coordinate + (float2(0.0, 1.0) * _texture_size))).w);
 if ((_col.w > 0.0))
 {
+{
+(_col.w *= _blend_color.w);
 return _col;
+;
+}
 ;
 }
 ;
 (_col.w = gl_texture2D(_texture, (_texture_coordinate + (float2(-1.0, 1.0) * _texture_size))).w);
 if ((_col.w > 0.0))
 {
+{
+(_col.w *= _blend_color.w);
 return _col;
+;
+}
 ;
 }
 ;
 (_col.w = gl_texture2D(_texture, (_texture_coordinate + (float2(-1.0, 0.0) * _texture_size))).w);
 if ((_col.w > 0.0))
 {
+{
+(_col.w *= _blend_color.w);
 return _col;
+;
+}
 ;
 }
 ;
 (_col.w = gl_texture2D(_texture, (_texture_coordinate + (float2(-1.0, -1.0) * _texture_size))).w);
 if ((_col.w > 0.0))
 {
+{
+(_col.w *= _blend_color.w);
 return _col;
+;
+}
 ;
 }
 ;
 (_col.w = gl_texture2D(_texture, (_texture_coordinate + (float2(0.0, -1.0) * _texture_size))).w);
 if ((_col.w > 0.0))
 {
+{
+(_col.w *= _blend_color.w);
 return _col;
+;
+}
 ;
 }
 ;
 (_col.w = gl_texture2D(_texture, (_texture_coordinate + (float2(1.0, -1.0) * _texture_size))).w);
 if ((_col.w > 0.0))
 {
+{
+(_col.w *= _blend_color.w);
 return _col;
+;
+}
 ;
 }
 ;
@@ -100,8 +132,7 @@ void gl_main()
 {
 {
 float4 _src = (gl_texture2D(_texture, _texture_coordinate) * _blend_color);
-(_src = _getter(_src));
-(gl_Color[0] = _src);
+(gl_Color[0] = _getter(_src));
 }
 }
 ;
