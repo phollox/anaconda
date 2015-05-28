@@ -755,6 +755,7 @@ class Converter(object):
 
         # these are game-specific
         self.object_names = {}
+        self.object_class_index = 0
         self.all_objects = {}
         self.name_to_item = {}
         self.object_types = {}
@@ -1841,7 +1842,9 @@ class Converter(object):
             if name is None:
                 class_name = 'Object%s' % handle[0]
             else:
-                class_name = get_class_name(name) + '_' + str(handle[0])
+                class_name = (get_class_name(name) + '_' +
+                              str(self.object_class_index))
+            self.object_class_index += 1
             object_type = frameitem.properties.objectType
             try:
                 object_writer = self.get_object_impl(object_type)(

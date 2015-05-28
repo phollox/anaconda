@@ -485,6 +485,7 @@ Image * get_image_cache(const std::string & filename, int hot_x, int hot_y,
         if (image->is_valid())
             image->flags |= Image::USED | Image::CACHED;
         else {
+            std::cout << "Could not load image " << filename << std::endl;
             delete image;
             image = NULL;
         }
