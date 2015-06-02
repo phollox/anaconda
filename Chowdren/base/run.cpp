@@ -37,7 +37,7 @@ GameManager manager;
 // #define CHOWDREN_USER_PROFILER
 
 // #if !defined(NDEBUG)
-#define CHOWDREN_SHOW_DEBUGGER
+// #define CHOWDREN_SHOW_DEBUGGER
 // #define SHOW_STATS
 // #endif
 
@@ -111,7 +111,9 @@ void GameManager::init()
 #elif defined(CHOWDREN_IS_FP)
     player_died = false;
     lives = 3;
-    start_frame = 56;
+    start_frame = 0;
+    values->set(1, 4);
+    values->set(12, 2);
 #elif defined(CHOWDREN_IS_NAH)
     platform_set_scale_type(2);
 #else

@@ -2009,12 +2009,12 @@ void FrameObject::shoot(FrameObject * other, int speed, int direction)
     other->movement->start();
 }
 
-int FrameObject::get_angle()
+float FrameObject::get_angle()
 {
-    return 0;
+    return 0.0f;
 }
 
-void FrameObject::set_angle(int angle, int quality)
+void FrameObject::set_angle(float angle, int quality)
 {
 }
 

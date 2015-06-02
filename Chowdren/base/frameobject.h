@@ -310,8 +310,8 @@ public:
     void set_y(int y);
     virtual int get_action_x();
     virtual int get_action_y();
-    virtual int get_angle();
-    virtual void set_angle(int angle, int quality = 0);
+    virtual float get_angle();
+    virtual void set_angle(float angle, int quality = 0);
     void create_alterables();
     void set_visible(bool value);
     void set_blend_color(int color);

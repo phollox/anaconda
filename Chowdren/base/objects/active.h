@@ -47,7 +47,7 @@ public:
     int animation_direction, animation_frame;
     int forced_animation, forced_frame, forced_speed, forced_direction;
     unsigned int counter;
-    int angle;
+    float angle;
     float x_scale, y_scale;
     int action_x, action_y;
     int active_flags;
@@ -82,8 +82,7 @@ public:
     void draw();
     int get_action_x();
     int get_action_y();
-    void set_angle(int angle, int quality = 0);
-    int get_angle();
+    void set_angle(float angle, int quality = 0);
     int get_frame();
     Direction * get_direction_data();
     int get_animation(int anim);
@@ -105,6 +104,11 @@ public:
               int hot_x, int hot_y, int action_x, int action_y,
               TransparentColor transparent_color);
     void replace_color(const Color & from, const Color & to);
+
+    float get_angle()
+    {
+        return angle;
+    }
 };
 
 extern FrameObject * default_active_instance;

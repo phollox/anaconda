@@ -101,7 +101,7 @@ inline void Render::set_view(int x, int y, int w, int h)
 #else
     glViewport(x, y, w, h);
     render_data.adjust_x = -w / 2.0f;
-    render_data.adjust_y = h / 2.0f;
+    render_data.adjust_y = -h / 2.0f;
     render_data.trans_x = 2.0f / w;
     render_data.trans_y = -2.0f / h;
 #endif

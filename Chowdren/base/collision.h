@@ -224,7 +224,7 @@ class SpriteCollision : public InstanceCollision
 {
 public:
     Image * image;
-    int angle;
+    float angle;
     float x_scale, y_scale;
     int hotspot_x, hotspot_y;
     // transformed variables
@@ -240,7 +240,7 @@ public:
 
     SpriteCollision(FrameObject * instance = NULL)
     : InstanceCollision(instance, SPRITE_COLLISION, 0), image(NULL),
-      angle(0), x_scale(1.0f), y_scale(1.0f), co(1.0f),
+      angle(0.0f), x_scale(1.0f), y_scale(1.0f), co(1.0f),
       si(0.0f), hotspot_x(0), hotspot_y(0), width(0), height(0), x_t(0), y_t(0)
     {
     }
@@ -260,32 +260,25 @@ public:
         update_transform();
     }
 
-    void set_angle(int value)
+    void set_angle(float value)
     {
         angle = value;
-        float r;
-        switch (value) {
-            case 0:
-                co = 1.0f;
-                si = 0.0;
-                break;
-            case 90:
-                co = 0.0f;
-                si = 1.0f;
-                break;
-            case 180:
-                co = -1.0;
-                si = 0.0f;
-                break;
-            case 270:
-                co = 0.0f;
-                si = -1.0f;
-                break;
-            default:
-                r = rad(float(angle));
-                co = cos(r);
-                si = sin(r);
-                break;
+        if (value == 0.0f) {
+            co = 1.0f;
+            si = 0.0;
+        } else if (value == 90.0f) {
+            co = 0.0f;
+            si = 1.0f;
+        } else if (value == 180.0f) {
+            co = -1.0;
+            si = 0.0f;
+        } else if (value == 270.0f) {
+            co = 0.0f;
+            si = -1.0f;
+        } else {
+            float r = rad(angle);
+            co = cos(r);
+            si = sin(r);
         }
         update_transform();
     }
@@ -311,7 +304,7 @@ public:
     void update_transform()
     {
         bool no_scale = x_scale == 1.0f && y_scale == 1.0f;
-        bool no_rotate = angle == 0;
+        bool no_rotate = angle == 0.0f;
         if (no_scale && no_rotate) {
             width = image->width;
             height = image->height;

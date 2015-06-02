@@ -6,7 +6,7 @@
 
 Active::Active(int x, int y, int type_id)
 : FrameObject(x, y, type_id), forced_animation(-1),
-  animation_frame(0), counter(0), angle(0), forced_frame(-1),
+  animation_frame(0), counter(0), angle(0.0f), forced_frame(-1),
   forced_speed(-1), forced_direction(-1), x_scale(1.0f), y_scale(1.0f),
   animation_direction(0), flash_interval(0.0f), animation_finished(-1),
   image(NULL), active_flags(0), direction_data(NULL), last_dir(-1),
@@ -357,17 +357,12 @@ int Active::get_action_y()
     return get_y() + action_y;
 }
 
-void Active::set_angle(int angle, int quality)
+void Active::set_angle(float angle, int quality)
 {
-    angle = mod(angle, 360);
+    angle = mod(angle, 360.0f);
     this->angle = angle;
     sprite_col.set_angle(angle);
     update_action_point();
-}
-
-int Active::get_angle()
-{
-    return angle;
 }
 
 int Active::get_frame()
