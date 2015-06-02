@@ -42,5 +42,6 @@ void main()
     ACCUM(vec2(0.913546, 0.406736));
     ACCUM(vec2(0.489074, 0.103956));
     o /= 31.0;
+    o.a *= gl_Color.a;
     gl_FragColor = o;
 }

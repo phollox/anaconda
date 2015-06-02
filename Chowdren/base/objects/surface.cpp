@@ -498,6 +498,7 @@ int SurfaceObject::get_image_width(int index)
 
 void SurfaceObject::clear_alpha(int index)
 {
+    blend_color.a = index;
 }
 
 void SurfaceObject::draw_rect(int x, int y, int w, int h, Color color,
