@@ -106,13 +106,13 @@ inline std::string left_string(const std::string & v, int count)
 class Font
 {
 public:
-    const char * face;
+    std::string name;
     int size;
     bool bold;
     bool italic;
     bool underline;
 
-    Font(const char * face, int size, bool bold, bool italic, bool underline);
+    Font(const std::string & name, int size, bool bold, bool italic, bool underline);
 };
 
 // static objects
@@ -140,9 +140,13 @@ public:
     static bool name_exists(const std::string & path);
     static bool directory_exists(const std::string & path);
     static void delete_file(const std::string & path);
+    static void delete_folder(const std::string & path);
     static bool file_readable(const std::string & path);
+    static int get_size(const std::string & path);
     static bool copy_file(const std::string & src, const std::string & dst);
     static void rename_file(const std::string & src, const std::string & dst);
+    static void append_text(const std::string & text,
+                            const std::string & path);
 };
 
 #include "extensions.h"

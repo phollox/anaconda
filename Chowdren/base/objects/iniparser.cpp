@@ -14,6 +14,7 @@ http://code.google.com/p/inih/
 #include <sstream>
 #include <istream>
 #include "platform.h"
+#include "utf16to8.h"
 
 inline int is_space(unsigned char c)
 {
@@ -75,6 +76,13 @@ int ini_parse_string(const std::string & s,
                                     const char*),
                      void* user)
 {
+    if (s.size() >= 2 && (unsigned char)s[0] == 0xFF
+        && (unsigned char)s[1] == 0xFE)
+    {
+        std::string out;
+        convert_utf16_to_utf8(s, out);
+        return ini_parse_string(out, handler, user);
+    }
     std::istringstream input(s);
 
     /* Uses a fair bit of stack (use heap instead if you need to) */

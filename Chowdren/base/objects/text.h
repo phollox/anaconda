@@ -19,6 +19,7 @@ public:
     bool initialized;
     int alignment;
     bool bold, italic;
+    std::string font_name;
     FTTextureFont * font;
     std::string draw_text;
     bool draw_text_set;
@@ -43,6 +44,7 @@ public:
     int get_width();
     int get_height();
     void update_draw_text();
+    const std::string & get_font_name();
 };
 
 class FontInfo

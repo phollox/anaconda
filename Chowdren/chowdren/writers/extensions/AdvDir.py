@@ -40,25 +40,81 @@ class FindClosest(ActionWriter):
         writer.put('%s->find_closest(%s, %s, %s);' % (obj, instances, x, y))
         writer.end_brace()
 
-actions = make_table(ActionMethodWriter, {
-    1 : FindClosest
-})
+class CompareDistance(ConditionMethodWriter):
+    custom = True
+    def write(self, writer):
+        self.end_label = 'compare_%s_end' % self.get_id(self)
 
-conditions = make_table(ConditionMethodWriter, {
-})
+        writer.start_brace()
+
+        writer.putlnc('FrameObject * obj1;')
+        writer.putlnc('FrameObject * obj2;')
+        writer.putlnc('int x1, y1, x2, y2;')
+
+        pos1 = self.convert_index(0)
+        pos2 = self.convert_index(1)
+
+        self.set_pos(pos1, 'obj1', 'x1', 'y1', writer)
+        self.set_pos(pos2, 'obj2', 'x2', 'y2', writer)
+
+        check = 'get_distance(x1, y1, x2, y2) <= %s' % self.convert_index(2)
+        if not self.is_negated():
+            check = '!(%s)' % check
+
+        writer.putlnc('if (%s) %s', check, self.converter.event_break)
+
+        writer.end_brace()
+        writer.put_label(self.end_label)
+
+    def set_pos(self, pos, save_obj, x, y, writer):
+        if pos.get('use_action_point', False):
+            raise NotImplementedError()
+        if pos.get('transform_position_direction', False):
+            raise NotImplementedError()
+        obj = pos.get('parent', None)
+        if obj is None:
+            raise NotImplementedError()
+        writer.putlnc('%s = %s;', save_obj, self.converter.get_object(obj))
+        writer.putlnc('if (%s == NULL) goto %s;', save_obj, self.end_label)
+
+        writer.putlnc('%s = %s->get_x() + %s;', x, save_obj, pos['x'])
+        writer.putlnc('%s = %s->get_y() + %s;', y, save_obj, pos['y'])
 
 class GetDistance(ExpressionMethodWriter):
     has_object = False
     method = 'get_distance'
 
+class GetDistanceInt(ExpressionMethodWriter):
+    has_object = False
+    method = 'get_distance_int'
+
 class GetDirection(ExpressionMethodWriter):
     has_object = False
     method = 'get_angle'
 
+class GetDirectionInt(ExpressionMethodWriter):
+    has_object = False
+    method = 'get_angle_int'
+
+class GetDirDiffAbs(ExpressionMethodWriter):
+    has_object = False
+    method = 'get_dir_diff_abs'
+
+actions = make_table(ActionMethodWriter, {
+    1 : FindClosest
+})
+
+conditions = make_table(ConditionMethodWriter, {
+    0 : CompareDistance
+})
+
 expressions = make_table(ExpressionMethodWriter, {
     1 : GetDirection,
-    8 : 'get_closest',
-    2 : GetDistance
+    2 : GetDistance,
+    3 : GetDirectionInt,
+    4 : GetDistanceInt,
+    6 : GetDirDiffAbs,
+    8 : 'get_closest'
 })
 
 def get_object():

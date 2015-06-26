@@ -85,6 +85,8 @@ PFNGLGETUNIFORMLOCATIONARBPROC __glGetUniformLocationARB;
 #endif
 
 #ifndef CHOWDREN_USE_D3D
+void set_gl_state();
+
 static bool check_opengl_extension(const char * name)
 {
     if (SDL_GL_ExtensionSupported(name) == SDL_TRUE)
@@ -357,6 +359,23 @@ unsigned int platform_get_global_time()
     return time(NULL);
 }
 
+static DateTime datetime;
+
+const DateTime & platform_get_datetime()
+{
+    time_t now = time(NULL);
+    tm * t = localtime(&now);
+    datetime.sec = t->tm_sec;
+    datetime.min = t->tm_min;
+    datetime.hour = t->tm_hour;
+    datetime.mday = t->tm_mday;
+    datetime.mon = t->tm_mon;
+    datetime.year = t->tm_year;
+    datetime.wday = t->tm_wday;
+    datetime.yday = t->tm_yday;
+    return datetime;
+}
+
 void platform_sleep(double t)
 {
     if (t < 0.001)
@@ -378,9 +397,11 @@ void platform_get_mouse_pos(int * x, int * y)
     *y = (*y - draw_y_off) * (float(WINDOW_HEIGHT) / draw_y_size);
 }
 
-// #define CHOWDREN_USE_GL_DEBUG
-
 #if !defined(NDEBUG) && !defined(CHOWDREN_USE_D3D)
+// #define CHOWDREN_USE_GL_DEBUG
+#endif
+
+#ifdef CHOWDREN_USE_GL_DEBUG
 static void APIENTRY on_debug_message(GLenum source, GLenum type, GLuint id,
                                       GLenum severity, GLsizei length,
                                       const GLchar * message,
@@ -388,6 +409,15 @@ static void APIENTRY on_debug_message(GLenum source, GLenum type, GLuint id,
 {
     std::cout << "OpenGL message (" << source << " " << type << " " << id <<
         ")" << message << std::endl;
+}
+
+static void APIENTRY on_debug_message_amd(GLuint id, GLenum category,
+                                          GLenum severity, GLsizei length,
+                                          const GLchar* message,
+                                          GLvoid* userParam)
+{
+    std::cout << "OpenGL message (" << id << " " << category << " "
+        << severity << ")" << message << std::endl;
 }
 #endif
 
@@ -608,7 +638,7 @@ void platform_create_display(bool fullscreen)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #endif
 
-#ifndef NDEBUG
+#ifdef CHOWDREN_USE_GL_DEBUG
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 #endif
 
@@ -767,23 +797,32 @@ void platform_create_display(bool fullscreen)
         SDL_GL_GetProcAddress("glGetUniformLocationARB");
 #endif
 
-#if !defined(NDEBUG) && defined(CHOWDREN_USE_GL_DEBUG)
+#ifdef CHOWDREN_USE_GL_DEBUG
 #define GL_DEBUG_OUTPUT 0x92E0
 	std::cout << "OpenGL debug enabled" << std::endl;
+
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+    if (SDL_GL_ExtensionSupported("GL_ARB_debug_output")) {
+        std::cout << "Using ARB debug" << std::endl;
+        PFNGLDEBUGMESSAGECALLBACKARBPROC glDebugMessageCallback =
+            (PFNGLDEBUGMESSAGECALLBACKARBPROC)
+            SDL_GL_GetProcAddress("glDebugMessageCallback");
 
-    PFNGLDEBUGMESSAGECALLBACKARBPROC glDebugMessageCallback =
-        (PFNGLDEBUGMESSAGECALLBACKARBPROC)
-        SDL_GL_GetProcAddress("glDebugMessageCallback");
+        PFNGLDEBUGMESSAGECONTROLARBPROC glDebugMessageControl =
+            (PFNGLDEBUGMESSAGECONTROLARBPROC)
+            SDL_GL_GetProcAddress("glDebugMessageControl");
 
-    PFNGLDEBUGMESSAGECONTROLARBPROC glDebugMessageControl =
-        (PFNGLDEBUGMESSAGECONTROLARBPROC)
-        SDL_GL_GetProcAddress("glDebugMessageControl");
-
-	glDebugMessageCallback((GLDEBUGPROCARB)on_debug_message, NULL);
-    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL,
-                          GL_TRUE);
+    	glDebugMessageCallback((GLDEBUGPROCARB)on_debug_message, NULL);
+        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0,
+                              NULL, GL_TRUE);
+    } else if (SDL_GL_ExtensionSupported("GL_AMD_debug_output")) {
+        std::cout << "Using AMD debug" << std::endl;
+        PFNGLDEBUGMESSAGECALLBACKAMDPROC glDebugMessageCallbackAMD =
+            (PFNGLDEBUGMESSAGECALLBACKAMDPROC)
+            SDL_GL_GetProcAddress("glDebugMessageCallbackAMD");
+        glDebugMessageCallbackAMD((GLDEBUGPROCAMD)on_debug_message_amd, NULL);
+    }
 #endif
 
     // check extensions
@@ -894,12 +933,20 @@ void platform_begin_draw()
 {
 #ifdef CHOWDREN_USE_D3D
     render_data.device->BeginScene();
+#else
+    set_gl_state();
 #endif
     screen_fbo.bind();
 }
 
 void platform_swap_buffers()
 {
+#ifdef CHOWDREN_USE_GL_DEBUG
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR)
+        std::cout << "OpenGL error: " << err << std::endl;
+#endif
+
     int window_width, window_height;
     platform_get_size(&window_width, &window_height);
     bool resize = window_width != WINDOW_WIDTH ||
@@ -1068,6 +1115,11 @@ const std::string & platform_get_language()
 
 #include <sys/stat.h>
 
+void platform_walk_folder(const std::string & path,
+                          vector<FilesystemItem> items)
+{
+}
+
 size_t platform_get_file_size(const char * filename)
 {
 #ifndef _WIN32
@@ -1218,6 +1270,7 @@ public:
     int axis_count;
     int last_press;
     int button_count;
+    int hat_count;
 
     JoystickData()
     : has_effect(false), has_rumble(false), last_press(0), controller(NULL),
@@ -1230,8 +1283,10 @@ public:
         controller = c;
         joy = j;
         instance = i;
-        if (c == NULL)
+        if (c == NULL) {
             button_count = SDL_JoystickNumButtons(j);
+            hat_count = SDL_JoystickNumHats(j);
+        }
         init_rumble();
     }
 
@@ -1290,24 +1345,33 @@ public:
         return SDL_JoystickGetButton(joy, n) == 1;
     }
 
+    int get_joy_hat(int n)
+    {
+        if (n >= hat_count)
+            return 0;
+        return SDL_JoystickGetHat(joy, n);
+    }
+
     bool get_button(SDL_GameControllerButton b)
     {
         if (controller == NULL) {
             int bb;
             switch (b) {
                 case SDL_CONTROLLER_BUTTON_DPAD_UP:
-                    return (SDL_JoystickGetHat(joy, 0) & SDL_HAT_UP) != 0;
+                    return (get_joy_hat(0) & SDL_HAT_UP) != 0;
                 case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-                    return (SDL_JoystickGetHat(joy, 0) & SDL_HAT_DOWN) != 0;
+                    return (get_joy_hat(0) & SDL_HAT_DOWN) != 0;
                 case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-                    return (SDL_JoystickGetHat(joy, 0) & SDL_HAT_LEFT) != 0;
+                    return (get_joy_hat(0) & SDL_HAT_LEFT) != 0;
                 case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-                    return (SDL_JoystickGetHat(joy, 0) & SDL_HAT_RIGHT) != 0;
+                    return (get_joy_hat(0) & SDL_HAT_RIGHT) != 0;
                 default:
                     bb = (int)b;
             }
             if (bb >= SDL_CONTROLLER_BUTTON_DPAD_UP)
                 bb -= 4;
+            if (bb >= button_count)
+                return false;
             return SDL_JoystickGetButton(joy, bb) == 1;
         }
         return SDL_GameControllerGetButton(controller, b) == 1;
@@ -1554,21 +1618,12 @@ void joystick_vibrate(int n, int l, int r, int ms)
     get_joy(n).vibrate(l / 100.0f, r / 100.0f, ms);
 }
 
-#define DEADZONE 0.15f
-#define DEADZONE_MUL (1.0f / (1.0f - 0.15f))
-
-float get_joystick_axis(int n, int axis)
+float get_joystick_axis_raw(int n, int axis)
 {
     if (!is_joystick_attached(n))
         return 0.0f;
     axis--;
-    float v = get_joy(n).get_axis(axis);
-    if (v > DEADZONE)
-        return (v - DEADZONE) * DEADZONE_MUL;
-    else if (v < -DEADZONE)
-        return (v + DEADZONE) * DEADZONE_MUL;
-    else
-        return 0.0f;
+    return get_joy(n).get_axis(axis);
 }
 
 // url open

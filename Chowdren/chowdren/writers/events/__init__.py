@@ -57,6 +57,7 @@ class ConditionWriter(ACBase):
     in_place = False
     pre_event = None
     post_event = None
+    precedence = 0
 
     def write(self, writer):
         raise NotImplementedError()

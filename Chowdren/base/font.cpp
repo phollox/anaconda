@@ -956,7 +956,7 @@ inline void FTSimpleLayout::OutputWrappedI(const T *buf, const int len,
 {
     float distributeWidth = 0.0;
     // Align the text according as specified by Alignment
-    switch (alignment)
+    switch (alignment & ALIGN_HORIZONTAL)
     {
         case ALIGN_LEFT:
             pen.X(0);

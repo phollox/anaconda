@@ -78,6 +78,15 @@ void ActivePicture::set_scale(float value)
     scale_x = scale_y = value;
 }
 
+void ActivePicture::set_size(int w, int h)
+{
+    float sx = w / float(image->width);
+    float sy = h / float(image->height);
+    scale_x = sx;
+    scale_y = sy;
+    ((SpriteCollision*)collision)->set_scale(sx, sy);
+}
+
 void ActivePicture::set_zoom(float value)
 {
     set_scale(value / 100.0);
@@ -121,6 +130,13 @@ void ActivePicture::draw()
 void ActivePicture::paste(int dest_x, int dest_y, int src_x, int src_y,
                           int src_width, int src_height, int collision_type)
 {
+// #ifndef NDEBUG
+//     std::cout << "Paste: " << name << " "
+//         << int(transparent_color.r) << " "
+//         << int(transparent_color.g) << " "
+//         << int(transparent_color.b) << " "
+//         << int(transparent_color.a) << std::endl;
+// #endif
     if (image == NULL) {
         std::cout << "Invalid image paste: " << filename << std::endl;
         return;
@@ -128,7 +144,7 @@ void ActivePicture::paste(int dest_x, int dest_y, int src_x, int src_y,
     image->hotspot_x = 0;
     image->hotspot_y = 0;
     layer->paste(image, dest_x, dest_y, src_x, src_y,
-                 src_width, src_height, collision_type, blend_color);
+                 src_width, src_height, collision_type, effect, blend_color);
 }
 
 class DefaultPicture : public ActivePicture

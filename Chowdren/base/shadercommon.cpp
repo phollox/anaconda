@@ -27,15 +27,17 @@ void convert_vec4(int val, float & a, float & b, float & c, float & d)
                                 DO_SHADER(S);\
                                 break
 
-#define SET_BLEND_FUNC(a, b) blend_status = 1;\
-                             set_blend_func(a, b);
-#define SET_BLEND_FUNC_EQ(func_a, func_b, eq_a, eq_b)\
+#define SET_BLEND_FUNC(a, b, c, d)\
+                             blend_status = 1;\
+                             set_blend_func(a, b, c, d)
+
+#define SET_BLEND_FUNC_EQ(a, b, c, d, e, f)\
                              blend_status = 2;\
-                             set_blend_func_eq(func_a, func_b, eq_a, eq_b);
+                             set_blend_func_eq(a, b, c, d, e, f)
 
 static bool has_blend_eq = false;
 static bool has_blend_func = false;
-static int blend_status = 0;
+static int blend_status = 2;
 
 void shader_reset_blend()
 {
@@ -47,9 +49,11 @@ void shader_reset_blend()
 void shader_set_texture()
 {
     if (blend_status == 1) {
-        set_blend_func(FUNC_SRC_ALPHA, FUNC_ONE_MINUS_SRC_ALPHA);
+        set_blend_func(FUNC_SRC_ALPHA, FUNC_ONE_MINUS_SRC_ALPHA,
+                       FUNC_ONE, FUNC_ONE_MINUS_SRC_ALPHA);
     } else if (blend_status == 2) {
         set_blend_func_eq(FUNC_SRC_ALPHA, FUNC_ONE_MINUS_SRC_ALPHA,
+                          FUNC_ONE, FUNC_ONE_MINUS_SRC_ALPHA,
                           EQ_ADD, EQ_ADD);
     }
     blend_status = 0;
@@ -61,9 +65,11 @@ void shader_set_effect(int effect, FrameObject * obj,
                        int width, int height)
 {
     if (blend_status == 1) {
-        set_blend_func(FUNC_SRC_ALPHA, FUNC_ONE_MINUS_SRC_ALPHA);
+        set_blend_func(FUNC_SRC_ALPHA, FUNC_ONE_MINUS_SRC_ALPHA,
+                       FUNC_ONE, FUNC_ONE_MINUS_SRC_ALPHA);
     } else if (blend_status == 2) {
         set_blend_func_eq(FUNC_SRC_ALPHA, FUNC_ONE_MINUS_SRC_ALPHA,
+                          FUNC_ONE, FUNC_ONE_MINUS_SRC_ALPHA,
                           EQ_ADD, EQ_ADD);
     }
     blend_status = 0;
@@ -74,20 +80,24 @@ void shader_set_effect(int effect, FrameObject * obj,
         case Render::SUBTRACT:
             DO_SHADER(subtract_shader);
             SET_BLEND_FUNC_EQ(FUNC_DST_COLOR, FUNC_ONE,
+                              FUNC_ZERO, FUNC_ONE,
                               EQ_REVERSE_SUBTRACT, EQ_ADD);
             break;
         case Render::ADDITIVE:
             texture_shader.begin(NULL, 0, 0);
-            SET_BLEND_FUNC(FUNC_SRC_ALPHA, FUNC_ONE);
+            SET_BLEND_FUNC(FUNC_SRC_ALPHA, FUNC_ONE,
+                           FUNC_ZERO, FUNC_ONE);
             break;
         case Render::SURFACESUBTRACT:
             texture_shader.begin(NULL, 0, 0);
             SET_BLEND_FUNC_EQ(FUNC_ONE, FUNC_ONE,
+                              FUNC_ZERO, FUNC_ONE,
                               EQ_REVERSE_SUBTRACT, EQ_ADD);
             break;
         case Render::LAYERCOLOR:
             texture_shader.begin(NULL, 0, 0);
-            SET_BLEND_FUNC(FUNC_ZERO, FUNC_SRC_COLOR);
+            SET_BLEND_FUNC(FUNC_ZERO, FUNC_SRC_COLOR,
+                           FUNC_ZERO, FUNC_ONE);
             break;
         case Render::PIXELSCALE:
             pixelscale_shader.begin(NULL, 0, 0);
@@ -97,11 +107,13 @@ void shader_set_effect(int effect, FrameObject * obj,
             break;
         case Render::CHANNELBLURADD:
             DO_SHADER(channelblur_shader);
-            SET_BLEND_FUNC(FUNC_SRC_ALPHA, FUNC_ONE);
+            SET_BLEND_FUNC(FUNC_SRC_ALPHA, FUNC_ONE,
+                           FUNC_ZERO, FUNC_ONE);
             break;
         case Render::BLURADD:
             DO_SHADER(blur_shader);
-            SET_BLEND_FUNC(FUNC_SRC_ALPHA, FUNC_ONE);
+            SET_BLEND_FUNC(FUNC_SRC_ALPHA, FUNC_ONE,
+                           FUNC_ZERO, FUNC_ONE);
             break;
         HANDLE_SHADER(BRIGHTSATBG, brightsatbg_shader);
         HANDLE_SHADER(PERSPECTIVE, perspective_shader);
@@ -131,5 +143,8 @@ void shader_set_effect(int effect, FrameObject * obj,
         HANDLE_SHADER(BGBLOOM, bgbloom_shader);
         HANDLE_SHADER(MIXER, mixer_shader);
         HANDLE_SHADER(BLUR, blur_shader);
+        HANDLE_SHADER(DISPLAY, display_shader);
+        HANDLE_SHADER(LINEARBURN, linearburn_shader);
+        HANDLE_SHADER(LINEARDODGE, lineardodge_shader);
     }
 }

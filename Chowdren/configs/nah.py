@@ -1,4 +1,5 @@
 from chowdren.writers.events.system import get_loop_index_name
+import re
 
 def use_deferred_collisions(converter):
     return False
@@ -20,6 +21,10 @@ def init(converter):
     converter.add_define('CHOWDREN_PASTE_CACHE')
     converter.add_define('CHOWDREN_DEFAULT_SCALE', 2)
     # converter.add_define('CHOWDREN_PASTE_BROADPHASE')
+    if converter.platform_name == 'ps4':
+        converter.add_define('CHOWDREN_PRELOAD_ALL')
+
+    converter.add_define('CHOWDREN_SAVE_PATH', 'save')
 
 def get_loop_name(converter, parameter):
     name = converter.convert_parameter(parameter)
@@ -51,7 +56,7 @@ def write_loop(converter, loop_name, event_writer, writer):
     writer.putlnc('%s = %s;', ai_name, index_name)
 
 def use_image_preload(converter):
-    return True
+    return converter.platform_name not in ('ps4',)
 
 def use_image_flush(converter, frame):
     return False
@@ -106,7 +111,27 @@ def write_pre(converter, writer, group):
     else:
         group.conditions.insert(0, condition)
 
+save_paths = set([
+    'Profile.INI',
+    '.\\Bin\\Profile.INI',
+    '.\\Bin\\Profile.ini'
+])
+
+audio_re = re.compile(re.escape('\\audio\\'), re.IGNORECASE)
+src_re = re.compile(re.escape('\\src\\'), re.IGNORECASE)
+bad_start = 'C:\\MMF2\\Python\\Chowdren\\nah\\'
+
 def get_string(converter, value):
     if value == 'XBOX':
         return 'X360'
+    elif value == 'Bin\\Charactertypes.ini':
+        return '.\\Bin\\Charactertypes.ini'
+    value = audio_re.sub(re.escape('\\Audio\\'), value)
+    value = src_re.sub(re.escape('\\Src\\'), value)
+    value = value.replace(bad_start, '.\\')
+    if converter.platform_name == 'ps4':
+        if value in save_paths:
+            return './save/Profile.INI'
+        if value == 'BLANK.INI':
+            return './Bin/BLANK.ini'
     return value

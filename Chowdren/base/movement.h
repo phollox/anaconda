@@ -182,4 +182,16 @@ public:
     void stop(bool collision);
 };
 
+class MoveItMovement : public Movement
+{
+public:
+    int src_x, src_y;
+    int dst_x, dst_y;
+    int step;
+    int cycles;
+
+    MoveItMovement(FrameObject * instance, int x, int y, int cycles);
+    void update();
+};
+
 #endif // CHOWDREN_MOVEMENT_H

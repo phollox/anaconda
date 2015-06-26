@@ -9,6 +9,8 @@ typedef enum
     ALIGN_HCENTER = 1 << 1,
     ALIGN_RIGHT = 1 << 2,
     ALIGN_JUSTIFY = 1 << 3,
+    ALIGN_HORIZONTAL = ALIGN_LEFT | ALIGN_HCENTER | ALIGN_RIGHT |
+                       ALIGN_JUSTIFY,
     ALIGN_TOP = 1 << 4,
     ALIGN_BOTTOM = 1 << 5,
     ALIGN_VCENTER = 1 << 6

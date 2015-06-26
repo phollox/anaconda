@@ -489,7 +489,8 @@ void Active::set_y_scale(float value)
 void Active::paste(int collision_type)
 {
     layer->paste(image, x-image->hotspot_x, y-image->hotspot_y, 0, 0,
-                 image->width, image->height, collision_type, blend_color);
+                 image->width, image->height, collision_type, effect,
+                 blend_color);
 }
 
 bool Active::test_animation(int value)

@@ -27,9 +27,11 @@ class KcList(ObjectWriter):
         width = data.readShort()
         height = data.readShort()
         # XXX support unicode
-        font = LogFont(data, old = True)
+        is_unicode = self.data.settings.get('unicode', False)
+        font = self.data.new(LogFont, data, old=not is_unicode)
         font_color = data.readColor()
-        data.readString(40)
+        self.data.readString(data, 40)
+        
         data.skipBytes(16 * 4)
         back_color = data.readColor()
         flags.setFlags(data.readInt())
@@ -38,22 +40,36 @@ class KcList(ObjectWriter):
         data.skipBytes(4 * 3)
         lines = []
         for _ in xrange(line_count):
-            line = data.readString()
+            line = self.data.readString(data)
             writer.putln(to_c('add_line(%r);', line))
 
         if flags['HideOnStart']:
             writer.putln('set_visible(false);')
 
+        if flags['Sort']:
+            writer.putln('list_flags |= SORT_LIST;')
+
 actions = make_table(ActionMethodWriter, {
-    0 : 'load_file'
+    0 : 'load_file',
+    5 : 'clear',
+    6 : 'add_line',
+    8 : 'delete_line(%s - 1)',
+    9 : '.current_line = %s',
+    21 : 'disable_focus',
+    30 : 'set_line(%s - 1, %s)'
 })
 
 conditions = make_table(ConditionMethodWriter, {
+    4 : 'get_focus'
 })
 
 expressions = make_table(ExpressionMethodWriter, {
+    0 : '.current_line',
+    1 : 'get_current_line()',
     4 : 'get_line',
-    7 : 'get_count'
+    7 : 'get_count()',
+    14 : 'find_string',
+    15 : 'find_string_exact'
 })
 
 def get_object():

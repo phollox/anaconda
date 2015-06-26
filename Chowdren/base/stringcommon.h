@@ -121,4 +121,11 @@ inline void split_string(const std::string & str, const std::string & delims,
     }
 }
 
+inline bool ends_with(const std::string & str, const std::string & suffix)
+{
+    if (str.size() < suffix.size())
+        return false;
+    return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
 #endif // CHOWDREN_STRINGCOMMON_H

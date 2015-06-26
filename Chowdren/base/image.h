@@ -90,11 +90,15 @@ public:
     FileImage(const std::string & filename, int hot_x, int hot_y,
               int act_x, int act_y, TransparentColor transparent);
     void load_file();
+    void load_data(unsigned char * data, int size);
 };
 
 Image * get_internal_image(unsigned int i);
 Image * get_image_cache(const std::string & filename, int hot_x, int hot_y,
-                            int act_x, int act_y, TransparentColor color);
+                        int act_x, int act_y, TransparentColor color);
+bool has_image_cache(const std::string & filename);
+void set_image_cache(const std::string & filename, FileImage * image);
+
 void reset_image_cache();
 void flush_image_cache();
 void preload_images();

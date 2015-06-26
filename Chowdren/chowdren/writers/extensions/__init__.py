@@ -23,7 +23,7 @@ for name in filenames:
 # some aliases
 names['stringparser'] = 'parser'
 
-def load_extension_module(ext):
+def load_extension_module(ext, use_default):
     try:
         return loaded_extensions[ext]
     except KeyError:
@@ -35,13 +35,15 @@ def load_extension_module(ext):
         extension = getattr(module, mod, None)
     except KeyError:
         extension = None
-    if extension is None:
+    if use_default and extension is None:
         class NewModule(object):
             @staticmethod
             def get_object():
                 return ObjectWriter
         extension = NewModule
 
-    extension.extension_name = ext
+    if extension is not None:
+        extension.extension_name = ext
+
     loaded_extensions[ext] = extension
     return extension

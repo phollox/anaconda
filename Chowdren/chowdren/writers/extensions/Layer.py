@@ -210,6 +210,17 @@ class MoveObject(ActionMethodWriter):
         parameter = self.parameters[0].loader
         return (parameter.objectInfo, parameter.objectType)
 
+class SetAlpha(ActionMethodWriter):
+    method = 'set_alpha_coefficient(%s-1, %s)'
+
+class SetEffect(ActionMethodWriter):
+    custom = True
+
+    def write(self, writer):
+        name = self.parameters[1].loader.value
+        if name != '':
+            raise NotImplementedError()
+
 class SetByName(ActionMethodWriter):
     def write(self, writer):
         name = self.converter.convert_static_expression(
@@ -281,9 +292,22 @@ class GetYByName(GetByName):
     def get_string_layer(self, index, layer):
         return 'layers[%s].y' % index
 
+class CheckByName(ConditionMethodWriter):
+    has_object = False
+
+    def write(self, writer):
+        name = self.converter.convert_static_expression(
+            self.parameters[0].loader.items)
+        index, layer = get_layer(self.converter, name)
+        self.write_layer(index, writer)
+
+class IsVisibleByName(CheckByName):
+    def write_layer(self, layer, writer):
+        writer.putc('layers[%s].visible', layer)
+
 class IsVisible(ConditionMethodWriter):
     has_object = False
-    method = 'layers[%s+1].visible'
+    method = 'layers[%s-1].visible'
 
 class GetObjectLevel(ExpressionMethodWriter):
     has_object = False
@@ -313,12 +337,15 @@ actions = make_table(ActionMethodWriter, {
     27 : 'sort_alt_decreasing',
     31 : 'show_layer(%s-1)',
     32 : 'hide_layer(%s-1)',
+    44 : SetEffect,
+    46 : SetAlpha,
     47 : 'set_rgb(%s-1, %s)',
     50 : SetAlphaByName
 })
 
 conditions = make_table(ConditionMethodWriter, {
-    10 : IsVisible
+    10 : IsVisible,
+    11 : IsVisibleByName
 })
 
 expressions = make_table(ExpressionMethodWriter, {

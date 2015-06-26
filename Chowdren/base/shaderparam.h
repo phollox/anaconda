@@ -18,6 +18,7 @@ unsigned int hash_shader_parameter(const char * str, unsigned int len);
 #define SHADER_PARAM_FSY 98
 #define SHADER_PARAM_FSX 103
 #define SHADER_PARAM_FFADE 35
+#define SHADER_PARAM_FPERIODS 153
 #define SHADER_PARAM_YOFF 129
 #define SHADER_PARAM_FANGLE 66
 #define SHADER_PARAM_IINVERT 132
@@ -25,6 +26,7 @@ unsigned int hash_shader_parameter(const char * str, unsigned int len);
 #define SHADER_PARAM_FORIGINALPOWER 159
 #define SHADER_PARAM_Y_SIZE 151
 #define SHADER_PARAM_SATURATION 130
+#define SHADER_PARAM_FAMPLITUDE 115
 #define SHADER_PARAM_FBRGB 25
 #define SHADER_PARAM_VERTICAL 68
 #define SHADER_PARAM_RR 2

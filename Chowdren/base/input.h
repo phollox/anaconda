@@ -113,6 +113,7 @@ int get_joystick_rt(int n);
 int get_joystick_z(int n);
 int get_joystick_x(int n);
 int get_joystick_y(int n);
+float get_joystick_axis(int n, int axis);
 bool is_joystick_pressed_once(int n, int button);
 bool is_joystick_released_once(int n, int button);
 bool any_joystick_pressed_once(int n);

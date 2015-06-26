@@ -11,6 +11,9 @@
 #include "collision.cpp"
 #include "objects/active.h"
 
+// XXX move this?
+#include "staticlibs/utf16to8.cpp"
+
 #ifdef CHOWDREN_USE_VALUEADD
 #include "extra_keys.cpp"
 #endif
@@ -75,8 +78,9 @@ void swap_position(const FlatObjectList & list)
 
 // Font
 
-Font::Font(const char * face, int size, bool bold, bool italic, bool underline)
-: face(face),  size(size),  bold(bold), italic(italic), underline(underline)
+Font::Font(const std::string & name, int size, bool bold, bool italic,
+           bool underline)
+: name(name), size(size),  bold(bold), italic(italic), underline(underline)
 {
 
 }
@@ -251,7 +255,7 @@ inline void remove_paste_item(BackgroundItem * item, BackgroundItems & items,
 
 void Background::paste(Image * img, int dest_x, int dest_y,
                        int src_x, int src_y, int src_width, int src_height,
-                       int collision_type, const Color & color)
+                       int collision_type, int effect, const Color & color)
 {
     // collision types:
     // 0: not an obstacle
@@ -291,6 +295,7 @@ void Background::paste(Image * img, int dest_x, int dest_y,
                                                src_x, src_y,
                                                src_width, src_height,
                                                color);
+    item->effect = effect;
 
 #ifdef CHOWDREN_PASTE_CACHE
     if (collides(cache_pos, item->aabb) && fbo.tex != 0)
@@ -340,7 +345,7 @@ void Background::draw(int v[4])
                          cache_pos[3] - cache_pos[1]);
 		int old_offset[2] = {Render::offset[0], Render::offset[1]};
         Render::set_offset(-cache_pos[0], -cache_pos[1]);
-        Render::clear(0, 0, 0, 0);
+        Render::clear(255, 255, 255, 0);
 
         BackgroundItems::const_iterator it;
         for (it = items.begin(); it != items.end(); ++it) {
@@ -375,9 +380,22 @@ void Background::draw(int v[4])
     }
 
     Texture t = fbo.get_tex();
+
+    float ty1;
+    float ty2;
+#ifdef CHOWDREN_FBO_FLIP
+    ty1 = back_texcoords[5];
+    ty2 = back_texcoords[1];
+#else
+    ty1 = back_texcoords[1];
+    ty2 = back_texcoords[5];
+#endif
+
     Render::draw_tex(cache_pos[0], cache_pos[1],
                      cache_pos[2], cache_pos[3],
-                     Color(), t);
+                     Color(), t,
+                     back_texcoords[0], ty1,
+                     back_texcoords[4], ty2);
 #else
 
 #ifdef CHOWDREN_PASTE_BROADPHASE
@@ -834,7 +852,7 @@ CollisionBase * Layer::test_background_collision(int x, int y)
 
 void Layer::paste(Image * img, int dest_x, int dest_y,
                   int src_x, int src_y, int src_width, int src_height,
-                  int collision_type, const Color & color)
+                  int collision_type, int effect, const Color & color)
 {
     if (collision_type != 0 && collision_type != 1 && collision_type != 3 &&
         collision_type != 4)
@@ -845,7 +863,7 @@ void Layer::paste(Image * img, int dest_x, int dest_y,
     if (back == NULL)
         back = new Background;
     back->paste(img, dest_x, dest_y, src_x, src_y,
-                src_width, src_height, collision_type, color);
+                src_width, src_height, collision_type, effect, color);
 }
 
 struct DrawCallback
@@ -1118,6 +1136,13 @@ int Frame::get_mouse_y()
     int x, y;
     get_mouse_pos(&x, &y);
     return y;
+}
+
+bool Frame::mouse_in_zone(int x1, int y1, int x2, int y2)
+{
+    int x, y;
+    get_mouse_pos(&x, &y);
+    return collides(x, y, x+1, y+1, x1, y1, x2, y2);
 }
 
 CollisionBase * Frame::test_background_collision(int x, int y)
@@ -1420,6 +1445,10 @@ FrameObject::FrameObject(int x, int y, int type_id)
 #ifdef CHOWDREN_USE_VALUEADD
     extra_alterables = NULL;
 #endif
+
+#ifdef CHOWDREN_USE_PATHPLANNER
+    agent = NULL;
+#endif
 }
 
 FrameObject::~FrameObject()
@@ -1436,8 +1465,13 @@ FrameObject::~FrameObject()
     delete shader_parameters;
     if (!(flags & GLOBAL))
         Alterables::destroy(alterables);
+
 #ifdef CHOWDREN_USE_VALUEADD
     delete extra_alterables;
+#endif
+
+#ifdef CHOWDREN_USE_PATHPLANNER
+    delete agent;
 #endif
 }
 
@@ -1752,6 +1786,20 @@ int FrameObject::get_box_index(int index)
     else
         ret += layer->off_y;
     return ret;
+}
+
+int FrameObject::get_generic_width()
+{
+    if (collision == NULL)
+        return width;
+    return collision->aabb[2] - collision->aabb[0];
+}
+
+int FrameObject::get_generic_height()
+{
+    if (collision == NULL)
+        return height;
+    return collision->aabb[3] - collision->aabb[1];
 }
 
 void FrameObject::set_shader(int value)
@@ -2170,14 +2218,14 @@ FixedValue::operator double() const
     memcpy(&value, &object, sizeof(FrameObject*));
 
 #ifndef NDEBUG
-    if (value & 0x1) {
-        std::cout << "Invalid alignment for fixed value" << std::endl;
+    if (value & 3ULL) {
+        std::cout << "Invalid alignment for fixed value: " << value
+            << std::endl;
     }
 #endif
-    // reposition the sign bit in the last bit
-    value |= (value & FIXED_SIGN_BIT) >> 63ULL;
-    value &= ~FIXED_SIGN_BIT;
-    value ^= FIXED_ENCODE_XOR;
+    value |= (value & FIXED_FIRST) >> 62ULL;
+    value &= ~FIXED_FIRST;
+    value |= uint64_t((value & FIXED_EXPMASK) == 0) << 62ULL;
     double v2;
     memcpy(&v2, &value, sizeof(uint64_t));
     return v2;
@@ -2341,6 +2389,11 @@ void File::delete_file(const std::string & path)
         return;
 }
 
+void File::delete_folder(const std::string & path)
+{
+    std::cout << "Delete folder not implemented: " << path << std::endl;
+}
+
 bool File::copy_file(const std::string & src, const std::string & dst)
 {
     std::string data;
@@ -2352,10 +2405,28 @@ bool File::copy_file(const std::string & src, const std::string & dst)
     return true;
 }
 
+int File::get_size(const std::string & path)
+{
+    return platform_get_file_size(path.c_str());
+}
+
 void File::rename_file(const std::string & src, const std::string & dst)
 {
     copy_file(src, dst);
     delete_file(src);
+}
+
+void File::append_text(const std::string & text, const std::string & path)
+{
+    std::string data;
+    if (!read_file(path.c_str(), data))
+        return;
+    data += text;
+    FSFile fp(path.c_str(), "w");
+    if (!fp.is_open())
+        return;
+    fp.write(&data[0], data.size());
+    fp.close();
 }
 
 // joystick
@@ -2509,6 +2580,20 @@ int get_joystick_degrees(int n)
     if (dir == 8)
         return -1;
     return dir * 45;
+}
+
+#define DEADZONE 0.15f
+#define DEADZONE_MUL (1.0f / (1.0f - 0.15f))
+
+float get_joystick_axis(int n, int axis)
+{
+    float v = get_joystick_axis_raw(n, axis);
+    if (v > DEADZONE)
+        return (v - DEADZONE) * DEADZONE_MUL;
+    else if (v < -DEADZONE)
+        return (v + DEADZONE) * DEADZONE_MUL;
+    else
+        return 0.0f;
 }
 
 int get_joystick_z(int n)

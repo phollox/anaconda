@@ -327,6 +327,12 @@ inline void get_dir(int dir, float & x, float & y)
     y = -sin(r);
 }
 
+inline int get_dir_diff_abs(int d1, int d2)
+{
+    return get_min(get_abs(d1 - d2), get_min(get_abs(d1 - d2 - 360),
+                                             get_abs(d1 - d2 + 360)));
+}
+
 // random
 
 inline int randrange(int range)

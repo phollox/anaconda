@@ -338,8 +338,6 @@ class Text(ObjectWriter):
     def write_init(self, writer):
         text = self.common.text
         lines = [paragraph.value for paragraph in text.items]
-        for paragraph in text.items:
-            writer.putln(to_c('add_line(%r);', paragraph.value))
         # objects_file.putln('font = font%s' % text.items[0].font)
         writer.putln('width = %s;' % text.width)
         writer.putln('height = %s;' % text.height)
@@ -347,6 +345,7 @@ class Text(ObjectWriter):
         font = text.items[0].font
         writer.putln('bold = font%s.bold;' % font)
         writer.putln('italic = font%s.italic;' % font)
+        writer.putln('font_name = font%s.name;' % font)
         writer.putln('font = get_font(font%s.size);' % font)
 
         paragraph = text.items[0]
@@ -363,6 +362,8 @@ class Text(ObjectWriter):
         else:
             vertical = 'ALIGN_TOP'
         writer.putln('alignment = %s | %s;' % (horizontal, vertical))
+        for paragraph in text.items:
+            writer.putln(to_c('add_line(%r);', paragraph.value))
 
     def is_background(self):
         return False

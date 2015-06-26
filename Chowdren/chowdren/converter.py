@@ -148,6 +148,8 @@ if sys.platform == 'win32':
     MMF_BASE = get_install_path() or ''
 
 MMF_PATH = os.path.join(MMF_BASE, 'Extensions')
+MMF_UNICODE_PATH = os.path.join(MMF_BASE, 'Extensions', 'Unicode')
+MMF_RUNTIME = os.path.join(MMF_BASE, 'Data', 'Runtime', 'Unicode')
 MMF_EXT = '.mfx'
 
 EXTENSION_ALIAS = {
@@ -155,8 +157,13 @@ EXTENSION_ALIAS = {
 }
 
 IGNORE_EXTENSIONS = set([
-    'kcwctrl', 'SteamChowdren', 'ChowdrenFont', 'INI++', 'MMKPathPlanner'
+    'kcwctrl', 'SteamChowdren', 'ChowdrenFont', 'INI++', 'MMKPathPlanner',
+    'Layer'
 ])
+
+if sys.platform == 'win32':
+    paths = ';'.join((MMF_RUNTIME,))
+    os.environ['PATH'] += ';' + paths
 
 def load_native_extension(name):
     if not NATIVE_EXTENSIONS or sys.platform != 'win32' or not MMF_BASE:
@@ -170,7 +177,11 @@ def load_native_extension(name):
         pass
     cwd = os.getcwd()
     os.chdir(MMF_BASE)
-    library = loadLibrary(os.path.join(MMF_PATH, name + MMF_EXT))
+    for path in (MMF_PATH, MMF_UNICODE_PATH):
+        path = os.path.join(path, name + MMF_EXT)
+        if os.path.isfile(path):
+            break
+    library = loadLibrary(path)
     os.chdir(cwd)
     if library is None:
         print 'could not load', name
@@ -300,6 +311,7 @@ class EventGroup(object):
     in_place = False
     pre_event = False
     post_event = False
+    precedence = 0
 
     def __init__(self, converter, conditions, actions, container, global_id,
                  or_index, not_always, or_type):
@@ -628,6 +640,7 @@ class Converter(object):
             self.games.append(game)
 
         self.game = self.games[0]
+        self.is_unicode = self.game.settings.get('unicode', False)
 
         if args.ico is not None:
             shutil.copy(args.ico, self.get_filename('icon.ico'))
@@ -1469,6 +1482,7 @@ class Converter(object):
                 new_group.in_place = first_writer.in_place
                 new_group.pre_event = first_writer.pre_event
                 new_group.post_event = first_writer.post_event
+                new_group.precedence = first_writer.precedence
 
                 if is_always or force_always:
                     new_always_groups.append(new_group)
@@ -1732,6 +1746,14 @@ class Converter(object):
 
         end_markers = []
 
+        def cmp_group(a, b):
+            v = cmp(a.precedence, b.precedence)
+            if v != 0:
+                return v
+            return cmp(a.global_id, b.global_id)
+
+        for group_list in (first_groups, last_groups, pre_groups):
+            group_list.sort(cmp=cmp_group)
         call_groups = first_groups + call_groups + last_groups
 
         if PROFILE_GROUPS:
@@ -1826,7 +1848,8 @@ class Converter(object):
                     continue
                 object_type, num = k
                 object_class = self.get_object_class(object_type)
-                missing_groups.append((object_class, num))
+                name = self.get_condition_name(v[0].conditions[0].data)
+                missing_groups.append((object_class, num, name))
             print 'unimplemented generated groups in %r: %r' % (
                 frame.name, missing_groups)
 
@@ -2972,6 +2995,8 @@ class Converter(object):
 
             end = len(out)
 
+            print out
+
             while True:
                 end = out.rindex('),', 0, end)
                 if out[end-1] != '(':
@@ -3212,10 +3237,17 @@ class Converter(object):
         except (KeyError, ValueError):
             return None
 
+    def get_extension_module(self, ext):
+        if self.is_unicode:
+            mod = load_extension_module(ext.name + 'Unicode', False)
+            if mod is not None:
+                return mod
+        return load_extension_module(ext.name, True)
+
     def get_object_impl(self, object_type):
         if object_type >= EXTENSION_BASE:
             ext = self.game.extensions.fromHandle(object_type - EXTENSION_BASE)
-            writer_module = load_extension_module(ext.name)
+            writer_module = self.get_extension_module(ext)
             return writer_module.get_object()
         else:
             return system_objects[object_type]
@@ -3286,7 +3318,7 @@ class Converter(object):
             num = item.getExtensionNum()
             if num >= 0:
                 extension = self.get_extension(item)
-                writer_module = load_extension_module(extension.name)
+                writer_module = self.get_extension_module(extension)
                 key = num
         if writer_module is None:
             writer_module = system_writers

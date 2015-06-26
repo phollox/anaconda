@@ -59,16 +59,20 @@ class EditObject(ObjectWriter):
         return self.converter.config.use_edit_obj()
 
 actions = make_table(ActionMethodWriter, {
+    4 : 'set_text',
     13 : 'set_visible(false)',
     12 : 'set_visible(true)',
-    4 : 'set_text'
+    16 : 'enable_focus',
+    23 : 'set_limit',
+    30 : 'disable_focus'
 })
 
 conditions = make_table(ConditionMethodWriter, {
+    4 : 'get_focus'
 })
 
 expressions = make_table(ExpressionMethodWriter, {
-    0 : 'get_text'
+    0 : 'get_text()'
 })
 
 def get_object():

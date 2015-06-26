@@ -15,6 +15,9 @@ class AssociateArray(ObjectWriter):
         data.skipBytes(4)
         data.skipBytes(4) # width, height
         is_global = data.readByte() != 0
+        self.write_assarray(writer, is_global)
+
+    def write_assarray(self, writer, is_global):
         if is_global:
             writer.putln('map = &global_map;')
         else:
@@ -23,7 +26,7 @@ class AssociateArray(ObjectWriter):
     @staticmethod
     def write_application(converter):
         converter.add_define('CHOWDREN_ASSARRAY_STORE',
-                             AssociateArray.key_count)
+                             max(1, AssociateArray.key_count))
 
 objects = collections.defaultdict(dict)
 

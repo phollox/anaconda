@@ -26,12 +26,14 @@ void d3d_reset_state()
     render_data.device->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE);
     render_data.device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
     render_data.device->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+
     render_data.device->SetRenderState(D3DRS_SRCBLEND,
                                        D3DBLEND_SRCALPHA);
     render_data.device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+
     render_data.device->SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_ONE);
-    render_data.device->SetRenderState(D3DRS_DESTBLENDALPHA,
-                                       D3DBLEND_INVSRCALPHA);
+    render_data.device->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ONE);
+
     render_data.device->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
     render_data.device->SetRenderState(D3DRS_LIGHTING, FALSE);
 
@@ -58,6 +60,33 @@ void d3d_set_backtex_size(int w, int h)
                                       D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT,
                                       &td.texture, NULL);
 }
+
+#else
+
+void set_gl_state()
+{
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    glEnable(GL_BLEND);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+
+    glVertexPointer(2, GL_FLOAT, 0,
+                    (void*)&render_data.positions[0]);
+    glColorPointer(4, GL_UNSIGNED_BYTE, 0, (void*)&render_data.colors[0]);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+
+    glClientActiveTexture(GL_TEXTURE0);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glTexCoordPointer(2, GL_FLOAT, 0, (void*)&render_data.texcoord1[0]); 
+
+    glClientActiveTexture(GL_TEXTURE1);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glTexCoordPointer(2, GL_FLOAT, 0, (void*)&render_texcoords2[0]);
+
+    glClientActiveTexture(GL_TEXTURE0);
+}
+
 #endif
 
 void Render::init()
@@ -116,10 +145,7 @@ void Render::init()
         render_data.vertices[i].texcoord2[1] = back_texcoords[i*2+1];
     }
 #else
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    set_gl_state();
 
     // glBindBuffer(GL_ARRAY_BUFFER, 0);
     // glEnableVertexAttribArray(POSITION_ATTRIB_IDX);
@@ -135,21 +161,6 @@ void Render::init()
     // glVertexAttribPointer(TEXCOORD2_ATTRIB_IDX, 2, GL_FLOAT, GL_FALSE, 0,
     //                       (void*)&render_data.texcoords[1]);
 
-    glVertexPointer(2, GL_FLOAT, 0,
-                    (void*)&render_data.positions[0]);
-    glColorPointer(4, GL_UNSIGNED_BYTE, 0, (void*)&render_data.colors[0]);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
-
-    glClientActiveTexture(GL_TEXTURE0);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(2, GL_FLOAT, 0, (void*)&render_data.texcoord1[0]); 
-
-    glClientActiveTexture(GL_TEXTURE1);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(2, GL_FLOAT, 0, (void*)&render_texcoords2[0]);
-
-    glClientActiveTexture(GL_TEXTURE0);
 
     glGenTextures(1, &render_data.back_tex);
     set_tex(render_data.back_tex);

@@ -17,5 +17,7 @@ void StringTokenizer::split(const std::string & text,
 
 const std::string & StringTokenizer::get(int index)
 {
+    if (index < 0 || index >= int(elements.size()))
+        return empty_string;
     return elements[index];
 }

@@ -89,6 +89,7 @@ public:
     void set_transparent_color(int color);
     void set_animation_parameter(int index, int value);
     void set_animation_type(int value);
+    void set_animation_speed(int value);
     void set_charmap(const std::string & charmap);
     const std::string & get_charmap();
 

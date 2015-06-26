@@ -15,6 +15,10 @@ typedef hash_map<std::string, SectionMap> INICache;
 static INICache ini_cache;
 #endif
 
+#ifdef CHOWDREN_USE_BLOWFISH_CACHE
+#include "objects/blowfishext.h"
+#endif
+
 inline bool match_wildcard(const std::string & pattern,
                            const std::string & value)
 {
@@ -318,6 +322,15 @@ void INI::load_file(const std::string & fn, bool read_only, bool merge,
     this->read_only = read_only;
     filename = convert_path(fn);
 
+#ifdef CHOWDREN_USE_BLOWFISH_CACHE
+    const std::string & cache = BlowfishObject::get_cache(filename);
+    if (!cache.empty()) {
+        read_only = true;
+        load_string(cache, merge);
+        return;
+    }
+#endif
+
 #ifdef CHOWDREN_CACHE_INI
     std::string cache_key = filename;
     to_lower(cache_key);
@@ -329,6 +342,8 @@ void INI::load_file(const std::string & fn, bool read_only, bool merge,
     if (!merge)
         reset(false);
 #endif
+
+
     std::cout << "Loading " << filename << " (" << get_name() << ")"
         << std::endl;
     platform_create_directories(get_path_dirname(filename));
@@ -683,7 +698,7 @@ void INI::set_auto(bool save, bool load)
 INI::~INI()
 {
 #ifndef CHOWDREN_AUTOSAVE_ON_CHANGE
-    if (auto_save)
+    if (auto_save && changed)
         save_file(false);
 #endif
     if (!is_global)

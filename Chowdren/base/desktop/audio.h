@@ -580,9 +580,7 @@ public:
 
 #ifdef USE_THREAD_PRELOAD
         fill_now = true;
-        SDL_LockMutex(global_device.stream_cond_mutex);
         SDL_CondBroadcast(global_device.stream_cond);
-        SDL_UnlockMutex(global_device.stream_cond_mutex);
 #else
         stopping = fill_queue();
         al_check(alSourcePlay(source));

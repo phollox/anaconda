@@ -92,21 +92,19 @@ class SystemBox(ObjectWriter):
         border2 = read_system_color(data)
         self.image = data.readShort()
 
-        if pattern:
-            writer.putln('type = PATTERN_IMAGE;')
-        elif align_center:
-            writer.putln('type = CENTER_IMAGE;')
-        elif align_top_left:
-            writer.putln('type = TOPLEFT_IMAGE;')
-        else:
-            raise NotImplementedError()
-
         if self.image == -1:
-            print 'system box with no image not supported'
             writer.putln('image = NULL;')
-            # raise NotImplementedError()
         else:
             writer.putln('image = %s;' % self.converter.get_image(self.image))
+            if pattern:
+                writer.putln('type = PATTERN_IMAGE;')
+            elif align_center:
+                writer.putln('type = CENTER_IMAGE;')
+            elif align_top_left:
+                writer.putln('type = TOPLEFT_IMAGE;')
+            else:
+                raise NotImplementedError()
+
         data.skipBytes(2) # rData_wFree
         text_color = read_system_color(data)
         margin_left = data.readShort()

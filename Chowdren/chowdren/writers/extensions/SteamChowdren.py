@@ -13,6 +13,9 @@ class SteamObject(ObjectWriter):
     def write_init(self, writer):
         pass
 
+    def has_sleep(self):
+        return False
+
 actions = make_table(ActionMethodWriter, {
     0 : 'unlock_achievement'
 })

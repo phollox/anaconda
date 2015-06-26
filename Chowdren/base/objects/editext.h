@@ -24,6 +24,10 @@ public:
     EditObject(int x, int y, int type_id);
     void set_text(const std::string & value);
     const std::string & get_text();
+    bool get_focus();
+    void enable_focus();
+    void disable_focus();
+    void set_limit(int size);
 
 #ifdef CHOWDREN_USE_EDITOBJ
     int edit_flags;

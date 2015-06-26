@@ -7,16 +7,26 @@ from chowdren.writers.events import (StaticConditionWriter,
     ExpressionMethodWriter)
 
 class FolderObject(ObjectWriter):
-    class_name = 'FolderObject'
-    static = False
+    class_name = 'File'
+    static = True
 
     def write_init(self, writer):
         pass
 
+class StartWalk(StaticActionWriter):
+    custom = True
+
+    def write(self, writer):
+        print 'Folder walk not implemented yet'
+
 actions = make_table(StaticActionWriter, {
+    1 : 'delete_folder',
+    8 : StartWalk,
+    15 : 'create_directory'
 })
 
 conditions = make_table(StaticConditionWriter, {
+    15 : 'file_exists'
 })
 
 expressions = make_table(ExpressionMethodWriter, {

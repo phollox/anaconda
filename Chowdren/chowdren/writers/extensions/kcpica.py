@@ -36,6 +36,7 @@ class ActivePicture(ObjectWriter):
 actions = make_table(ActionMethodWriter, {
     0 : 'load',
     2 : 'set_hotspot',
+    3 : 'set_size',
     11 : 'set_hotspot_mul(1.0f, 0.5f)',
     9 : 'set_hotspot_mul(0.0f, 0.5f)',
     10 : 'set_hotspot_mul(0.5f, 0.5f)',

@@ -253,16 +253,21 @@ int BaseShader::get_uniform(const char * value)
 #define FUNC_ZERO D3DBLEND_ZERO
 #define FUNC_SRC_COLOR D3DBLEND_SRCCOLOR
 
-#define set_blend_func_eq(a, b, c, d) \
+#define set_blend_func_eq(a, b, c, d, e, f) \
     render_data.device->SetRenderState(D3DRS_SRCBLEND, a);\
     render_data.device->SetRenderState(D3DRS_DESTBLEND, b);\
-    render_data.device->SetRenderState(D3DRS_BLENDOP, c);\
-    render_data.device->SetRenderState(D3DRS_BLENDOPALPHA, d);
+    render_data.device->SetRenderState(D3DRS_SRCBLENDALPHA, c);\
+    render_data.device->SetRenderState(D3DRS_DESTBLENDALPHA, d);\
+    render_data.device->SetRenderState(D3DRS_BLENDOP, e);\
+    render_data.device->SetRenderState(D3DRS_BLENDOPALPHA, f)
 
 
-#define set_blend_func(a, b) \
+#define set_blend_func(a, b, c, d) \
     render_data.device->SetRenderState(D3DRS_SRCBLEND, a);\
-    render_data.device->SetRenderState(D3DRS_DESTBLEND, b)
+    render_data.device->SetRenderState(D3DRS_DESTBLEND, b);\
+    render_data.device->SetRenderState(D3DRS_SRCBLENDALPHA, c);\
+    render_data.device->SetRenderState(D3DRS_DESTBLENDALPHA, d)
+
 #else
 
 #define EQ_REVERSE_SUBTRACT GL_FUNC_REVERSE_SUBTRACT
@@ -275,9 +280,10 @@ int BaseShader::get_uniform(const char * value)
 #define FUNC_ZERO GL_ZERO
 #define FUNC_SRC_COLOR GL_SRC_COLOR
 
-#define set_blend_func_eq(a, b, c, d) glBlendFunc(a, b);\
-                                      glBlendEquationSeparate(c, d)
-#define set_blend_func(a, b) glBlendFunc(a, b)
+#define set_blend_func_eq(a, b, c, d, e, f)\
+                                      glBlendFuncSeparate(a, b, c, d);\
+                                      glBlendEquationSeparate(e, f)
+#define set_blend_func(a, b, c, d) glBlendFuncSeparate(a, b, c, d)
 #endif
 
 #define commit_parameters(x)

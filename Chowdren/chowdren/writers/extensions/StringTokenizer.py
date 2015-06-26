@@ -17,7 +17,8 @@ conditions = make_table(ConditionMethodWriter, {
 })
 
 expressions = make_table(ExpressionMethodWriter, {
-    1 : 'get'
+    1 : 'get',
+    0 : 'get_count()'
 })
 
 def get_object():

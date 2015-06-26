@@ -280,6 +280,11 @@ void TextBlitter::set_animation_type(int value)
     anim_type = value;
 }
 
+void TextBlitter::set_animation_speed(int value)
+{
+    anim_speed = value;
+}
+
 void TextBlitter::set_animation_parameter(int index, int value)
 {
     switch (index) {

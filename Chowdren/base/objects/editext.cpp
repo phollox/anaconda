@@ -19,6 +19,27 @@ const std::string & EditObject::get_text()
     return empty_string;
 }
 
+bool EditObject::get_focus()
+{
+    return true;
+}
+
+void EditObject::set_limit(int size)
+{
+    std::cout << "Edit: set_limit not implemented" << std::endl;
+}
+
+void EditObject::disable_focus()
+{
+    std::cout << "Edit: disable_focus not implemented" << std::endl;
+}
+
+
+void EditObject::enable_focus()
+{
+    std::cout << "Edit: enable_focus not implemented" << std::endl;
+}
+
 #else
 
 EditObject::EditObject(int x, int y, int type_id)
@@ -89,6 +110,27 @@ void EditObject::set_text(const std::string & value)
 const std::string & EditObject::get_text()
 {
     return text;
+}
+
+bool EditObject::get_focus()
+{
+    return (edit_flags & FOCUS) != 0;
+}
+
+void EditObject::set_limit(int size)
+{
+    std::cout << "Edit: set_limit not implemented" << std::endl;
+}
+
+void EditObject::disable_focus()
+{
+    edit_flags &= ~FOCUS;
+}
+
+
+void EditObject::enable_focus()
+{
+    edit_flags |= FOCUS;
 }
 
 #endif

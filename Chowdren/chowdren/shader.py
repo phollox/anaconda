@@ -34,7 +34,7 @@ NATIVE_SHADERS = {
     'HardMix.fx' : None,
     'Overlay.fx' : None,
     'Lens.fx' : 'lens',
-    'LinearDodge.fx' : None,
+    'LinearDodge.fx' : 'lineardodge',
     'SoftLight.fx' : None,
     'PinLight.fx' : None,
     'Invert' : 'invert',
@@ -73,9 +73,9 @@ NATIVE_SHADERS = {
     'BrightnessSaturation.fx' : None,
 
     # missing effects (TE)
-    'Display.fx' : None,
-    'PixelOutline.fx' : None,
-    'LinearBurn.fx' : None,
+    'Display.fx' : 'display',
+    'PixelOutline.fx' : 'pixeloutline', # change?
+    'LinearBurn.fx' : 'linearburn',
 
     # unsupported in HWA
     'XOR' : None,

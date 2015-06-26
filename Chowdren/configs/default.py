@@ -5,6 +5,7 @@ def init(converter):
     converter.add_define('CHOWDREN_JOYSTICK2_CONTROLLER')
     converter.add_define('CHOWDREN_FORCE_TRANSPARENT')
     converter.add_define('CHOWDREN_16BIT_IMAGE')
+    converter.add_define('CHOWDREN_FORCE_TEXT_LAYOUT')
 
 def init_container(converter, container):
     pass

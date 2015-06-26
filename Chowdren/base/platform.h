@@ -2,11 +2,17 @@
 #define CHOWDREN_PLATFORM_H
 
 #include <string>
+#include "types.h"
 #include "fileio.h"
 
 #ifdef CHOWDREN_IS_WIIU
 #define IS_BIG_ENDIAN
 #endif
+
+struct DateTime
+{
+    int sec, min, hour, mday, mon, year, wday, yday;
+};
 
 void open_url(const std::string & name);
 void platform_init();
@@ -18,6 +24,7 @@ void platform_get_size(int * width, int * height);
 void platform_get_screen_size(int * width, int * height);
 double platform_get_time();
 unsigned int platform_get_global_time();
+const DateTime & platform_get_datetime();
 void platform_sleep(double v);
 int translate_vk_to_key(int vk);
 int translate_key_to_vk(int key);
@@ -41,9 +48,19 @@ void platform_set_fullscreen(bool value);
 
 size_t platform_get_file_size(const char * filename);
 void platform_create_directories(const std::string & v);
+
 bool platform_is_file(const std::string & path);
 bool platform_is_directory(const std::string & path);
 bool platform_path_exists(const std::string & path);
+
+struct FilesystemItem
+{
+    std::string name;
+    bool is_file;
+};
+
+void platform_walk_folder(const std::string & path,
+                          vector<FilesystemItem> & items);
 
 // debug
 void platform_print_stats();
@@ -57,7 +74,7 @@ bool is_joystick_released(int n, int button);
 bool compare_joystick_direction(int n, int test_dir);
 bool is_joystick_direction_changed(int n);
 void joystick_vibrate(int n, int l, int r, int d);
-float get_joystick_axis(int n, int axis);
+float get_joystick_axis_raw(int n, int axis);
 int get_joystick_last_press(int n);
 const std::string & get_joystick_name(int n);
 const std::string & get_joystick_guid(int n);
@@ -65,6 +82,10 @@ const std::string & get_joystick_guid(int n);
 // desktop
 void platform_set_display_scale(int scale);
 void platform_set_scale_type(int type);
+
+// ps4
+void platform_set_lightbar(int r, int g, int b, int ms, int type);
+void platform_reset_lightbar();
 
 // path
 std::string convert_path(const std::string & value);

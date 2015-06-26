@@ -5,14 +5,17 @@
 #include "color.h"
 #include <string>
 
-#define PATTERN_IMAGE 0
-#define CENTER_IMAGE 1
-#define TOPLEFT_IMAGE 2
-
 class SystemBox : public FrameObject
 {
 public:
     FRAMEOBJECT_HEAD(SystemBox)
+
+    enum DrawType
+    {
+        PATTERN_IMAGE,
+        CENTER_IMAGE,
+        TOPLEFT_IMAGE
+    };
 
     Image * image;
     int type;
@@ -29,6 +32,7 @@ public:
     void set_border_1(Color color);
     void set_border_2(Color color);
     void set_fill(Color color);
+    const std::string & get_font_name();
 };
 
 extern FrameObject * default_systembox_instance;

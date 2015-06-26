@@ -15,6 +15,11 @@ public:
     StringTokenizer(int x, int y, int type_id);
     void split(const std::string & text, const std::string & delims);
     const std::string & get(int index);
+
+    int get_count()
+    {
+        return elements.size();
+    }
 };
 
 #endif // CHOWDREN_STRINGTOKENIZER_H

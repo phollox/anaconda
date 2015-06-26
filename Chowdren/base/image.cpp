@@ -16,35 +16,25 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_PNG
 #define STBI_ONLY_BMP
+#define STBI_ONLY_GIF
 #include "stb_image.h"
 
-inline unsigned char * load_png_image(FSFile & image_file, int size,
-                                      int * w, int * h, int * channels)
+inline unsigned char * load_image(unsigned char * data, int size,
+                                  int * w, int * h, int * channels)
+{
+
+    return stbi_load_from_memory(data, size, w, h, channels, 4);
+}
+
+inline unsigned char * load_image(FSFile & image_file, int size,
+                                  int * w, int * h, int * channels)
 {
     unsigned char * buf = new unsigned char[size];
     image_file.read(buf, size);
-    unsigned char * out = stbi_load_from_memory(buf, size, w, h, channels, 4);
+    unsigned char * out = load_image(buf, size, w, h, channels);
     delete[] buf;
     return out;
 }
-
-#ifdef CHOWDREN_USE_WEBP
-
-inline unsigned char * load_image(FSFile & image_file, int size,
-                                  int * w, int * h, int * channels)
-{
-    return load_png_image(image_file, size, w, h, channels);
-}
-
-#else
-
-inline unsigned char * load_image(FSFile & image_file, int size,
-                                  int * w, int * h, int * channels)
-{
-    return load_png_image(image_file, size, w, h, channels);
-}
-
-#endif
 
 typedef vector<Image*> ImageList;
 
@@ -197,7 +187,7 @@ void Image::upload_texture()
     // create alpha mask
     int size = width * height;
     BaseBitArray::word_t * data;
-    data = (BaseBitArray::word_t*)malloc(GET_BITARRAY_SIZE(size) * 4);
+    data = (BaseBitArray::word_t*)malloc(GET_BITARRAY_SIZE(size));
     int i = 0;
     int ii = 0;
     unsigned char c;
@@ -423,6 +413,31 @@ FileImage::FileImage(const std::string & filename, int hot_x, int hot_y,
     flags |= FILE;
 }
 
+void FileImage::load_data(unsigned char * data, int size)
+{
+    int w, h, channels;
+    image = load_image(data, size, &w, &h, &channels);
+
+    width = w;
+    height = h;
+
+    if (image == NULL) {
+        printf("Could not load image \"%s\": %s\n", filename.c_str(),
+               stbi_failure_reason());
+        return;
+    }
+
+    if (!transparent.is_enabled())
+        return;
+
+#ifndef CHOWDREN_FORCE_TRANSPARENT
+    if (channels != 1 && channels != 3)
+        return;
+#endif
+
+    set_transparent_color(transparent);
+}
+
 void FileImage::load_file()
 {
     FSFile fp(filename.c_str(), "r");
@@ -433,7 +448,7 @@ void FileImage::load_file()
     }
 
     int w, h, channels;
-    image = load_png_image(fp, fp.get_size(), &w, &h, &channels);
+    image = load_image(fp, fp.get_size(), &w, &h, &channels);
 
     width = w;
     height = h;
@@ -441,7 +456,8 @@ void FileImage::load_file()
     fp.close();
 
     if (image == NULL) {
-        printf("Could not load image \"%s\"\n", filename.c_str());
+        printf("Could not load image \"%s\": %s\n", filename.c_str(),
+               stbi_failure_reason());
         return;
     }
 
@@ -494,6 +510,16 @@ Image * get_image_cache(const std::string & filename, int hot_x, int hot_y,
         image = it->second;
     }
     return image;
+}
+
+bool has_image_cache(const std::string & filename)
+{
+    return image_cache.find(filename) != image_cache.end();
+}
+
+void set_image_cache(const std::string & filename, FileImage * image)
+{
+    image_cache[filename] = image;
 }
 
 void reset_image_cache()

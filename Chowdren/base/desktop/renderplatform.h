@@ -119,7 +119,7 @@ inline void Render::clear(Color c)
                               D3DCOLOR_ARGB(c.a, c.r, c.g, c.b),
                               0.0f, 0);
 #else
-    glClearColor(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, 1.0f);
+    glClearColor(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 #endif
 }

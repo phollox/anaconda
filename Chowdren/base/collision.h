@@ -289,6 +289,13 @@ public:
         update_transform();
     }
 
+    void set_scale(float sx, float sy)
+    {
+        x_scale = sx;
+        y_scale = sy;
+        update_transform();
+    }
+
     void set_x_scale(float x)
     {
         x_scale = x;
@@ -434,12 +441,13 @@ public:
     int dest_x, dest_y, src_x, src_y, src_width, src_height;
     Color color;
     Image * image;
+    int effect;
 
     BackgroundItem(Image * img, int dest_x, int dest_y, int src_x, int src_y,
                    int src_width, int src_height, const Color & color)
     : dest_x(dest_x), dest_y(dest_y), src_x(src_x), src_y(src_y),
       src_width(src_width), src_height(src_height), image(img), color(color),
-      CollisionBase(BACKGROUND_ITEM, 0)
+      effect(Render::NONE), CollisionBase(BACKGROUND_ITEM, 0)
     {
         aabb[0] = dest_x;
         aabb[1] = dest_y;
@@ -449,7 +457,10 @@ public:
 
     void draw()
     {
-        image->draw(dest_x, dest_y, src_x, src_y, src_width, src_height, color);
+        Render::set_effect(effect);
+        image->draw(dest_x, dest_y, src_x, src_y, src_width, src_height,
+                    color);
+        Render::disable_effect();
     }
 };
 

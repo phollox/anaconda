@@ -555,6 +555,7 @@ class MouseClicked(ConditionWriter):
 
 class ObjectClicked(ConditionWriter):
     is_always = True
+    precedence = 1
 
     def get_object(self):
         data = self.data.items[1].loader
@@ -776,6 +777,12 @@ class NumberOfObjects(ComparisonWriter):
         return '%s.size()' % self.converter.get_object_list(obj,
                                                             allow_single=True)
 
+class MouseInZone(ConditionMethodWriter):
+    def write(self, writer):
+        zone = self.parameters[0].loader
+        writer.putc('mouse_in_zone(%s, %s, %s, %s)',
+                    zone.x1, zone.y1, zone.x2, zone.y2)
+
 class CompareObjectsInZone(ComparisonWriter):
     has_object = False
     iterate_objects = False
@@ -807,6 +814,19 @@ class NoObjectsInZone(ConditionWriter):
     def write_pre(self, writer):
         obj = (self.data.objectInfo, self.data.objectType)
         self.obj_list = self.converter.create_list(obj, writer)
+
+class AllDestroyed(ConditionWriter):
+    is_always = True
+    custom = True
+
+    def write(self, writer):
+        obj = (self.data.objectInfo, self.data.objectType)
+        obj_list = self.converter.create_list(obj, writer)
+        writer.putlnc('if (%s.size() != 0) %s', obj_list,
+                      self.converter.event_break)
+        generated = self is self.group.conditions[0]
+        if generated:
+            write_not_always(writer, self)
 
 class PickCondition(ConditionWriter):
     custom = True
@@ -899,6 +919,7 @@ class PickFlagOn(PickAlterableCondition):
                 writer.putlnc('if (!((*it)->alterables->flags.is_on(%s)))'
                               ' it.deselect();', index)
         writer.end_brace()
+
 
 class PickFromFixed(PickCondition):
     def write_pick(self, writer, objs):
@@ -1425,6 +1446,9 @@ class Foreach(ActionWriter):
             raise NotImplementedError()
         name = get_method_name(real_name)
         if real_name not in self.converter.system_object.foreach_names:
+            writer.putlnc('// nested foreach not implemented: %s',
+                          real_name)
+            writer.end_brace()
             print 'foreach error! nested foreach not implemented yet'
             return
         func_call = self.converter.system_object.foreach_names[real_name]
@@ -1789,6 +1813,9 @@ class PlayerAction(ActionMethodWriter):
         player = self.data.objectInfo + 1
         if player != 1:
             return
+        self.write_player(writer)
+
+    def write_player(self, writer):
         return ActionMethodWriter.write(self, writer)
 
 class IgnoreControls(PlayerAction):
@@ -1796,6 +1823,25 @@ class IgnoreControls(PlayerAction):
 
 class RestoreControls(PlayerAction):
     method = '.manager.ignore_controls = false'
+
+KEY_INDEXES = {
+    0 : 'up',
+    1 : 'down',
+    2 : 'left',
+    3 : 'right',
+    4 : 'button1',
+    5 : 'button2',
+    6 : 'button3',
+    7 : 'button4'
+}
+
+class ChangeInputKey(PlayerAction):
+    custom = True
+
+    def write_player(self, writer):
+        index = int(self.convert_index(0))
+        player_key = KEY_INDEXES[index]
+        writer.putlnc('manager.%s = %s;', player_key, self.convert_index(1))
 
 # expressions
 
@@ -2156,7 +2202,8 @@ actions = make_table(ActionMethodWriter, {
     # temporary dir
     'ExtractBinaryFile' : EmptyAction,
     'ReleaseBinaryFile' : EmptyAction,
-    'Wrap' : 'wrap_pos'
+    'Wrap' : 'wrap_pos',
+    'ChangeInputKey' : ChangeInputKey
 })
 
 conditions = make_table(ConditionMethodWriter, {
@@ -2236,7 +2283,9 @@ conditions = make_table(ConditionMethodWriter, {
     'MouseWheelDown' : FalseCondition,
     'MouseWheelUp' : FalseCondition,
     'OnLoop' : FalseCondition, # if not a generated group, this is always false
-    'VsyncEnabled' : 'platform_get_vsync'
+    'VsyncEnabled' : 'platform_get_vsync',
+    'AllDestroyed' : AllDestroyed,
+    'MouseInZone' : MouseInZone
 })
 
 expressions = make_table(ExpressionMethodWriter, {
@@ -2305,6 +2354,8 @@ expressions = make_table(ExpressionMethodWriter, {
     'ObjectRight' : 'get_box_index(2)',
     'ObjectTop' : 'get_box_index(1)',
     'ObjectBottom' : 'get_box_index(3)',
+    'GetWidth' : 'get_generic_width()',
+    'GetHeight' : 'get_generic_height()',
     'GetDirection' : 'get_direction()',
     'GetXScale' : '.x_scale',
     'GetYScale' : '.y_scale',
@@ -2355,6 +2406,7 @@ expressions = make_table(ExpressionMethodWriter, {
     'TemporaryPath' : 'get_temp_path()',
     'GetCollisionMask' : 'get_background_mask',
     'FontColor' : 'blend_color.get_int()',
+    'FontName' : 'get_font_name',
     'RGBCoefficient' : 'blend_color.get_int()',
     'MovementNumber' : 'get_movement()->index',
     'FrameBackgroundColor' : 'background_color.get_int()',

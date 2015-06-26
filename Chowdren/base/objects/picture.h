@@ -27,6 +27,7 @@ public:
     void set_transparent_color(const Color & color);
     void set_hotspot(int x, int y);
     void set_hotspot_mul(float x, float y);
+    void set_size(int w, int h);
     void flip_horizontal();
     void set_scale(float value);
     void set_zoom(float value);

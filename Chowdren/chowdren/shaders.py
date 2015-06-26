@@ -179,6 +179,15 @@ shader_pixelscale.add_uniform('y_scale', 'float')
 shader_pixelscale.add_uniform('x_size', 'float')
 shader_pixelscale.add_uniform('y_size', 'float')
 
+shader_lineardodge = Shader('LinearDodge', 'lineardodge', has_back=True)
+
+shader_linearburn = Shader('LinearBurn', 'linearburn', has_back=True)
+
+shader_display = Shader('Display', 'display')
+shader_display.add_uniform('fPeriods', 'float')
+shader_display.add_uniform('fOffset', 'float')
+shader_display.add_uniform('fAmplitude', 'float')
+
 shader_blur = Shader('Blur', 'blur', has_tex_size=True)
 shader_blur.add_uniform('radius', 'float')
 
@@ -218,5 +227,8 @@ SHADERS = [
     shader_pixelscale,
     shader_blur,
     shader_texture,
-    shader_font
+    shader_font,
+    shader_linearburn,
+    shader_lineardodge,
+    shader_display
 ]

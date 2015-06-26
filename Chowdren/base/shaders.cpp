@@ -1010,6 +1010,70 @@ public:
     }
 };
 
+class LinearBurnShader : public BaseShader
+{
+public:
+    LinearBurnShader()
+    : BaseShader(SHADER_LINEARBURN, SHADER_HAS_BACK)
+    {
+    }
+    
+    void initialize_parameters()
+    {
+    }
+    
+    static void set_parameters(FrameObject * instance)
+    {
+    }
+};
+
+class LinearDodgeShader : public BaseShader
+{
+public:
+    LinearDodgeShader()
+    : BaseShader(SHADER_LINEARDODGE, SHADER_HAS_BACK)
+    {
+    }
+    
+    void initialize_parameters()
+    {
+    }
+    
+    static void set_parameters(FrameObject * instance)
+    {
+    }
+};
+
+class DisplayShader : public BaseShader
+{
+public:
+    static int fPeriods;
+    static int fOffset;
+    static int fAmplitude;
+    
+    DisplayShader()
+    : BaseShader(SHADER_DISPLAY)
+    {
+    }
+    
+    void initialize_parameters()
+    {
+        fPeriods = get_uniform("fPeriods");
+        fOffset = get_uniform("fOffset");
+        fAmplitude = get_uniform("fAmplitude");
+    }
+    
+    static void set_parameters(FrameObject * instance)
+    {
+        BaseShader::set_float(instance, SHADER_PARAM_FPERIODS, fPeriods);
+        BaseShader::set_float(instance, SHADER_PARAM_FOFFSET, fOffset);
+        BaseShader::set_float(instance, SHADER_PARAM_FAMPLITUDE, fAmplitude);
+    }
+};
+int DisplayShader::fPeriods;
+int DisplayShader::fOffset;
+int DisplayShader::fAmplitude;
+
 SubtractShader subtract_shader;
 MonochromeShader monochrome_shader;
 MixerShader mixer_shader;
@@ -1043,3 +1107,6 @@ PixelScaleShader pixelscale_shader;
 BlurShader blur_shader;
 TextureShader texture_shader;
 FontShader font_shader;
+LinearBurnShader linearburn_shader;
+LinearDodgeShader lineardodge_shader;
+DisplayShader display_shader;

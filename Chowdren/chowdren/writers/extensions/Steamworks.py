@@ -13,6 +13,9 @@ class SteamObject(ObjectWriter):
     def write_init(self, writer):
         pass
 
+    def has_sleep(self):
+        return False
+
 actions = make_table(ActionMethodWriter, {
     0 : EmptyAction, # steamworks_set_achievement_0
     1 : EmptyAction, # steamworks_request_statistics_achievements_1

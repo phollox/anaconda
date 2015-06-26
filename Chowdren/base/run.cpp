@@ -36,10 +36,10 @@ GameManager manager;
 
 // #define CHOWDREN_USER_PROFILER
 
-// #if !defined(NDEBUG)
-// #define CHOWDREN_SHOW_DEBUGGER
-// #define SHOW_STATS
-// #endif
+#if !defined(NDEBUG)
+#define CHOWDREN_SHOW_DEBUGGER
+#define SHOW_STATS
+#endif
 
 GameManager::GameManager()
 : frame(NULL), window_created(false), fullscreen(false), off_x(0), off_y(0),
@@ -87,7 +87,6 @@ void GameManager::init()
         axis_values[i] = 0;
     }
 #endif
-
     platform_init();
     media.init();
     set_window(false);
@@ -112,8 +111,8 @@ void GameManager::init()
     player_died = false;
     lives = 3;
     start_frame = 0;
-    values->set(1, 4);
-    values->set(12, 2);
+    // values->set(1, 4);
+    // values->set(12, 2);
 #elif defined(CHOWDREN_IS_NAH)
     platform_set_scale_type(2);
 #else

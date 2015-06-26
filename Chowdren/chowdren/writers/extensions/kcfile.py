@@ -18,6 +18,7 @@ actions = make_table(StaticActionWriter, {
     5 : 'delete_file',
     6 : 'rename_file',
     8 : 'copy_file',
+    10 : 'append_text',
     11 : EmptyAction
 })
 
@@ -29,6 +30,8 @@ conditions = make_table(StaticConditionWriter, {
 })
 
 expressions = make_table(StaticExpressionWriter, {
+    0 : 'get_size',
+    27 : 'get_appdata_directory()', # directories_my_documents_directory
     28 : 'get_appdata_directory()'
 })
 

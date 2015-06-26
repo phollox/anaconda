@@ -1016,3 +1016,23 @@ void EightDirections::update()
     move(add_x * m, add_y * m);
     last_move = m;
 }
+
+// MoveItMovement
+
+MoveItMovement::MoveItMovement(FrameObject * instance, int x, int y,
+                               int cycles)
+: Movement(instance), src_x(instance->x), src_y(instance->y),
+  dst_x(x), dst_y(y), step(0)
+{
+    this->cycles = std::max(1, cycles);
+}
+
+void MoveItMovement::update()
+{
+    if (step >= cycles)
+        return;
+    step++;
+    int x = ((dst_x - src_x) * step) / cycles + src_x;
+    int y = ((dst_y - src_y) * step) / cycles + src_y;
+    instance->set_position(x, y);
+}

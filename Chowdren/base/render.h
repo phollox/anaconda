@@ -46,6 +46,9 @@ public:
         ADDITIVE,
         OFFSET,
         MIXER,
+        DISPLAY,
+        LINEARBURN,
+        LINEARDODGE,
 
         // internal effects
         SURFACESUBTRACT,

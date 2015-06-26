@@ -17,6 +17,10 @@ SystemBox::~SystemBox()
 
 void SystemBox::draw()
 {
+    if (image == NULL) {
+        std::cout << "System box draw with text not implemented" << std::endl;
+        return;
+    }
     int xx, yy;
     switch (type) {
         case PATTERN_IMAGE:
@@ -82,7 +86,11 @@ void SystemBox::set_border_2(Color color)
 
 void SystemBox::set_fill(Color color)
 {
+}
 
+const std::string & SystemBox::get_font_name()
+{
+    return empty_string;
 }
 
 class DefaultInstance : public SystemBox
