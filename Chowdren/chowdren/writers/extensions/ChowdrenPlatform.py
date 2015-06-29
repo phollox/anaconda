@@ -17,7 +17,8 @@ class PlatformAction(ActionMethodWriter):
 
 actions = make_table(PlatformAction, {
     0 : 'platform_set_lightbar',
-    1 : 'platform_reset_lightbar'
+    1 : 'platform_reset_lightbar',
+    2 : 'set_local'
 })
 
 conditions = make_table(ConditionMethodWriter,  {

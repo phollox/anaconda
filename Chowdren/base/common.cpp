@@ -18,6 +18,10 @@
 #include "extra_keys.cpp"
 #endif
 
+#ifdef CHOWDREN_CACHE_INI
+#include "objects/ini.h"
+#endif
+
 #ifdef BOOST_NO_EXCEPTIONS
 namespace boost
 {
@@ -2400,8 +2404,14 @@ bool File::copy_file(const std::string & src, const std::string & dst)
     if (!read_file(src.c_str(), data))
         return false;
     FSFile fp(dst.c_str(), "w");
+    if (!fp.is_open())
+        return false;
     fp.write(&data[0], data.size());
     fp.close();
+
+#ifdef CHOWDREN_CACHE_INI
+    INI::reset_cache();
+#endif
     return true;
 }
 

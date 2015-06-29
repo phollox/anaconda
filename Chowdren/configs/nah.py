@@ -23,8 +23,10 @@ def init(converter):
     # converter.add_define('CHOWDREN_PASTE_BROADPHASE')
     if converter.platform_name == 'ps4':
         converter.add_define('CHOWDREN_PRELOAD_ALL')
+        converter.add_define('CHOWDREN_IGNORE_ASPECT')
 
     converter.add_define('CHOWDREN_SAVE_PATH', 'save')
+    
 
 def get_loop_name(converter, parameter):
     name = converter.convert_parameter(parameter)
@@ -65,7 +67,8 @@ alterable_int_objects = [
     ('SCOREVARIABLES_', [9, 10]),
     ('GOALOBJECT_', [9]),
     ('NEWSCREW_', [1]),
-    ('PAYPHONE_', [1])
+    ('PAYPHONE_', [1]),
+    ('Safe3_', [0])
 ]
 
 def use_alterable_int(converter, expression):
@@ -126,6 +129,8 @@ def get_string(converter, value):
         return 'X360'
     elif value == 'Bin\\Charactertypes.ini':
         return '.\\Bin\\Charactertypes.ini'
+    if value.startswith('Audio\\'):
+        value = '.\\' + value
     value = audio_re.sub(re.escape('\\Audio\\'), value)
     value = src_re.sub(re.escape('\\Src\\'), value)
     value = value.replace(bad_start, '.\\')
@@ -135,3 +140,8 @@ def get_string(converter, value):
         if value == 'BLANK.INI':
             return './Bin/BLANK.ini'
     return value
+
+from configs.local import nah 
+
+def get_locals(converter):
+    return nah.local_dict

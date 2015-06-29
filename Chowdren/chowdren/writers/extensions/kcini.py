@@ -28,14 +28,14 @@ class INI(ObjectWriter):
 
 actions = make_table(ActionMethodWriter, {
     1 : 'set_item',
-    7 : 'set_value',
+    7 : 'set_value_int',
     9 : 'set_string',
     10 : 'set_string',
     12 : 'delete_item',
     11 : 'delete_item',
     13 : 'delete_group',
     6 : 'load_file',
-    8 : 'set_value',
+    8 : 'set_value_int',
     0 : 'set_group'
     # 14 : 'set_value', # specified group
     # 15 : 'set_string', # specified group
@@ -64,10 +64,10 @@ conditions = make_table(ConditionMethodWriter, {
 })
 
 expressions = make_table(ExpressionMethodWriter, {
-    2 : 'get_value',
+    2 : 'get_value_int',
     4 : 'get_string',
     5 : 'get_string',
-    3 : 'get_value'
+    3 : 'get_value_int'
     # 17 : 'get_item_count',
     # 7 : 'get_item_count()',
     # 16 : 'get_group_count()',

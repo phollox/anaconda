@@ -174,7 +174,7 @@ void SteamObject::clear_achievement(const std::string & name)
 #ifdef CHOWDREN_ENABLE_STEAM
     if (!global_steam_obj.initialized)
         return;
-	SteamUserStats()->ClearAchievement(name.c_str());
+    SteamUserStats()->ClearAchievement(name.c_str());
     SteamUserStats()->StoreStats();
 #endif
 }
@@ -184,7 +184,7 @@ void SteamObject::clear_achievements()
 #ifdef CHOWDREN_ENABLE_STEAM
     if (!global_steam_obj.initialized)
         return;
-	SteamUserStats()->ResetAllStats(true);
+    SteamUserStats()->ResetAllStats(true);
     SteamUserStats()->StoreStats();
 #endif
 }

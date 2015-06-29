@@ -98,6 +98,16 @@ void INI::reset_global_data()
     global_data.clear();
 }
 
+#ifdef CHOWDREN_CACHE_INI
+void INI::reset_cache()
+{
+    INICache::iterator it;
+    for (it = ini_cache.begin(); it != ini_cache.end(); ++it) {
+        it->second.clear();
+    }
+}
+#endif
+
 int INI::_parse_handler(void* user, const char* section, const char* name,
                         const char* value)
 {
@@ -256,6 +266,23 @@ double INI::get_value(const std::string & item, double def)
     return get_value(current_group, item, def);
 }
 
+int INI::get_value_int(const std::string & group, const std::string & item,
+                       int def)
+{
+    SectionMap::const_iterator it = data->find(group);
+    if (it == data->end())
+        return def;
+    OptionMap::const_iterator new_it = (*it).second.find(item);
+    if (new_it == (*it).second.end())
+        return def;
+    return string_to_int((*new_it).second);
+}
+
+int INI::get_value_int(const std::string & item, int def)
+{
+    return get_value_int(current_group, item, def);
+}
+
 double INI::get_value_index(const std::string & group, unsigned int index)
 {
     SectionMap::const_iterator it = data->find(group);
@@ -278,25 +305,25 @@ double INI::get_value_index(unsigned int index)
 }
 
 void INI::set_value(const std::string & group, const std::string & item,
-                    int pad, double value)
-{
-    set_string(group, item, number_to_string(value));
-}
-
-void INI::set_value(const std::string & group, const std::string & item,
                     double value)
 {
     set_string(group, item, number_to_string(value));
 }
 
-void INI::set_value(const std::string & item, int pad, double value)
-{
-    set_value(current_group, item, pad, value);
-}
-
 void INI::set_value(const std::string & item, double value)
 {
-    set_value(item, 0, value);
+    set_value(current_group, item, value);
+}
+
+void INI::set_value_int(const std::string & group, const std::string & item,
+                        int value)
+{
+    set_string(group, item, number_to_string(value));
+}
+
+void INI::set_value_int(const std::string & item, int value)
+{
+    set_value_int(current_group, item, value);
 }
 
 void INI::set_string(const std::string & group, const std::string & item,

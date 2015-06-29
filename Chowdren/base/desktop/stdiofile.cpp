@@ -160,10 +160,11 @@ public:
     StandardFile(BaseFile * parent, const char * filename, bool is_read)
     {
         const char * real_mode;
-        if (is_read)
+        if (is_read) {
             real_mode = "rb";
-        else
+        } else {
             real_mode = "wb";
+        }
 
 #ifdef FSFILE_CONVERT_PATH
         std::string file_string = convert_path(filename);
@@ -172,7 +173,8 @@ public:
 #else
         fp = fopen(filename, real_mode);
 #endif
-        parent->closed = fp == NULL;
+        if (fp == NULL)
+            parent->flags |= BaseFile::CLOSED;
     }
 
     bool seek(size_t v, int origin)
@@ -210,6 +212,7 @@ public:
 
 void BaseFile::open(const char * filename, const char * mode)
 {
+    flags = 0;
     bool is_read;
     switch (*mode) {
         case 'r':
@@ -217,6 +220,7 @@ void BaseFile::open(const char * filename, const char * mode)
             break;
         case 'w':
             is_read = false;
+            flags |= WRITE;
             break;
     }
 #ifdef CHOWDREN_AUTO_STEAMCLOUD
@@ -231,20 +235,19 @@ void BaseFile::open(const char * filename, const char * mode)
     }
     if (new_handle == NULL) {
         new_handle = new StandardFile(this, filename, is_read);
-        if (closed) {
+        if (flags & CLOSED) {
             delete new_handle;
             return;
         }
     }
 #else
     HANDLE_BASE * new_handle = new StandardFile(this, filename, is_read);
-    if (closed) {
+    if (flags & CLOSED) {
         delete new_handle;
         return;
     }
 #endif
     handle = (void*)new_handle;
-    closed = false;
 }
 
 bool BaseFile::seek(size_t v, int origin)
@@ -274,10 +277,10 @@ bool BaseFile::at_end()
 
 void BaseFile::close()
 {
-    if (closed)
+    if (flags & CLOSED)
         return;
     HANDLE_BASE * h = (HANDLE_BASE*)handle;
     h->close();
     delete h;
-    closed = true;
+    flags |= CLOSED;
 }

@@ -48,6 +48,7 @@ import struct
 import hashlib
 import cPickle
 import multiprocessing
+from chowdren.local import write_locals
 
 WRITE_SOUNDS = True
 PROFILE = False
@@ -1007,9 +1008,13 @@ class Converter(object):
         strings_header.start_guard('CHOWDREN_STRINGS_H')
         strings_header.putln('#include <string>')
         for value, name in self.strings.iteritems():
-            strings_file.putlnc('const std::string %s(%r, %s);', name, value,
+            strings_file.putlnc('std::string %s(%r, %s);', name, value,
                                 len(value), cpp=False)
-            strings_header.putlnc('extern const std::string %s;', name)
+            strings_header.putlnc('extern std::string %s;', name)
+
+        local_dict = self.config.get_locals()
+        write_locals(local_dict, strings_file, strings_header, self)
+
         strings_header.close_guard('CHOWDREN_STRINGS_H')
         strings_file.close()
         strings_header.close()
@@ -1092,6 +1097,9 @@ class Converter(object):
         self.info_dict['frame_srcs'] = self.frame_srcs
         self.info_dict['object_srcs'] = objects_file.sources
         self.info_dict['ext_srcs'] = list(self.extension_sources)
+
+        with open(self.get_filename('strings.py'), 'wb') as fp:
+            fp.write(repr(self.strings.keys()))
 
         if not self.assets.skip:
             self.write_config(self.info_dict, 'config.py')
@@ -1885,10 +1893,11 @@ class Converter(object):
             self.all_objects[handle] = object_writer
             type_handle = (handle[0], self.game_index)
             self.object_types[type_handle] = object_type
+            if extra.is_special_object(name):
+                continue
             self.extension_includes.update(object_writer.get_includes())
             self.extension_sources.update(object_writer.get_sources())
-            if (object_writer.static or extra.is_special_object(name)
-                or object_writer.class_name == 'Undefined'):
+            if object_writer.static or object_writer.class_name == 'Undefined':
                 continue
 
             if object_writer.is_static_background():

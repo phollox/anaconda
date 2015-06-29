@@ -37,6 +37,9 @@ public:
 
     INI(int x, int y, int type_id);
     static void reset_global_data();
+#ifdef CHOWDREN_CACHE_INI
+    static void reset_cache();
+#endif
     static int _parse_handler(void* user, const char* section,
                               const char* name, const char* value);
     void parse_handler(const std::string & section, const std::string & name,
@@ -59,17 +62,22 @@ public:
                                       unsigned int index);
     const std::string & get_item_name(unsigned int index);
     const std::string & get_group_name(unsigned int index);
+
+    // value double
     double get_value(const std::string & group, const std::string & item,
                      double def=0.0);
     double get_value(const std::string & item, double def=0.0);
     double get_value_index(const std::string & group, unsigned int index);
     double get_value_index(unsigned int index);
     void set_value(const std::string & group, const std::string & item,
-                   int pad, double value);
-    void set_value(const std::string & group, const std::string & item,
                    double value);
-    void set_value(const std::string & item, int pad, double value);
     void set_value(const std::string & item, double value);
+    int get_value_int(const std::string & group, const std::string & item,
+                      int def=0);
+    int get_value_int(const std::string & item, int def=0);
+    void set_value_int(const std::string & group, const std::string & item,
+                       int value);
+    void set_value_int(const std::string & item, int value);
     void set_string(const std::string & group, const std::string & item,
                     const std::string & value);
     void set_string(const std::string & item, const std::string & value);

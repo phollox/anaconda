@@ -145,11 +145,25 @@ class GetMD5(ExpressionMethodWriter):
     has_object = False
     method = 'get_md5'
 
+class SetValue(ActionMethodWriter):
+    def write(self, writer):
+        t = self.parameters[-2]
+        t = self.converter.convert_static_expression(t.loader.items)
+        t = eval(t)
+        if t == 0:
+            self.method = 'set_value_int'
+        elif t == 1:
+            self.method = 'set_value'
+        else:
+            raise NotImplementedError()
+        self.parameters.pop(-2)
+        ActionMethodWriter.write(self, writer)
+
 actions = make_table(ActionMethodWriter, {
     0 : 'set_group',
-    14 : 'set_value', # specified group
+    14 : SetValue, # specified group
     15 : 'set_string', # specified group
-    1 : 'set_value', # current group
+    1 : SetValue, # current group
     2 : 'set_string', # current group
     28 : 'delete_group',
     9 : 'delete_group',

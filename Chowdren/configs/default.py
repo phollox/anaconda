@@ -29,6 +29,9 @@ def get_scale_method(converter, obj):
 def use_simple_or(converter):
     return False
 
+def get_locals(converter):
+    return {}
+
 def use_iteration_index(converter):
     return True
 
