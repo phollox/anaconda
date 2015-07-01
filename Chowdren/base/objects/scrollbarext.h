@@ -12,13 +12,21 @@ public:
     static const int button_size = 16;
     static const int grip_min_size = 16;
 
+    enum Button {
+        NONE,
+        LEFTARROW,
+        RIGHTARROW,
+        GRIP,
+        TRACK,
+    };
+
     bool vertical;
     int min_val;
     int max_val;
     int val;
 
-    bool focus;
-    bool dragging;
+    Button over; // Last hovered (or currently pressed) button
+    bool pressing;
     int drag_click_pos;
     int drag_new_pos;
 
@@ -40,9 +48,8 @@ public:
     int pos_to_val(int pos);
     int get_grip_size();
     int get_grip_pos();
-    void draw_box(int pos, int size, const Color& fill, const Color& outline,
-        int thickness);
-    void draw_arrow(int pos, bool flip);
+    void draw_box(int id, int pos, int size);
+    void draw_arrow(int id, int pos);
 };
 
 #endif // CHOWDREN_SCROLLBAREXT_H

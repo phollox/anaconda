@@ -149,7 +149,9 @@ void ScrollbarObject::draw()
     draw_box(TRACK, 0, get_total_size());
 
     // Grip & arrow buttons overlap, so we need to sort them
-    int grip_pos = ((pressing && over == GRIP) ? drag_new_pos : get_grip_pos()) + button_size;
+    int grip_pos = ((pressing && over == GRIP) ? drag_new_pos : get_grip_pos())
+        + button_size;
+        
     if (over != GRIP) {
         draw_box(GRIP, grip_pos, get_grip_size());
     }
@@ -185,7 +187,8 @@ void ScrollbarObject::draw_box(int id, int pos, int size)
     }
 
     Color fill = id == TRACK ? track_color : button_color;
-    Color outline = over == id ? (pressing ? pressed_color : over_color) : border_color;
+    Color outline = over == id ?
+        (pressing ? pressed_color : over_color) : border_color;
 
     Render::draw_quad(x1, y1, x2, y2, outline);
     Render::draw_quad(x1 + 1.f, y1 + 1.f, x2 - 1.f, y2 - 1.f, fill);
