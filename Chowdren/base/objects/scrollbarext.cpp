@@ -4,7 +4,7 @@
 // ScrollbarObject
 
 ScrollbarObject::ScrollbarObject(int x, int y, int type_id)
-: FrameObject(x, y, type_id), focus(false), dragging(false)
+: FrameObject(x, y, type_id), over(NONE), pressing(false)
 {
     flags &= ~SCROLL;
     collision = new InstanceBox(this);
@@ -75,7 +75,7 @@ void ScrollbarObject::set_scroll_range(int min, int max)
 int ScrollbarObject::get_value()
 {
     // While dragging, the new value isn't written yet
-    if (dragging)
+    if (over == GRIP && pressing)
         return pos_to_val(drag_new_pos);
     return val;
 }
@@ -88,69 +88,89 @@ void ScrollbarObject::update()
 
     int pos = vertical ? y : x;
     int mouse_pos = (vertical ? my : mx) - pos;
+    int grip_total_pos = get_grip_pos() + button_size;
         
-    if (is_mouse_pressed_once(SDL_BUTTON_LEFT)) {
-        PointCollision col(mx, my);
-        focus = collide(&col, collision);
+    if (!pressing) {
+        over = NONE;
 
-        if (!focus)
+        PointCollision col(mx, my);
+        if (!collide(&col, collision))
             return;
 
-        // Clicked on - arrow
         if (mouse_pos < button_size)
-            val = std::max(min_val, val - 1);
+            over = LEFTARROW;
+        else if (mouse_pos >= get_total_size() - button_size)
+            over = RIGHTARROW;
+        else if (mouse_pos >= grip_total_pos
+              && mouse_pos < grip_total_pos + get_grip_size())
+            over = GRIP;
+    }
 
-        // Clicked on + arrow
-        if (mouse_pos >= get_total_size() - button_size)
-            val = std::min(max_val, val + 1);
-
-        // Clicked on grip
-        int grip_total_pos = get_grip_pos() + button_size;
-        if (mouse_pos >= grip_total_pos
-         && mouse_pos < grip_total_pos + get_grip_size())
-        {
-            dragging = true;
-            drag_click_pos = mouse_pos;
+    if (is_mouse_pressed_once(SDL_BUTTON_LEFT)) {
+        switch (over) {
+            case LEFTARROW:
+                pressing = true;
+                val = std::max(min_val, val - 1);
+                break;
+            case RIGHTARROW:
+                pressing = true;
+                val = std::min(max_val, val + 1);
+                break;
+            case GRIP:
+                pressing = true;
+                drag_click_pos = mouse_pos;
+                break;
         }
     }
 
-    // The grip was clicked and is now being dragged
-    if (dragging) {
-        // When released, apply current position
+    // LMB down on one of the buttons
+    if (pressing) {
         if (!is_mouse_pressed(SDL_BUTTON_LEFT)) {
-            val = pos_to_val(drag_new_pos);
-            dragging = false;
+            // Grip was released, apply new position
+            if (over == GRIP)
+                val = pos_to_val(drag_new_pos);
+            pressing = false;
             return;
         }
 
-        int delta = mouse_pos - drag_click_pos;
-        drag_new_pos = get_grip_pos() + delta;
-        drag_new_pos = std::max(0, std::min(get_track_size(), drag_new_pos));
+        // The grip was clicked and is now being dragged
+        if (over == GRIP) {
+            int delta = mouse_pos - drag_click_pos;
+            drag_new_pos = get_grip_pos() + delta;
+            drag_new_pos = std::max(0,
+                std::min(get_track_size(), drag_new_pos));
+        }
     }
 }
 
 
 void ScrollbarObject::draw()
 {
-    static const Color background_color(204, 206, 217, 255);
-    static const Color border_color(106, 107, 110, 255);
-    static const Color button_color(240, 240, 240, 255);
-    draw_box(0, get_total_size(), background_color, border_color, 1);
+    draw_box(TRACK, 0, get_total_size());
 
-    draw_box(0, button_size, button_color, border_color, 1);
-    draw_arrow(button_size / 2, true);
-    
-    draw_box(get_total_size() - button_size, button_size,
-        button_color, border_color, 1);
-    draw_arrow(get_total_size() - button_size / 2, false);
+    // Grip & arrow buttons overlap, so we need to sort them
+    int grip_pos = ((pressing && over == GRIP) ? drag_new_pos : get_grip_pos()) + button_size;
+    if (over != GRIP) {
+        draw_box(GRIP, grip_pos, get_grip_size());
+    }
 
-    int grip_pos = (dragging ? drag_new_pos : get_grip_pos()) + button_size;
-    draw_box(grip_pos, get_grip_size(), button_color, border_color, 1);
+    draw_box(LEFTARROW, 0, button_size + 1);
+    draw_box(RIGHTARROW, get_total_size() - button_size - 1, button_size + 1);
+
+    // Grip is in foreground if hovered/pressed
+    if (over == GRIP) {
+        draw_box(GRIP, grip_pos, get_grip_size());
+    }
 }
 
-void ScrollbarObject::draw_box(int pos, int size, const Color& fill,
-    const Color& outline, int thickness)
+void ScrollbarObject::draw_box(int id, int pos, int size)
 {
+    static const Color track_color(204, 206, 217, 255);
+    static const Color border_color(106, 107, 110, 255);
+    static const Color button_color(240, 240, 240, 255);
+    static const Color over_color(136, 137, 140, 255);
+    static const Color pressed_color(167, 187, 233, 255);
+
     float x1, y1, x2, y2;
     if (vertical) {
         x1 = x;
@@ -163,15 +183,28 @@ void ScrollbarObject::draw_box(int pos, int size, const Color& fill,
         x2 = x + pos + size;
         y2 = y + height;
     }
+
+    Color fill = id == TRACK ? track_color : button_color;
+    Color outline = over == id ? (pressing ? pressed_color : over_color) : border_color;
+
     Render::draw_quad(x1, y1, x2, y2, outline);
-    Render::draw_quad(x1 + thickness, y1 + thickness,
-        x2 - thickness, y2 - thickness, fill);
+    Render::draw_quad(x1 + 1.f, y1 + 1.f, x2 - 1.f, y2 - 1.f, fill);
+    if (id < GRIP) {
+        draw_arrow(id, pos + button_size / 2);
+    }
 }
 
-void ScrollbarObject::draw_arrow(int pos, bool flip)
+void ScrollbarObject::draw_arrow(int id, int pos)
 {
+    static const Color arrow_color(64, 64, 64, 255);
+
     int x = this->x + (vertical ? (width / 2) : pos);
     int y = this->y + (vertical ? pos : (height / 2));
+
+    if (over == id && pressing) {
+        x += 1;
+        y += 1;
+    }
 
     float points[] = {
         x - 4, y - 4,
@@ -182,14 +215,14 @@ void ScrollbarObject::draw_arrow(int pos, bool flip)
     
     int off;
     if (vertical) {
-        off = flip ? 0 : 4;
+        off = id == LEFTARROW ? 0 : 4;
         points[off] = x;
         points[off + 2] = x;
     } else {
-        off = flip ? 7 : 3;
+        off = id == LEFTARROW ? 7 : 3;
         points[off] = y;
         points[(off + 2) % 8] = y;
     }
 
-    Render::draw_quad(&points[0], Color(64, 64, 64, 255));
+    Render::draw_quad(&points[0], arrow_color);
 }
