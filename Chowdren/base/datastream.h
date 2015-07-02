@@ -216,14 +216,20 @@ public:
 class WriteStream : public DataStream
 {
 public:
+    std::stringstream stream;
+
     WriteStream()
-    : DataStream(*(new std::stringstream()))
+    : DataStream(stream)
     {
     }
 
     ~WriteStream()
     {
-        delete (&stream);
+    }
+
+    std::string get_string()
+    {
+        return stream.str();
     }
 
     void save(FSFile & fp)
@@ -263,6 +269,42 @@ public:
     bool at_end()
     {
         return pos == str.size();
+    }
+
+    void write(const char * data, size_t len)
+    {
+    }
+};
+
+class ArrayStream : public BaseStream
+{
+public:
+    char * array;
+    size_t size;
+    size_t pos;
+
+    ArrayStream(char * array, size_t size)
+    : array(array), size(size), pos(0)
+    {
+    }
+
+    bool read(char * data, size_t len)
+    {
+        if (size - pos < len)
+            return false;
+        memcpy(data, &array[pos], len);
+        pos += len;
+        return true;
+    }
+
+    void seek(size_t p)
+    {
+        pos = std::max(size_t(0), std::min(p, size));
+    }
+
+    bool at_end()
+    {
+        return pos == size;
     }
 
     void write(const char * data, size_t len)

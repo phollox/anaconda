@@ -24,8 +24,8 @@ class PathPlanner(ObjectWriter):
         height = data.readInt()
 
         writer.putlnc('tile_size = %s;', tile_size)
-        writer.putlnc('map_width = %s;', width)
-        writer.putlnc('map_height = %s;', width)
+        writer.putlnc('map_width = %s;', (width / tile_size) + 1)
+        writer.putlnc('map_height = %s;', (height / tile_size) + 1)
         writer.putlnc('create_map();')
 
 class ObjectAction(ActionMethodWriter):

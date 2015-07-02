@@ -199,8 +199,8 @@ public:
     DefaultPlatform()
     : PlatformObject(0, 0, 0)
     {
-        setup_default_instance(this);
         create_alterables();
+        setup_default_instance(this);
     }
 };
 

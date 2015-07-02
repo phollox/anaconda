@@ -153,9 +153,9 @@ public:
     DefaultPicture()
     : ActivePicture(0, 0, 0)
     {
-        setup_default_instance(this);
         collision = new InstanceBox(this);
         create_alterables();
+        setup_default_instance(this);
     }
 };
 
