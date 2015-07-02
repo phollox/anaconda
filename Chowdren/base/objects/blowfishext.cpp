@@ -24,9 +24,16 @@ void BlowfishObject::decrypt_file(const std::string & key,
 
     std::cout << "Decrypt file: " << key << " " << filename << std::endl;
 
+    std::string & cache = cipher_store[filename];
+    if (!cache.empty()) {
+        std::cout << "Already decrypted" << std::endl;
+        return;
+    }
+
     std::string data;
     if (!read_file(filename.c_str(), data)) {
         std::cout << "Could not read file: " << filename << std::endl;
+        cipher_store[filename] = empty_string;
         return;
     }
 
@@ -48,7 +55,7 @@ void BlowfishObject::decrypt_file(const std::string & key,
         fp.write(&out[0], out.size());
         fp.close();
     } else {
-        cipher_store[filename] = out;
+        cache = out;
     }
 }
 
@@ -59,4 +66,26 @@ const std::string & BlowfishObject::get_cache(const std::string & filename)
 	if (it == cipher_store.end())
 		return empty_string;
 	return it->second;
+}
+
+bool BlowfishObject::set_cache(const std::string & filename,
+                               const std::string & data)
+{
+    hash_map<std::string, std::string>::iterator it;
+    it = cipher_store.find(filename);
+    if (it == cipher_store.end())
+        return false;
+    it->second = data;
+
+    std::string out;
+    cipher.encrypt(&out, data);
+
+    FSFile fp(filename.c_str(), "w");
+    if (!fp.is_open()) {
+        std::cout << "Could not save Blowfish file: " << filename << std::endl;
+        return true;
+    }
+    fp.write(&out[0], out.size());
+    fp.close();
+    return true;
 }

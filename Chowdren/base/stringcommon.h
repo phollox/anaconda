@@ -9,6 +9,7 @@
 #include "dynnum.h"
 #include <boost/algorithm/string/replace.hpp>
 
+int fast_atoi(const std::string & value);
 double fast_atof(const char * p, const char * end);
 std::string fast_itoa(int value);
 std::string fast_lltoa(long long value);
@@ -25,14 +26,9 @@ inline double string_to_double(const std::string & in)
     return fast_atof(start, end);
 }
 
-inline int string_to_int(const std::string & in, int def = 0)
+inline int string_to_int(const std::string & in)
 {
-    // only used in assarray/charimage, OK to be slow
-    std::istringstream input(in);
-    int value;
-    if (!(input >> value))
-        return def;
-    return value;
+    return fast_atoi(in);
 }
 
 inline DynamicNumber string_to_number(const std::string & in)

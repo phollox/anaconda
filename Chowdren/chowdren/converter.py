@@ -1083,6 +1083,14 @@ class Converter(object):
                    for item in self.extension_sources]
         ext_srcs.sort()
 
+        cmake_defines = []
+        for (name, value) in self.defines:
+            if value is None:
+                value = '1'
+            cmake_defines.append('set(%s %s)' % (name, value))
+
+        cmake_defines = '\n'.join(cmake_defines)
+
         self.format_file('Application.cmake', 'CMakeLists.txt',
                          event_srcs=get_cmake_list('EVENTSRCS',
                                                    event_file.sources),
@@ -1091,6 +1099,7 @@ class Converter(object):
                          object_srcs=get_cmake_list('OBJECTSRCS',
                                                     objects_file.sources),
                          extension_srcs=get_cmake_list('EXTSRCS', ext_srcs),
+                         defines=cmake_defines,
                          use_dlls=repr(self.use_dlls).upper())
         self.copy_file('icon.icns', overwrite=False)
         self.info_dict['event_srcs'] = event_file.sources

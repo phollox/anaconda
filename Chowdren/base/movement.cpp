@@ -1020,10 +1020,11 @@ void EightDirections::update()
 // MoveItMovement
 
 MoveItMovement::MoveItMovement(FrameObject * instance, int x, int y,
-                               int cycles)
+                               int cycles, Movement * old_movement)
 : Movement(instance), src_x(instance->x), src_y(instance->y),
-  dst_x(x), dst_y(y), step(0)
+  dst_x(x), dst_y(y), step(0), old_movement(old_movement)
 {
+    flags |= IS_MOVE_IT;
     this->cycles = std::max(1, cycles);
 }
 

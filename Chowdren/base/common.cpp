@@ -1338,6 +1338,10 @@ void setup_default_instance(FrameObject * obj)
 {
     obj->layer = &default_layer;
     obj->width = obj->height = 0;
+    if (obj->collision == NULL)
+        return;
+    for (int i = 0; i < 4; ++i)
+        obj->collision->aabb[i] = 0;
 }
 
 FrameObject * Frame::add_object(FrameObject * instance, Layer * layer)

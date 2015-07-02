@@ -18,8 +18,15 @@ void MoveIt::move(int x, int y, int speed)
         int dst_y = y - obj->layer->off_y;
         float distance = get_distance(obj->x, obj->y, dst_x, dst_y);
         int cycles = int(distance / speed);
-        delete obj->movement;
-        obj->movement = new MoveItMovement(obj, dst_x, dst_y, cycles);
+        Movement * movement = obj->movement;
+        if (movement != NULL) {
+            if (movement->flags & Movement::IS_MOVE_IT) {
+                movement = ((MoveItMovement*)movement)->old_movement;
+                delete obj->movement;
+            }
+        }
+        obj->movement = new MoveItMovement(obj, dst_x, dst_y, cycles,
+                                           movement);
         obj->movement->start();
     }
 }
@@ -32,7 +39,11 @@ void MoveIt::clear_queue()
 void MoveIt::stop(QualifierList & objs)
 {
     for (QualifierIterator it(objs); !it.end(); ++it) {
-        (*it)->clear_movements();
+        FrameObject * obj = *it;
+        Movement * movement = obj->movement;
+        if (movement == NULL || !(movement->flags & Movement::IS_MOVE_IT))
+            continue;
+        obj->movement = ((MoveItMovement*)movement)->old_movement;
     }
 }
 

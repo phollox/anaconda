@@ -18,4 +18,6 @@ set(APP_PLATFORM "%(platform)s")
 
 %(extension_srcs)s
 
+%(defines)s
+
 include(${CHOWDREN_BASE_DIR}/CMakeLists.txt)

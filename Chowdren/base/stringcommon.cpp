@@ -246,3 +246,37 @@ std::string fast_dtoa(double value)
     }
     return std::string(wstr + 1, &buffer[15] - wstr);
 }
+
+int fast_atoi(const std::string & src)
+{
+    if (src.empty())
+        return 0;
+    const char * p = &src[0];
+    const char * end = p + src.size();
+    int value = 0;
+
+    while (IS_WHITESPACE(*p) || *p == '0') {
+        INCREMENT_PTR();
+    }
+
+    int sign = 1;
+    switch (*p) {
+        case '-':
+            sign = -1;
+            INCREMENT_PTR();
+            break;
+        case '+':
+            INCREMENT_PTR();
+            break;
+        default:
+            break;
+    }
+
+    while (IS_DIGIT(*p)) {
+        value = value * 10 + (*p - '0');
+        INCREMENT_PTR();
+    }
+
+parse_end:
+    return value * sign;
+}
