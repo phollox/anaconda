@@ -24,7 +24,8 @@ public:
     enum MovementFlags
     {
         MOVE_AT_START = 1 << 0,
-        MOVE_STOPPED = 1 << 1
+        MOVE_STOPPED = 1 << 1,
+        IS_MOVE_IT = 1 << 2
     };
 
     Movement(FrameObject * instance);
@@ -189,8 +190,10 @@ public:
     int dst_x, dst_y;
     int step;
     int cycles;
+    Movement * old_movement;
 
-    MoveItMovement(FrameObject * instance, int x, int y, int cycles);
+    MoveItMovement(FrameObject * instance, int x, int y, int cycles,
+                   Movement * old_movement);
     void update();
 };
 

@@ -352,7 +352,7 @@ void INI::load_file(const std::string & fn, bool read_only, bool merge,
 #ifdef CHOWDREN_USE_BLOWFISH_CACHE
     const std::string & cache = BlowfishObject::get_cache(filename);
     if (!cache.empty()) {
-        read_only = true;
+        std::cout << "Using Blowfish cache for " << filename << std::endl;
         load_string(cache, merge);
         return;
     }
@@ -369,7 +369,6 @@ void INI::load_file(const std::string & fn, bool read_only, bool merge,
     if (!merge)
         reset(false);
 #endif
-
 
     std::cout << "Loading " << filename << " (" << get_name() << ")"
         << std::endl;
@@ -414,7 +413,7 @@ void INI::load_file(TempPath path)
 void INI::load_string(const std::string & data, bool merge)
 {
 #ifndef CHOWDREN_AUTOSAVE_ON_CHANGE
-    if (auto_save)
+    if (auto_save && changed)
         save_file(false);
 #endif
     if (!merge)
@@ -461,6 +460,7 @@ void INI::save_file(const std::string & fn, bool force)
         return;
     changed = false;
     filename = convert_path(fn);
+    std::cout << "Saving: " << filename << std::endl;
     platform_create_directories(get_path_dirname(filename));
     std::stringstream out;
     get_data(out);
@@ -473,6 +473,11 @@ void INI::save_file(const std::string & fn, bool force)
         compress_huffman(outs, filename.c_str());
         return;
     }
+
+#ifdef CHOWDREN_USE_BLOWFISH_CACHE
+    if (BlowfishObject::set_cache(filename, outs))
+        return;
+#endif
 
     FSFile fp(filename.c_str(), "w");
     if (!fp.is_open()) {
