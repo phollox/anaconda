@@ -8,6 +8,8 @@ from chowdren.writers.events import (ComparisonWriter, ActionMethodWriter,
 from mmfparser.bitdict import BitDict
 from mmfparser.data.font import LogFont
 
+import glob, os
+
 class ScrollbarObject(ObjectWriter):
     class_name = 'ScrollbarObject'
     filename = 'scrollbarext'
@@ -31,11 +33,17 @@ class ScrollbarObject(ObjectWriter):
         writer.putlnc('vertical = %s;', vertical)
         writer.putlnc('min_val = %s;', min_val)
         writer.putlnc('max_val = %s;', max_val)
-        writer.putlnc('val = %s;', val)
-
+        writer.putlnc('init_scrollbar(%s);', val)
 
     def has_updates(self):
         return True
+
+    #def get_sources(self):
+    #    script_dir = os.path.dirname(__file__)
+    #    base_dir = os.path.join(script_dir, '..', '..', '..', 'base')
+    #    base_dir = os.path.abspath(base_dir)
+    #    print glob.glob(os.path.join(base_dir, 'staticlibs', 'gwen', '*.cpp'))
+    #    return ['objects/scrollbarext.cpp']
 
 
 actions = make_table(ActionMethodWriter, {

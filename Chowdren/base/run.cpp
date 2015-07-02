@@ -34,6 +34,10 @@ GameManager manager;
 #include <emscripten/emscripten.h>
 #endif
 
+#ifdef CHOWDREN_USE_GWEN
+#include "gui/gwen.h"
+#endif
+
 // #define CHOWDREN_USER_PROFILER
 
 #if !defined(NDEBUG)
@@ -615,6 +619,10 @@ bool GameManager::update()
     mouse.update();
 
     platform_poll_events();
+
+#ifdef CHOWDREN_USE_GWEN
+    gwen.update();
+#endif
 
     // player controls
     int new_control = get_player_control_flags(1);

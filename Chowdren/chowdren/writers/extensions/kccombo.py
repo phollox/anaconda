@@ -13,7 +13,20 @@ class ComboBox(ObjectWriter):
     filename = 'combobox'
 
     def write_init(self, writer):
-        pass
+        data = self.get_data()
+        f = open('g:\\buf', 'w')
+        width = data.readShort(True)
+        height = data.readShort(True)
+        data.skipBytes(2) # bom
+        data.read
+        for _ in xrange(data.tell(), data.size()):
+            f.write(chr(data.readByte(True)))
+        f.close()
+        writer.putlnc('width = %s;', width)
+        writer.putlnc('height = %s;', height)
+
+    def has_updates(self):
+        return True
 
 actions = make_table(ActionMethodWriter, {
     5 :  'reset',

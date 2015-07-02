@@ -169,6 +169,69 @@ if (USE_BOX2D)
     )
 endif()
 
+if (CHOWDREN_USE_GWEN)
+    set(GWEN_DIR "${CHOWDREN_BASE_DIR}/staticlibs/gwen")
+    set(SRCS
+        ${SRCS}
+        ${CHOWDREN_BASE_DIR}/gui/gwen.cpp
+        ${GWEN_DIR}/Anim.cpp
+        ${GWEN_DIR}/BaseRender.cpp
+        ${GWEN_DIR}/ChowdrenPlatform.cpp
+        ${GWEN_DIR}/ChowdrenRender.cpp
+        ${GWEN_DIR}/ControlList.cpp
+        ${GWEN_DIR}/DragAndDrop.cpp
+        ${GWEN_DIR}/events.cpp
+        ${GWEN_DIR}/GwenMain.cpp
+        ${GWEN_DIR}/Hook.cpp
+        ${GWEN_DIR}/inputhandler.cpp
+        ${GWEN_DIR}/Skin.cpp
+        ${GWEN_DIR}/ToolTip.cpp
+        ${GWEN_DIR}/Utility.cpp
+        ${GWEN_DIR}/Controls/Base.cpp
+        ${GWEN_DIR}/Controls/Button.cpp
+        ${GWEN_DIR}/Controls/Canvas.cpp
+        ${GWEN_DIR}/Controls/CheckBox.cpp
+        ${GWEN_DIR}/Controls/CrossSplitter.cpp
+        ${GWEN_DIR}/Controls/DockBase.cpp
+        ${GWEN_DIR}/Controls/DockedTabControl.cpp
+        ${GWEN_DIR}/Controls/Dragger.cpp
+        ${GWEN_DIR}/Controls/GwenComboBox.cpp
+        ${GWEN_DIR}/Controls/HorizontalScrollBar.cpp
+        ${GWEN_DIR}/Controls/HorizontalSlider.cpp
+        ${GWEN_DIR}/Controls/ImagePanel.cpp
+        ${GWEN_DIR}/Controls/Label.cpp
+        ${GWEN_DIR}/Controls/LabelClickable.cpp
+        ${GWEN_DIR}/Controls/ListBox.cpp
+        ${GWEN_DIR}/Controls/Menu.cpp
+        ${GWEN_DIR}/Controls/MenuItem.cpp
+        ${GWEN_DIR}/Controls/MenuStrip.cpp
+        ${GWEN_DIR}/Controls/NumericUpDown.cpp
+        ${GWEN_DIR}/Controls/ProgressBar.cpp
+        ${GWEN_DIR}/Controls/RadioButton.cpp
+        ${GWEN_DIR}/Controls/RadioButtonController.cpp
+        ${GWEN_DIR}/Controls/Rectangle.cpp
+        ${GWEN_DIR}/Controls/ResizableControl.cpp
+        ${GWEN_DIR}/Controls/Resizer.cpp
+        ${GWEN_DIR}/Controls/RichLabel.cpp
+        ${GWEN_DIR}/Controls/ScrollBar.cpp
+        ${GWEN_DIR}/Controls/ScrollBarBar.cpp
+        ${GWEN_DIR}/Controls/ScrollBarButton.cpp
+        ${GWEN_DIR}/Controls/ScrollControl.cpp
+        ${GWEN_DIR}/Controls/Slider.cpp
+        ${GWEN_DIR}/Controls/SplitterBar.cpp
+        ${GWEN_DIR}/Controls/TabButton.cpp
+        ${GWEN_DIR}/Controls/TabControl.cpp
+        ${GWEN_DIR}/Controls/TabStrip.cpp
+        ${GWEN_DIR}/Controls/Text.cpp
+        ${GWEN_DIR}/Controls/TextBox.cpp
+        ${GWEN_DIR}/Controls/TextBoxNumeric.cpp
+        ${GWEN_DIR}/Controls/VerticalScrollBar.cpp
+        ${GWEN_DIR}/Controls/VerticalSlider.cpp
+        ${GWEN_DIR}/Controls/WindowCanvas.cpp
+        ${GWEN_DIR}/Controls/WindowControl.cpp
+    )
+endif()
+
 if (EMULATE_WIIU)
     add_definitions(-DCHOWDREN_EMULATE_WIIU)
     add_definitions(-DCHOWDREN_HAS_MRT)

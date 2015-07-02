@@ -15,6 +15,7 @@ def init(converter):
     converter.add_define('CHOWDREN_FORCE_X360')
     converter.add_define('CHOWDREN_FORCE_TRANSPARENT')
     converter.add_define('CHOWDREN_FORCE_TEXT_LAYOUT')
+    converter.add_define('CHOWDREN_USE_GWEN')
 
 def use_image_preload(converter):
     return True
