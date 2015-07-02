@@ -19,6 +19,7 @@ ComboBox::~ComboBox()
 
 void ComboBox::update()
 {
+    combo_box.SetPos(x, y);
     combo_box.SetWidth(width);
 }
 
