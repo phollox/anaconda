@@ -3,6 +3,7 @@
 #include <iostream>
 #include "fileio.h"
 #include "path.h"
+#include "platform.h"
 
 #ifdef CHOWDREN_IS_DESKTOP
 #include <SDL.h>
@@ -148,6 +149,10 @@ void SteamObject::unlock_achievement(const std::string & name)
         return;
     SteamUserStats()->SetAchievement(name.c_str());
     SteamUserStats()->StoreStats();
+#endif
+
+#ifndef CHOWDREN_IS_DESKTOP
+    platform_unlock_achievement(name);
 #endif
 }
 

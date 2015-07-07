@@ -23,3 +23,23 @@ def use_image_flush(converter, frame):
 
 def use_edit_obj(converter):
     return True
+
+alterable_int_objects = [
+    ('BASEYou_', [3, 9]),
+    ('BASEInmate_', [3, 9]),
+    ('BASEGuard_', [3, 9]),
+    ('qualifier_13', [3, 9])
+]
+
+def use_alterable_int(converter, expression):
+    obj = expression.get_object()
+    name = expression.converter.get_object_name(obj)
+    print name
+    for (check_name, alts) in alterable_int_objects:
+        if not name.startswith(check_name):
+            continue
+        if alts is None:
+            return True
+        index = expression.data.loader.value
+        return index in alts
+    return False

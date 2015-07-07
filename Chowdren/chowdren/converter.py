@@ -28,7 +28,7 @@ from chowdren.writers.events.system import SystemObject
 from chowdren.writers.objects.system import system_objects
 from chowdren.common import (get_method_name, get_class_name, check_digits,
     to_c, make_color, parse_direction, get_base_path, get_root_path, makedirs,
-    is_qualifier, get_qualifier, TEMPORARY_GROUP_ID)
+    is_qualifier, get_qualifier, TEMPORARY_GROUP_ID, get_color_tuple)
 from chowdren.writers.extensions import load_extension_module
 from chowdren.key import VK_TO_SDL, VK_TO_NAME, convert_key, KEY_TO_NAME
 from chowdren import extra
@@ -193,41 +193,6 @@ def load_native_extension(name):
     native_extension_cache[name] = extension
     return extension
 
-def get_color_number(value):
-    return (value & 0xFF, (value & 0xFF00) >> 8, (value & 0xFF0000) >> 16)
-
-def get_system_color(index):
-    if index == 0xFFFF:
-        return None
-    if index & (1 << 31) != 0:
-        return get_color_number(index)
-    try:
-        return ACTIVE_BOX_COLORS[index]
-    except KeyError:
-        return (0, 0, 0)
-
-def read_system_color(reader):
-    return get_system_color(reader.readInt(True))
-
-active_picture_flags = BitDict(
-    'Resize',
-    'HideOnStart',
-    'TransparentBlack',
-    'TransparentFirstPixel',
-    'FlippedHorizontally',
-    'FlippedVertically',
-    'Resample',
-    'WrapModeOff',
-)
-
-button_flags = BitDict(
-    'HideOnStart',
-    'DisableOnStart',
-    'TextOnLeft',
-    'Transparent',
-    'SystemColor'
-)
-
 key_flags = BitDict(
     'Up',
     'Down',
@@ -238,9 +203,6 @@ key_flags = BitDict(
     'Fire3',
     'Fire4'
 )
-
-def get_color_tuple(value):
-    return value & 0xFF, (value & 0xFF00) >> 8, (value & 0xFF0000) >> 16
 
 DEFAULT_CHARMAP = ''.join([chr(item) for item in xrange(32, 256)])
 

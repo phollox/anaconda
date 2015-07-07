@@ -128,6 +128,9 @@ def to_c(format_spec, *args, **kw):
         new_args.append(arg)
     return format_spec % tuple(new_args)
 
+def get_color_tuple(value):
+    return (value & 0xFF, (value & 0xFF00) >> 8, (value & 0xFF0000) >> 16)
+
 def make_color(value):
     return 'Color(%s)' % ', '.join([str(item) for item in value])
 

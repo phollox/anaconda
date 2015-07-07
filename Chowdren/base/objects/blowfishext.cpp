@@ -6,16 +6,44 @@
 #include <iostream>
 #include "types.h"
 
-void BlowfishObject::encrypt_file(const std::string & key,
-                                  const std::string & filename)
-{
-    std::cout << "Encrypt file: " << key << " " << filename << std::endl;
-}
 
 static Blowfish cipher;
 static std::string last_cipher;
 static std::string gif_ext(".gif");
 static hash_map<std::string, std::string> cipher_store;
+
+void BlowfishObject::encrypt_file(const std::string & key,
+                                  const std::string & in_file)
+{
+    std::string filename = convert_path(in_file);
+    hash_map<std::string, std::string>::iterator it;
+    it = cipher_store.find(filename);
+    if (it != cipher_store.end())
+        return;
+
+    std::string data;
+    if (!read_file(filename.c_str(), data)) {
+        cipher_store[filename] = empty_string;
+        std::cout << "Could not read file: " << filename << std::endl;
+        return;
+    }
+
+    cipher_store[filename] = data;
+
+    if (last_cipher != key) {
+        last_cipher = key;
+        cipher.set_key(key);
+    }
+
+    std::string out;
+    cipher.encrypt(&out, data);
+
+    FSFile fp(filename.c_str(), "w");
+    if (!fp.is_open())
+        return;
+    fp.write(&out[0], out.size());
+    fp.close();
+}
 
 void BlowfishObject::decrypt_file(const std::string & key,
                                   const std::string & in_file)

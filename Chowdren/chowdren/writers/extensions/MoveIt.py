@@ -9,10 +9,14 @@ from chowdren.writers.events import (ComparisonWriter, StaticActionWriter,
 class MoveIt(ObjectWriter):
     class_name = 'MoveIt'
     filename = 'moveit'
-    static = True
+    defines = ['CHOWDREN_USE_MOVEIT']
+    update = True
 
     def write_init(self, writer):
         pass
+
+    def has_sleep(self):
+        return False
 
 class StopMovement(StaticActionWriter):
     custom = True

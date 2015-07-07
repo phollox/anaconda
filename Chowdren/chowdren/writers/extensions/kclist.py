@@ -26,7 +26,6 @@ class KcList(ObjectWriter):
         )
         width = data.readShort()
         height = data.readShort()
-        # XXX support unicode
         is_unicode = self.data.settings.get('unicode', False)
         font = self.data.new(LogFont, data, old=not is_unicode)
         font_color = data.readColor()

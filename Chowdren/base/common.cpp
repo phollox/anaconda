@@ -1457,6 +1457,10 @@ FrameObject::FrameObject(int x, int y, int type_id)
 #ifdef CHOWDREN_USE_PATHPLANNER
     agent = NULL;
 #endif
+
+#ifdef CHOWDREN_USE_MOVEIT
+    move_data = NULL;
+#endif
 }
 
 FrameObject::~FrameObject()
@@ -1480,6 +1484,10 @@ FrameObject::~FrameObject()
 
 #ifdef CHOWDREN_USE_PATHPLANNER
     delete agent;
+#endif
+
+#ifdef CHOWDREN_USE_MOVEIT
+    delete move_data;
 #endif
 }
 

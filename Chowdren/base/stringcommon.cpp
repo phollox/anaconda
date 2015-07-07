@@ -254,12 +254,12 @@ int fast_atoi(const std::string & src)
     const char * p = &src[0];
     const char * end = p + src.size();
     int value = 0;
+    int sign = 1;
 
     while (IS_WHITESPACE(*p) || *p == '0') {
         INCREMENT_PTR();
     }
 
-    int sign = 1;
     switch (*p) {
         case '-':
             sign = -1;

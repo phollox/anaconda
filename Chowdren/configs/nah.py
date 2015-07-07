@@ -124,6 +124,42 @@ audio_re = re.compile(re.escape('\\audio\\'), re.IGNORECASE)
 src_re = re.compile(re.escape('\\src\\'), re.IGNORECASE)
 bad_start = 'C:\\MMF2\\Python\\Chowdren\\nah\\'
 
+ps4_achievements = {
+    'MAYOR': 'KEY TO THE CITY',
+    'PRIMINISTER': 'HEAD OF STATE',
+    'KING_OF_ENGLAND': "I'M THE KING",
+    'MEGALORD': 'MEGALORD',
+    'MYSTERY_DOOR': 'MYSTERY DOOR',
+    'YIPPEE_KAI_AY': 'YIPPEE KAI YAY',
+    'EASTERN_PROMISE': 'EASTERN PROMISE',
+    'EXECUTIONER': 'EXECUTIONER',
+    'MEGALORD': 'MEGALORD',
+    'DEAD_EYE': 'DEAD EYE',
+    'KILL_BOGDAN': 'OVERKILL',
+    'KILL_UPGRAYDD': 'BARE CARDIO',
+    'GET_THE_CHOPPA': 'GET THE CHOPPA!'
+}
+
+ps4_list = [
+    'MEGALORD',
+    "I'M THE KING",
+    'HEAD OF STATE',
+    'KEY TO THE CITY',
+    'GET THE CHOPPA!',
+    'EXECUTIONER',
+    'DEAD EYE',
+    'BARE CARDIO',
+    'OVERKILL',
+    'EASTERN PROMISE',
+    'YIPPEE KAI YAY',
+    'MYSTERY DOOR'
+]
+
+ps4_replacements = {}
+
+for k, v in ps4_achievements.iteritems():
+    ps4_replacements[k] = str(ps4_list.index(v))
+
 def get_string(converter, value):
     if value == 'XBOX':
         return 'X360'
@@ -139,6 +175,9 @@ def get_string(converter, value):
             return './save/Profile.INI'
         if value == 'BLANK.INI':
             return './Bin/BLANK.ini'
+        ps4_value = ps4_replacements.get(value, None)
+        if ps4_value is not None:
+            return ps4_value
     return value
 
 from configs.local import nah 

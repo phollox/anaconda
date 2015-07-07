@@ -110,7 +110,7 @@ void GameManager::init()
 #elif defined(CHOWDREN_IS_FP)
     player_died = false;
     lives = 3;
-    start_frame = 0;
+    start_frame = 24;
     // values->set(1, 4);
     // values->set(12, 2);
 #elif defined(CHOWDREN_IS_NAH)

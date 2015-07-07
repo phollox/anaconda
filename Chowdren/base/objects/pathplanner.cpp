@@ -1,6 +1,7 @@
 #include "objects/pathplanner.h"
 #include "collision.h"
 #include "objects/pathfinding/jps.h"
+#include "movement.h"
 
 PathPlanner::PathPlanner(int x, int y, int type_id)
 : FrameObject(x, y, type_id)
@@ -71,6 +72,9 @@ void PathPlanner::add_obstacle(FrameObject * obj)
 
 void PathPlanner::set_destination(FrameObject * obj, int x, int y)
 {
+    // if (obj->movement && obj->movement->flags & Movement::IS_MOVE_IT) {
+    //     std::cout << "Is move it!" << std::endl;
+    // }
     PathAgent & agent = *obj->agent;
     PathPlanner * planner = (PathPlanner*)agent.planner;
     obj->agent->dest_x = planner->to_grid(x);
@@ -145,6 +149,8 @@ void PathPlanner::plan_path(FrameObject * obj)
     FrameObject::PathAgent & agent = *obj->agent;
     PathPlanner * planner = (PathPlanner*)agent.planner;
     agent.nodes.clear();
+    if (agent.x == agent.dest_x && agent.y == agent.dest_y)
+        return;
     int test = planner->to_index(agent.dest_x / GRID_UPSCALE,
                                  agent.dest_y / GRID_UPSCALE);
     if (planner->map.get(test)) {

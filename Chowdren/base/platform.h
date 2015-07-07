@@ -43,6 +43,7 @@ const std::string & platform_get_language();
 void platform_set_vsync(bool value);
 bool platform_get_vsync();
 void platform_set_fullscreen(bool value);
+void platform_unlock_achievement(const std::string & name);
 
 // fs
 

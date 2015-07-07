@@ -34,6 +34,7 @@ def init(converter):
     basename = os.path.basename(converter.games[0].filename)
     if 'e3' in basename or 'expo' in basename:
         converter.add_define('CHOWDREN_DISABLE_WRITE')
+        converter.add_define('CHOWDREN_IS_DEMO')
     # values[0] = 1
     # values[1] = 4
     # values[4] = 1

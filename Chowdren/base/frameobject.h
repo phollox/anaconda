@@ -319,6 +319,21 @@ public:
     PathAgent * agent;
 #endif
 
+#ifdef CHOWDREN_USE_MOVEIT
+    struct MoveData
+    {
+        int src_x, src_y;
+        int dst_x, dst_y;
+        int step;
+        int cycles;
+
+        MoveData(int src_x, int src_y, int dst_x, int dst_y, int cycles);
+        ~MoveData();
+    };
+
+    MoveData * move_data;
+#endif
+
     static ObjectPool<FrameObject> pool;
     virtual ~FrameObject();
     virtual void dealloc()

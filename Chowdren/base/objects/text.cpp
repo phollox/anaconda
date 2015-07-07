@@ -58,7 +58,6 @@ void Text::draw()
 
     FTTextureFont::color = blend_color;
     if (layout != NULL) {
-        FTBBox bb = layout->BBox(draw_text.c_str(), -1);
         layout->Render(draw_text.c_str(), -1, FTPoint(x, int(off_y)));
     } else {
         FTBBox box = font->BBox(draw_text.c_str(), -1, FTPoint());

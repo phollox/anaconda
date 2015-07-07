@@ -3,9 +3,10 @@
 #include "collision.h"
 #include <iostream>
 #include "render.h"
+#include "common.h"
 
 SystemBox::SystemBox(int x, int y, int type_id)
-: FrameObject(x, y, type_id)
+: FrameObject(x, y, type_id), layout(NULL)
 {
     collision = new InstanceBox(this);
 }
@@ -18,7 +19,39 @@ SystemBox::~SystemBox()
 void SystemBox::draw()
 {
     if (image == NULL) {
-        std::cout << "System box draw with text not implemented" << std::endl;
+        int x1 = x;
+        int y1 = y;
+        int x2 = x1 + width;
+        int y2 = y1 + height;
+        Render::draw_quad(x1, y1, x2, y2, Color(0, 0, 0));
+        x1++;
+        y1++;
+        x2--;
+        y2--;
+        Render::draw_quad(x1, y1, x2, y2, blend_color);
+
+        FTTextureFont * font;
+        if (layout == NULL) {
+            if (!init_font())
+                return;
+            layout = new FTSimpleLayout();
+            font = get_font(12);
+            layout->SetFont(font);
+            layout->SetAlignment(ALIGN_HCENTER);
+            layout->SetLineLength(width);
+        } else {
+            font = get_font(12);
+        }
+
+        double off_y = y + font->Ascender();
+
+        FTBBox bb = layout->BBox(text.c_str(), -1);
+        double box_h = bb.Upper().Y() - bb.Lower().Y(); 
+        off_y += (height - box_h) * 0.5;
+
+        FTTextureFont::color = Color(0, 0, 0, 255);
+        layout->Render(text.c_str(), -1, FTPoint(x, int(off_y) - 1));
+        // std::cout << "Draw system text: " << text << " " << name << std::endl;
         return;
     }
     int xx, yy;
@@ -67,6 +100,9 @@ void SystemBox::set_size(int w, int h)
     width = w;
     height = h;
     collision->update_aabb();
+    if (layout == NULL)
+        return;
+    layout->SetLineLength(width);
 }
 
 void SystemBox::set_text(const std::string & text)
@@ -86,6 +122,7 @@ void SystemBox::set_border_2(Color color)
 
 void SystemBox::set_fill(Color color)
 {
+    blend_color = color;
 }
 
 const std::string & SystemBox::get_font_name()
