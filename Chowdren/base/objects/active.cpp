@@ -423,9 +423,10 @@ static int animation_alias[] = {
 
 int Active::get_animation(int value)
 {
+    value = std::min(value, animations->count - 1);
     if (has_animation(value))
         return value;
-    value = std::max(0, std::min(value, animations->count - 1));
+    value = std::max(0, value);
     for (int i = 0; i < 3; i++) {
         int alias = animation_alias[i + value * 3];
         if (alias == -1 || !has_animation(alias))
@@ -495,6 +496,7 @@ void Active::paste(int collision_type)
 
 bool Active::test_animation(int value)
 {
+    value = std::min(value, animations->count - 1);
     if (value != current_animation)
         return false;
     if (loop_count == 0)
@@ -520,6 +522,7 @@ void Active::flash(float value)
 
 bool Active::is_animation_finished(int anim)
 {
+    anim = std::min(anim, animations->count - 1);
     return current_animation == anim && loop_count == 0;
 }
 

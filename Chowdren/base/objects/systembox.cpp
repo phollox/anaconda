@@ -16,6 +16,13 @@ SystemBox::~SystemBox()
     delete collision;
 }
 
+inline int align_pos(int a, int b)
+{
+    if (a <= 0)
+        return 0;
+    return (a / b) * b;
+}
+
 void SystemBox::draw()
 {
     if (image == NULL) {
@@ -56,15 +63,37 @@ void SystemBox::draw()
     }
     int xx, yy;
     switch (type) {
-        case PATTERN_IMAGE:
+        case PATTERN_IMAGE: {
+            // XXX use Render::offset for offset here?
+            int screen_x1 = 0 - (layer->off_x - frame->off_x);
+            int screen_y1 = 0 - (layer->off_y - frame->off_y);
+            int screen_x2 = screen_x1 + WINDOW_WIDTH;
+            int screen_y2 = screen_y1 + WINDOW_HEIGHT;
+
+            int x1 = x;
+            int y1 = y;
+            int x2 = x + width;
+            int y2 = y + height;
+
+            int xx1, yy1, xx2, yy2;
+            intersect(screen_x1, screen_y1, screen_x2, screen_y2,
+                      x1, y1, x2, y2,
+                      xx1, yy1, xx2, yy2);
+
+            x1 += ((xx1 - x1) / image->width) * image->width;
+            y1 += ((yy1 - y1) / image->height) * image->height;
+            x2 += ((xx2 - x2) / image->width) * image->width;
+            y2 += ((yy2 - y2) / image->height) * image->height;
+
             Render::enable_scissor(x, y, width, height);
-            for (xx = x; xx < x + width; xx += image->width)
-            for (yy = y; yy < y + height; yy += image->height) {
+            for (xx = x1; xx < x2; xx += image->width)
+            for (yy = y1; yy < y2; yy += image->height) {
                 draw_image(image, xx + image->hotspot_x,
                            yy + image->hotspot_y, Color());
             }
 			Render::disable_scissor();
             break;
+        }
         case CENTER_IMAGE:
             xx = x + width / 2 - image->width / 2;
             yy = y + height / 2 - image->height / 2;

@@ -235,6 +235,8 @@ def get_string(converter, value):
     if converter.platform_name != 'generic':
         value = value.replace('./records.dat',
                               '%s/records.dat' % converter.platform.save_dir)
+        value = value.replace('./file',
+                              '%s/file' % converter.platform.save_dir)
     return value
 
 def get_missing_image(converter, image):

@@ -1728,6 +1728,14 @@ void platform_set_remote_value(int v)
 
 }
 
+void platform_set_lightbar(int r, int g, int b, int ms, int type)
+{
+}
+
+void platform_reset_lightbar()
+{
+}
+
 int platform_get_remote_value()
 {
     return CHOWDREN_TV_TARGET;

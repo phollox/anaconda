@@ -777,13 +777,7 @@ void PinballMovement::set_direction(int value)
 
 float get_pinball_angle(float x, float y)
 {
-    float d = get_length(x, y);
-    if (d == 0.0f)
-        return 0.0f;
-    float angle = acos(x / d);
-    if (y > 0.0f)
-        angle = 2.0 * CHOW_PI - angle;
-    return angle;
+    return get_angle_rad(0.0f, 0.0f, x, y);
 }
 
 void PinballMovement::update()

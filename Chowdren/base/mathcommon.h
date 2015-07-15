@@ -108,6 +108,14 @@ inline int get_angle_int(int x1, int y1, int x2, int y2)
     return int(get_angle(x1, y1, x2, y2));
 }
 
+inline float get_angle_rad(float x1, float y1, float x2, float y2)
+{
+    float v = atan2(y1 - y2, x2 - x1);
+    if (v < 0.0f)
+        v += rad(360.0f);
+    return v;
+}
+
 inline int get_angle_int(int x, int y)
 {
     return get_angle_int(0, 0, x, y);

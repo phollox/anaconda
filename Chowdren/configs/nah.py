@@ -21,9 +21,14 @@ def init(converter):
     converter.add_define('CHOWDREN_PASTE_CACHE')
     converter.add_define('CHOWDREN_DEFAULT_SCALE', 2)
     # converter.add_define('CHOWDREN_PASTE_BROADPHASE')
+
+    strings = converter.game.globalStrings.items
     if converter.platform_name == 'ps4':
         converter.add_define('CHOWDREN_PRELOAD_ALL')
         converter.add_define('CHOWDREN_IGNORE_ASPECT')
+        strings[8] = 'PS4'
+    elif converter.platform_name in ('generic', 'd3d'):
+        strings[8] = 'Desktop'
 
     converter.add_define('CHOWDREN_SAVE_PATH', 'save')
     
