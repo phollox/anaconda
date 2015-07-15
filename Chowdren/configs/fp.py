@@ -237,6 +237,8 @@ def get_string(converter, value):
                               '%s/records.dat' % converter.platform.save_dir)
         value = value.replace('./file',
                               '%s/file' % converter.platform.save_dir)
+        value = value.replace('./save',
+                              '%s/save' % converter.platform.save_dir)
     return value
 
 def get_missing_image(converter, image):

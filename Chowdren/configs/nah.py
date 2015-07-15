@@ -170,6 +170,10 @@ def get_string(converter, value):
         return 'X360'
     elif value == 'Bin\\Charactertypes.ini':
         return '.\\Bin\\Charactertypes.ini'
+    value = value.replace('.INI', '.ini')
+    value = value.replace('.PNG', '.png')
+    value = value.replace('.OGG', '.ogg')
+    value = value.replace('.WAV', '.wav')
     if value.startswith('Audio\\'):
         value = '.\\' + value
     value = audio_re.sub(re.escape('\\Audio\\'), value)
@@ -188,4 +192,6 @@ def get_string(converter, value):
 from configs.local import nah 
 
 def get_locals(converter):
+    if converter.platform_name in ('generic', 'd3d'):
+        return None
     return nah.local_dict
