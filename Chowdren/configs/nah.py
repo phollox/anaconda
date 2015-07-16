@@ -192,7 +192,10 @@ def get_string(converter, value):
             return './Bin/Profile.ini'
     return value
 
-from configs.local import nah 
+try:
+    from configs.local import nah 
+except ImportError:
+    pass
 
 def get_locals(converter):
     if converter.platform_name in ('generic', 'd3d'):
