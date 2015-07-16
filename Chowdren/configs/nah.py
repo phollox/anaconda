@@ -120,8 +120,8 @@ def write_pre(converter, writer, group):
         group.conditions.insert(0, condition)
 
 save_paths = set([
-    'Profile.INI',
-    '.\\Bin\\Profile.INI',
+    'Profile.ini',
+    '.\\Bin\\Profile.ini',
     '.\\Bin\\Profile.ini'
 ])
 
@@ -170,6 +170,8 @@ def get_string(converter, value):
         return 'X360'
     elif value == 'Bin\\Charactertypes.ini':
         return '.\\Bin\\Charactertypes.ini'
+    elif value == 'BLANK.ini':
+        return './Bin/BLANK.ini'
     value = value.replace('.INI', '.ini')
     value = value.replace('.PNG', '.png')
     value = value.replace('.OGG', '.ogg')
@@ -182,11 +184,12 @@ def get_string(converter, value):
     if converter.platform_name == 'ps4':
         if value in save_paths:
             return './save/Profile.INI'
-        if value == 'BLANK.INI':
-            return './Bin/BLANK.ini'
         ps4_value = ps4_replacements.get(value, None)
         if ps4_value is not None:
             return ps4_value
+    else:
+        if value in save_paths:
+            return './Bin/Profile.ini'
     return value
 
 from configs.local import nah 

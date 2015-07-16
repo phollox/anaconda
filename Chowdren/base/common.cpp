@@ -2368,9 +2368,9 @@ const std::string & File::get_appdata_directory()
 
 void File::change_directory(const std::string & path)
 {
-#ifdef CHOWDREN_IS_DESKTOP
-    chdir(convert_path(path).c_str());
-#endif
+// #ifdef CHOWDREN_IS_DESKTOP
+//     chdir(convert_path(path).c_str());
+// #endif
 }
 
 void File::create_directory(const std::string & path)
