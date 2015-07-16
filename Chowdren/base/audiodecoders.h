@@ -28,6 +28,15 @@ public:
     virtual std::size_t read(signed short * data, std::size_t samples) = 0;
     virtual void seek(double value) = 0;
     virtual ~SoundDecoder() {};
+    virtual void post_init() {};
+
+    std::size_t get_samples()
+    {
+        if (samples == std::size_t(-1))
+            post_init();
+        return samples;
+    }
+
 };
 
 static size_t read_func(void * ptr, size_t size, size_t nmemb, void *fp);
@@ -51,13 +60,15 @@ public:
     OggVorbis_File ogg_file;
     vorbis_info * ogg_info;
     int ogg_bitstream;
+    bool fully_open;
 
     OggDecoder(FSFile & fp, size_t size)
-    : ogg_info(NULL), ogg_bitstream(0), size(size), fp(fp)
+    : ogg_info(NULL), ogg_bitstream(0), size(size), fully_open(false), fp(fp)
     {
         start = fp.tell();
         pos = 0;
-        if (ov_open_callbacks((void*)this, &ogg_file, NULL, 0, callbacks) != 0)
+
+        if (ov_test_callbacks((void*)this, &ogg_file, NULL, 0, callbacks) != 0)
             return;
 
         ogg_info = ov_info(&ogg_file, -1);
@@ -68,12 +79,12 @@ public:
 
         channels = ogg_info->channels;
         sample_rate = ogg_info->rate;
-        samples = ov_pcm_total(&ogg_file, -1) * channels;
+        samples = -1;
     }
 
     ~OggDecoder()
     {
-        if(ogg_info)
+        if (ogg_info)
             ov_clear(&ogg_file);
         ogg_info = NULL;
     }
@@ -83,10 +94,20 @@ public:
         return ogg_info != NULL;
     }
 
+    void post_init()
+    {
+        if (ogg_file.ready_state != PARTOPEN)
+            return;
+        ov_test_open(&ogg_file);
+        samples = ov_pcm_total(&ogg_file, -1) * channels;
+    }
+
     size_t read(signed short * sdata, std::size_t samples)
     {
         if (!(sdata && samples))
             return 0;
+        if (ogg_file.ready_state == PARTOPEN)
+            post_init();
         unsigned int got = 0;
         int bytes = samples * 2;
         char * data = (char*)sdata;
@@ -109,6 +130,8 @@ public:
 
     void seek(double value)
     {
+        if (ogg_file.ready_state == PARTOPEN)
+            post_init();
         value = std::max(0.0, value);
         int ret = ov_time_seek(&ogg_file, value);
         if (ret == 0)

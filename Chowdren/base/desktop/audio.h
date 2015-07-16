@@ -650,7 +650,9 @@ public:
 
     double get_duration()
     {
-        return double(file->samples) / file->sample_rate / file->channels;
+        return double(file->get_samples())
+               / file->sample_rate
+               / file->channels;
     }
 
     void set_loop(bool loop)
@@ -952,7 +954,7 @@ Sample::Sample(FSFile & fp, Media::AudioType type, size_t size)
     SoundDecoder * file = create_decoder(fp, type, size);
     channels = file->channels;
     sample_rate = file->sample_rate;
-    buffer.init(*file, file->samples);
+    buffer.init(*file, file->get_samples());
     delete file;
 }
 
