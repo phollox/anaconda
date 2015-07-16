@@ -170,9 +170,9 @@ def get_string(converter, value):
         return 'X360'
     elif value == 'Bin\\Charactertypes.ini':
         return '.\\Bin\\Charactertypes.ini'
-    elif value == 'BLANK.ini':
-        return './Bin/BLANK.ini'
     value = value.replace('.INI', '.ini')
+    if value == 'BLANK.ini':
+        return './Bin/BLANK.ini'
     value = value.replace('.PNG', '.png')
     value = value.replace('.OGG', '.ogg')
     value = value.replace('.WAV', '.wav')
