@@ -105,7 +105,7 @@ def get_dynamic_loop_index(converter, exp):
     return None
 
 def get_fonts(converter):
-    return ('Escapists',)
+    return ('SmallFonts',)
 
 def use_edit_obj(converter):
     return True
