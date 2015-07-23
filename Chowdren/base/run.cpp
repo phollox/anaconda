@@ -110,12 +110,12 @@ void GameManager::init()
 #elif defined(CHOWDREN_IS_FP)
     player_died = false;
     lives = 3;
-    start_frame = 56;
-    values->set(1, 2);
+    // start_frame = 56;
+    // values->set(1, 2);
     // values->set(12, 2);
 #elif defined(CHOWDREN_IS_NAH)
     platform_set_scale_type(2);
-    start_frame = 8;
+    // start_frame = 8;
 #else
     start_frame = 0;
 #endif
@@ -1080,11 +1080,14 @@ bool is_player_pressed_once(int player, int flags)
 
 // main function
 
-int main(int argc, char *argv[])
+#ifdef _WIN32
+static void open_console()
 {
-    install_crash_handler();
+#ifndef CHOWDREN_SHOW_DEBUGGER
+    if (getenv("CHOWDREN_SHOW_DEBUGGER") == NULL)
+        return;
+#endif
 
-#if defined(_WIN32) && defined(CHOWDREN_SHOW_DEBUGGER)
     int outHandle, errHandle, inHandle;
     FILE *outFile, *errFile, *inFile;
     AllocConsole();
@@ -1111,7 +1114,17 @@ int main(int argc, char *argv[])
     setvbuf(stdin, NULL, _IONBF, 0);
 
     std::ios::sync_with_stdio();
+}
 #endif
+
+int main(int argc, char *argv[])
+{
+    install_crash_handler();
+
+#ifdef _WIN32
+    open_console();
+#endif
+
     manager.run();
     return 0;
 }

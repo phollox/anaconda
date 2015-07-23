@@ -1733,12 +1733,15 @@ class Converter(object):
 
         for group_list in (first_groups, last_groups, pre_groups):
             group_list.sort(cmp=cmp_group)
-        call_groups = first_groups + call_groups + last_groups
+        call_groups = first_groups + ['check'] + call_groups + last_groups
 
         if PROFILE_GROUPS:
             prof_ids = defaultdict(int)
 
         for group in call_groups:
+            if group == 'check':
+                event_file.putlnc('if (next_frame != -1) return;')
+                continue
             if group.is_container_mark:
                 container = group.container
                 if container.is_static:

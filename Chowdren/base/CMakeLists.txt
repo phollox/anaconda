@@ -28,8 +28,7 @@ set(CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include" ${CMAKE_INCLUDE_PATH})
 
 option(USE_BOX2D "Use Box2D" OFF)
 option(USE_PYTHON "Use Python" OFF)
-option(USE_STEAM "Use Steam (otherwise emulate)" OFF)
-option(ENABLE_STEAM "Enable Steam" ON)
+option(USE_STEAM "Use Steam" OFF)
 option(EMULATE_WIIU "Emulate Wii U features" OFF)
 
 if (CMAKE_CROSSCOMPILING)
@@ -98,23 +97,20 @@ set(SRCS
 )
 
 if (USE_STEAM)
-    add_definitions(-DCHOWDREN_USE_STEAM)
-    if (ENABLE_STEAM)
-        add_definitions(-DCHOWDREN_ENABLE_STEAM)
-        include_directories("${CHOWDREN_BASE_DIR}/steam/sdk/public")
-        if (WIN32)
-            set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
-                "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/steam_api.lib")
-        elseif (APPLE)
-            set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
-                "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/osx32/libsteam_api.dylib")
-        elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
-            set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
-                "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/linux64/libsteam_api.so")
-        else()
-            set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
-                "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/linux32/libsteam_api.so")
-        endif()
+    add_definitions(-DCHOWDREN_ENABLE_STEAM)
+    include_directories("${CHOWDREN_BASE_DIR}/steam/sdk/public")
+    if (WIN32)
+        set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
+            "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/steam_api.lib")
+    elseif (APPLE)
+        set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
+            "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/osx32/libsteam_api.dylib")
+    elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
+            "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/linux64/libsteam_api.so")
+    else()
+        set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
+            "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/linux32/libsteam_api.so")
     endif()
 endif()
 

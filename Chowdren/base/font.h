@@ -352,7 +352,10 @@ public:
     unsigned int padding;
     int xOffset;
     int yOffset;
+    // XXX hack
     static Color color;
+    // XXX hack
+    static bool custom_shader;
     FTGlyphContainer * glyphList;
     FTPoint pen;
 
@@ -402,6 +405,7 @@ class FTSimpleLayout
                     FTPoint position = FTPoint());
         FTBBox BBox(const wchar_t* string, const int len = -1,
                     FTPoint position = FTPoint());
+        int get_lines(const char * s, const int len = -1);
         void Render(const char *string, const int len = -1,
                     FTPoint position = FTPoint());
         void Render(const wchar_t *string, const int len = -1,
@@ -447,7 +451,7 @@ class FTSimpleLayout
                                  FTPoint position, const float extraSpace);
         template <typename T>
         void WrapTextI(const T* buf, const int len, FTPoint position,
-                       FTBBox *bounds);
+                       FTBBox *bounds, int & lines);
 
         template <typename T>
         void OutputWrappedI(const T* buf, const int len, FTPoint position,

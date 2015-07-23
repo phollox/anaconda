@@ -10,6 +10,7 @@
 #include <alc.h>
 #include <SDL_thread.h>
 #include <SDL_mutex.h>
+#include <SDL_messagebox.h>
 #endif // CHOWDREN_IS_EMSCRIPTEN
 
 #ifndef NOMINMAX
@@ -821,6 +822,10 @@ void AudioDevice::open()
     device = alcOpenDevice(NULL);
     if (!device) {
         std::cout << "Device open failed" << std::endl;
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Audio error",
+            "Could not open audio device. Ensure that at least 1 audio "
+            "device is enabled.", NULL);
+        exit(EXIT_FAILURE);
         return;
     }
 

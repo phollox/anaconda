@@ -59,6 +59,9 @@ NATIVE_SHADERS = {
     'BrightnessSaturationBg.fx' : 'brightsatbg',
     'BgBlur.fx' : 'bgblur',
     'Blur.fx' : 'blur',
+    'Display.fx' : 'display',
+    'PixelOutline.fx' : 'pixeloutline', # change?
+    'LinearBurn.fx' : 'linearburn',
 
     # missing effects
     'CRT.fx' : None,
@@ -72,10 +75,6 @@ NATIVE_SHADERS = {
     'Colorizer with blur.fx' : None,
     'BrightnessSaturation.fx' : None,
 
-    # missing effects (TE)
-    'Display.fx' : 'display',
-    'PixelOutline.fx' : 'pixeloutline', # change?
-    'LinearBurn.fx' : 'linearburn',
 
     # unsupported in HWA
     'XOR' : None,

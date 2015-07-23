@@ -7,6 +7,7 @@ import os
 import urllib2
 import tarfile
 import stat
+import argparse
 
 chroot_prefix = 'steamrt_scout_'
 chroots = '/var/chroots'
@@ -15,7 +16,8 @@ steamrt_archive = ('https://codeload.github.com/ValveSoftware/steam-runtime/'
                    'tar.gz/master')
 
 class Builder(object):
-    def __init__(self):
+    def __init__(self, args):
+        self.args = args
         self.root_dir = os.getcwd()
 
     def create_project(self):
@@ -26,7 +28,13 @@ class Builder(object):
             pass
 
         os.chdir(self.build_dir)
-        self.system('cmake .. -DCMAKE_BUILD_TYPE=Release')
+
+        defs = ['-DCMAKE_BUILD_TYPE=Release']
+        if self.args.steam:
+            defs += ['-DCHOWDREN_USE_STEAM=ON']
+        cmd = 'cmake .. ' + defs.join(' ')
+
+        self.system(cmd)
         os.chdir(cwd)
 
     def system(self, command):
@@ -65,6 +73,10 @@ class LinuxBuilder(Builder):
         self.build_dir = os.path.join(self.root_dir, 'build_%s' % arch)
         self.install_dir = os.path.join(self.build_dir, 'install')
         self.dist_dir = os.path.join(self.root_dir, 'dist')
+        if self.args.steam:
+            self.build_dir += '_steamworks'
+            self.dist_dir += '_steamworks'
+
         self.chroot = chroot
         self.create_project()
         self.build_project()
@@ -129,13 +141,19 @@ class MacBuilder(Builder):
     pass
 
 def main():
+    parser = argparse.ArgumentParser(description='Chowdren builder')
+    parser.add_argument('--steam', dest='accumulate', action='store_false',
+                        help='Performs a build with Steamworks')
+    args = parser.parse_args()
+
     import platform
     if platform.system() == 'Linux':
-        builder = LinuxBuilder()
-        builder.build()
+        build_class = LinuxBuilder
     else:
-        builder = MacBuilder()
-        builder.build()
+        build_class = MacBuilder
+
+    builder = build_class(args)
+    builder.build()
 
     builder.finish()
 

@@ -31,10 +31,12 @@ alterable_int_objects = [
     ('qualifier_13', [3, 9])
 ]
 
+def get_fonts(converter):
+    return ('Escapists',)
+
 def use_alterable_int(converter, expression):
     obj = expression.get_object()
     name = expression.converter.get_object_name(obj)
-    print name
     for (check_name, alts) in alterable_int_objects:
         if not name.startswith(check_name):
             continue

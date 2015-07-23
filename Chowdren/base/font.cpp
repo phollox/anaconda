@@ -7,6 +7,8 @@
 #include "platform.h"
 #include "assetfile.h"
 
+#define USE_OUTLINE
+
 // front-end font loader
 
 bool load_fonts(FontList & fonts)
@@ -380,7 +382,9 @@ template <typename T>
 inline FTPoint FTTextureFont::RenderI(const T* string, const int len,
                                       FTPoint position, FTPoint spacing)
 {
-    Render::set_effect(Render::FONT);
+    if (!FTTextureFont::custom_shader) {
+        Render::set_effect(Render::FONT);
+    }
     // for multibyte - we can't rely on sizeof(T) == character
     FTUnicodeStringItr<T> ustr(string);
 
@@ -398,7 +402,9 @@ inline FTPoint FTTextureFont::RenderI(const T* string, const int len,
         }
     }
 
-    Render::disable_effect();
+    if (!FTTextureFont::custom_shader) {
+        Render::disable_effect();
+    }
 
     return position;
 }
@@ -422,6 +428,7 @@ FTPoint FTTextureFont::Render(const wchar_t * string, const int len,
 // FTTextureFont
 
 Color FTTextureFont::color;
+bool FTTextureFont::custom_shader;
 
 static inline unsigned int ClampSize(unsigned int in,
                                      unsigned int maxTextureSize)
@@ -476,7 +483,7 @@ FTTextureFont::FTTextureFont(FileStream & stream)
     textureHeight = ClampSize(glyphHeight * tmp + padding * 2,
                               tex_size);
 
-    char * data = new char[textureWidth*textureHeight];
+    char * data = new char[textureWidth*textureHeight]();
 
     xOffset = yOffset = padding;
 
@@ -572,10 +579,17 @@ FTGlyph::FTGlyph(FileStream & stream, char * data,
         }
     }
 
+#ifdef USE_OUTLINE
+    uv[0].X(float(x_offset - 1) / float(tex_width));
+    uv[0].Y(float(y_offset - 1) / float(tex_height));
+    uv[1].X(float(x_offset + width + 1) / float(tex_width));
+    uv[1].Y(float(y_offset + height + 1) / float(tex_height));
+#else
     uv[0].X(float(x_offset) / float(tex_width));
     uv[0].Y(float(y_offset) / float(tex_height));
     uv[1].X(float(x_offset + width) / float(tex_width));
     uv[1].Y(float(y_offset + height) / float(tex_height));
+#endif
 
     delete[] glyph;
 }
@@ -604,9 +618,20 @@ const FTPoint& FTGlyph::Render(const FTPoint& pen)
     dx = floor(pen.Xf() + corner.Xf());
     dy = floor(pen.Yf() - corner.Yf());
 
+#ifdef USE_OUTLINE
+    int x1 = dx - 1;
+    int y1 = dy - 1;
+    int x2 = dx + width + 1;
+    int y2 = dy + height + 1;
+
+    Render::draw_tex(x1, y1, x2, y2, FTTextureFont::color,
+                     tex,
+                     uv[0].Xf(), uv[0].Yf(), uv[1].Xf(), uv[1].Yf());
+#else
     Render::draw_tex(dx, dy, dx + width, dy + height, FTTextureFont::color,
                      tex,
                      uv[0].Xf(), uv[0].Yf(), uv[1].Xf(), uv[1].Yf());
+#endif
 
     return advance;
 }
@@ -705,10 +730,9 @@ FTSimpleLayout::FTSimpleLayout()
 
 template <typename T>
 inline FTBBox FTSimpleLayout::BBoxI(const T* string, const int len,
-                                        FTPoint position)
+                                    FTPoint position)
 {
     FTBBox tmp;
-
     WrapText(string, len, position, &tmp);
 
     return tmp;
@@ -716,7 +740,7 @@ inline FTBBox FTSimpleLayout::BBoxI(const T* string, const int len,
 
 
 FTBBox FTSimpleLayout::BBox(const char *string, const int len,
-                                FTPoint position)
+                            FTPoint position)
 {
     return BBoxI(string, len, position);
 }
@@ -728,15 +752,27 @@ FTBBox FTSimpleLayout::BBox(const wchar_t *string, const int len,
     return BBoxI(string, len, position);
 }
 
+int FTSimpleLayout::get_lines(const char * string, const int len)
+{
+    int lines;
+    FTPoint p(0.0f, 0.0f);
+    WrapTextI(string, len, p, NULL, lines);
+    return lines;
+}
 
 template <typename T>
 inline void FTSimpleLayout::RenderI(const T *string, const int len,
                                     FTPoint position)
 {
-    Render::set_effect(Render::FONT);
+    if (!FTTextureFont::custom_shader) {
+        Render::set_effect(Render::FONT);
+    }
     pen = FTPoint(0.0f, 0.0f);
     WrapText(string, len, position, NULL);
-    Render::disable_effect();
+
+    if (!FTTextureFont::custom_shader) {
+        Render::disable_effect();
+    }
 }
 
 
@@ -795,8 +831,11 @@ bool is_break_start(unsigned int v)
 
 template <typename T>
 inline void FTSimpleLayout::WrapTextI(const T *buf, const int len,
-                                      FTPoint position, FTBBox *bounds)
+                                      FTPoint position, FTBBox *bounds,
+                                      int & lines)
 {
+    lines = 0;
+
     FTUnicodeStringItr<T> breakItr(buf); // points to the last break character
     FTUnicodeStringItr<T> lineStart(buf); // points to the line start
     float nextStart = 0.0;     // total width of the current line
@@ -880,6 +919,7 @@ inline void FTSimpleLayout::WrapTextI(const T *buf, const int len,
 
             OutputWrapped(lineStart.getBufferFromHere(), breakCharCount,
                           position, remainingWidth, bounds);
+            lines++;
 
             // Store the start of the next line
             lineStart = breakChar;
@@ -922,6 +962,8 @@ inline void FTSimpleLayout::WrapTextI(const T *buf, const int len,
     float remainingWidth = lineLength - currentWidth;
     // Render any remaining text on the last line
     // Disable justification for the last row
+    if (*lineStart != 0)
+        lines++;
     if(alignment == ALIGN_JUSTIFY) {
         alignment = ALIGN_LEFT;
         OutputWrapped(lineStart.getBufferFromHere(), -1, position,
@@ -935,24 +977,26 @@ inline void FTSimpleLayout::WrapTextI(const T *buf, const int len,
 
 
 void FTSimpleLayout::WrapText(const char *buf, const int len,
-                                  FTPoint position, FTBBox *bounds)
+                              FTPoint position, FTBBox *bounds)
 {
-    WrapTextI(buf, len, position, bounds);
+    int lines;
+    WrapTextI(buf, len, position, bounds, lines);
 }
 
 
 void FTSimpleLayout::WrapText(const wchar_t* buf, const int len,
-                                  FTPoint position, FTBBox *bounds)
+                              FTPoint position, FTBBox *bounds)
 {
-    WrapTextI(buf, len, position, bounds);
+    int lines;
+    WrapTextI(buf, len, position, bounds, lines);
 }
 
 
 template <typename T>
 inline void FTSimpleLayout::OutputWrappedI(const T *buf, const int len,
-                                               FTPoint position,
-                                               const float remaining,
-                                               FTBBox *bounds)
+                                           FTPoint position,
+                                           const float remaining,
+                                           FTBBox *bounds)
 {
     float distributeWidth = 0.0;
     // Align the text according as specified by Alignment

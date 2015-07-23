@@ -105,7 +105,7 @@ def get_dynamic_loop_index(converter, exp):
     return None
 
 def get_fonts(converter):
-    return ('SmallFonts',)
+    return ('Escapists',)
 
 def use_edit_obj(converter):
     return True
@@ -129,7 +129,7 @@ def init_array_set_value(converter, event_writer):
     pass
 
 def get_missing_image(converter, image):
-    raise NotImplementedError('invalid image: %s' % image)
+    raise NotImplementedError('invalid image: %s' % repr(image))
 
 def write_loop(converter, loop_name, event_writer, writer):
     pass

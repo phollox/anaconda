@@ -115,6 +115,7 @@ void shader_set_effect(int effect, FrameObject * obj,
             SET_BLEND_FUNC(FUNC_SRC_ALPHA, FUNC_ONE,
                            FUNC_ZERO, FUNC_ONE);
             break;
+        HANDLE_SHADER(FONTOUTLINE, fontoutline_shader);
         HANDLE_SHADER(BRIGHTSATBG, brightsatbg_shader);
         HANDLE_SHADER(PERSPECTIVE, perspective_shader);
         HANDLE_SHADER(MONOCHROME, monochrome_shader);

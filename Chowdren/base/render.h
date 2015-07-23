@@ -17,6 +17,7 @@ public:
         MONOCHROME,
         ZOOMOFFSET,
         PIXELOUTLINE,
+        FONTOUTLINE,
         COLDIRBLUR,
         CHANNELBLUR,
         CHANNELBLURADD,

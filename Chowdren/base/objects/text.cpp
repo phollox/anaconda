@@ -49,17 +49,36 @@ void Text::draw()
 
     update_draw_text();
 
-    double off_y = y + font->Ascender();
-    if (alignment & ALIGN_VCENTER) {
-        off_y += height * 0.5 - font->LineHeight() * 0.5;
-    } else if (alignment & ALIGN_BOTTOM) {
-        off_y += font->LineHeight();
+    if (effect == Render::PIXELOUTLINE) {
+        Render::set_effect(Render::FONTOUTLINE, this,
+                           font->textureWidth, font->textureHeight);
+        FTTextureFont::custom_shader = true;
     }
+
+    double off_y = y + font->Ascender();
 
     FTTextureFont::color = blend_color;
     if (layout != NULL) {
-        layout->Render(draw_text.c_str(), -1, FTPoint(x, int(off_y)));
+        int lines = layout->get_lines(draw_text.c_str(), -1);
+        double box_h = lines * font->LineHeight();
+        // double box_h = box.Upper().Y() - box.Lower().Y();
+        // std::cout << box_h << " " << height << std::endl;
+        // if (alignment & ALIGN_VCENTER) {
+        //     off_y += (height - box_h) * 0.5;
+        // } else if (alignment & ALIGN_BOTTOM) {
+        //     off_y += box_h;
+        // }
+        std::cout << font->Ascender() << " " << height << " " << box_h << " "
+            << off_y << " " << font->LineHeight() << std::endl;
+        int off_yy = int(off_y);
+        layout->Render(draw_text.c_str(), -1, FTPoint(x, off_yy));
     } else {
+        if (alignment & ALIGN_VCENTER) {
+            off_y += height * 0.5 - font->LineHeight() * 0.5;
+        } else if (alignment & ALIGN_BOTTOM) {
+            off_y += font->LineHeight();
+        }
+
         FTBBox box = font->BBox(draw_text.c_str(), -1, FTPoint());
         double box_w = box.Upper().X() - box.Lower().X();
         // double box_h = box.Upper().Y() - box.Lower().Y();
@@ -76,6 +95,11 @@ void Text::draw()
 #endif
         font->Render(draw_text.c_str(), -1, FTPoint(int(off_x), int(off_y)),
                      FTPoint());
+    }
+
+    if (effect == Render::PIXELOUTLINE) {
+        Render::disable_effect();
+        FTTextureFont::custom_shader = false;
     }
 }
 

@@ -1074,6 +1074,28 @@ int DisplayShader::fPeriods;
 int DisplayShader::fOffset;
 int DisplayShader::fAmplitude;
 
+class FontOutlineShader : public BaseShader
+{
+public:
+    static int color;
+    
+    FontOutlineShader()
+    : BaseShader(SHADER_FONTOUTLINE, SHADER_HAS_TEX_SIZE)
+    {
+    }
+    
+    void initialize_parameters()
+    {
+        color = get_uniform("color");
+    }
+    
+    static void set_parameters(FrameObject * instance)
+    {
+        BaseShader::set_vec4(instance, SHADER_PARAM_COLOR, color);
+    }
+};
+int FontOutlineShader::color;
+
 SubtractShader subtract_shader;
 MonochromeShader monochrome_shader;
 MixerShader mixer_shader;
@@ -1110,3 +1132,4 @@ FontShader font_shader;
 LinearBurnShader linearburn_shader;
 LinearDodgeShader lineardodge_shader;
 DisplayShader display_shader;
+FontOutlineShader fontoutline_shader;

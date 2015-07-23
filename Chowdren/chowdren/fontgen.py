@@ -3,6 +3,7 @@ sys.path.append('..')
 import freetype
 from ctypes import byref
 from mmfparser.bytereader import ByteReader
+from PIL import Image
 
 """
 XXX use kerning information?
@@ -56,12 +57,24 @@ class Glyph(object):
         self.width = bitmap.width
         self.height = bitmap.rows
         self.buf = bitmap.buffer
+        self.horizontal_advance = glyph.metrics.horiAdvance
 
     def get_cbox(self):
         outline = self.glyph.outline
         bbox = freetype.FT_BBox()
         freetype.FT_Outline_Get_CBox(byref(outline._FT_Outline), byref(bbox))
         return freetype.BBox(bbox)
+
+    def get_data(self):
+        buf = ''
+        for c in self.buf:
+            buf += chr(c)
+        return buf
+
+    def get_image(self):
+        data = self.get_data()
+        image = Image.frombytes('L', (self.width, self.height), data)
+        return image
 
     def write(self, writer):
         writer.writeInt(ord(self.char), True)
@@ -75,10 +88,7 @@ class Glyph(object):
         writer.writeFloat(self.corner[1])
         writer.writeInt(self.width)
         writer.writeInt(self.height)
-        buf = ''
-        for c in self.buf:
-            buf += chr(c)
-        writer.write(buf)
+        writer.write(self.get_data())
 
 
 RESOLUTION = 96
@@ -109,6 +119,8 @@ class Font(object):
             charcode, agindex = font.get_next_char(charcode, agindex)
         for c in charset:
             self.load_char(c)
+        space_glyph = self.load_char(' ', force=True)
+        print space_glyph.advance, space_glyph.horizontal_advance
 
     def get_width(self):
         size = self.font.size
@@ -137,6 +149,18 @@ class Font(object):
         self.glyphs.append(glyph)
         self.glyph_dict[c] = glyph
         return glyph
+
+    def get_sheet(self):
+        width = sum(glyph.width for glyph in self.glyphs)
+        height = max(glyph.height for glyph in self.glyphs)
+        image = Image.new('L', (width, height), 1)
+        x = 0
+        for glyph in self.glyphs:
+            if glyph.width == 0 or glyph.height == 0:
+                continue
+            image.paste(glyph.get_image(), (x, 0))
+            x += glyph.width
+        return image
 
     def get_glyph(self, c):
         return self.glyph_dict[c]
