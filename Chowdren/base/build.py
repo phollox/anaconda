@@ -71,12 +71,12 @@ class LinuxBuilder(Builder):
     def build_arch(self, arch):
         chroot = self.install_chroot(arch)
         self.build_dir = os.path.join(self.root_dir, 'build_%s' % arch)
-        self.install_dir = os.path.join(self.build_dir, 'install')
         self.dist_dir = os.path.join(self.root_dir, 'dist')
         if self.args.steam:
             self.build_dir += '_steamworks'
             self.dist_dir += '_steamworks'
 
+        self.install_dir = os.path.join(self.build_dir, 'install')
         self.chroot = chroot
         self.create_project()
         self.build_project()
