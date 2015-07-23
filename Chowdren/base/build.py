@@ -32,7 +32,7 @@ class Builder(object):
         defs = ['-DCMAKE_BUILD_TYPE=Release']
         if self.args.steam:
             defs += ['-DCHOWDREN_USE_STEAM=ON']
-        cmd = 'cmake .. ' + defs.join(' ')
+        cmd = 'cmake .. ' + ' '.join(defs)
 
         self.system(cmd)
         os.chdir(cwd)
