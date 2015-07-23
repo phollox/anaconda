@@ -142,7 +142,7 @@ class MacBuilder(Builder):
 
 def main():
     parser = argparse.ArgumentParser(description='Chowdren builder')
-    parser.add_argument('--steam', dest='accumulate', action='store_false',
+    parser.add_argument('--steam', action='store_false',
                         help='Performs a build with Steamworks')
     args = parser.parse_args()
 
