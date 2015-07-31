@@ -101,12 +101,13 @@ enum ObjectFlags
     SCROLL = (1 << 2),
     FADEOUT = (1 << 3),
     BACKGROUND = (1 << 4),
-    GLOBAL = (1 << 5),
-    INACTIVE = (1 << 6),
-    HAS_COLLISION_CACHE = (1 << 7),
-    HAS_COLLISION = (1 << 8),
-    DEFER_COLLISIONS = (1 << 9),
-    REPEAT_BACK_COLLISION = (1 << 10)
+    BACKGROUND_COL = (1 << 5),
+    GLOBAL = (1 << 6),
+    INACTIVE = (1 << 7),
+    HAS_COLLISION_CACHE = (1 << 8),
+    HAS_COLLISION = (1 << 9),
+    DEFER_COLLISIONS = (1 << 10),
+    REPEAT_BACK_COLLISION = (1 << 11)
 };
 
 enum AnimationIndex

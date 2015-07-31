@@ -41,6 +41,11 @@ public:
     {
         data[index / WORD_SIZE] |= 1UL << (index % WORD_SIZE);
     }
+
+    void unset(int index)
+    {
+        data[index / WORD_SIZE] &= ~(1UL << (index % WORD_SIZE));
+    }
 };
 
 #define GET_BITARRAY_PAD(N) ((((N) % BaseBitArray::WORD_SIZE) == 0) ? 0 : 1)

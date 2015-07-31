@@ -4,6 +4,7 @@
 #include "fileio.h"
 #include "path.h"
 #include "platform.h"
+#include "manager.h"
 
 #ifdef CHOWDREN_IS_DESKTOP
 #include <SDL.h>
@@ -20,6 +21,8 @@ class SteamGlobal
 public:
     bool initialized;
     bool has_data;
+    Frame::EventFunction download_success;
+    Frame::EventFunction download_fail;
 
     SteamGlobal();
     static void on_close();
@@ -28,6 +31,8 @@ public:
 
     STEAM_CALLBACK(SteamGlobal, receive_callback, UserStatsReceived_t,
                    receive_callback_data);
+
+    void download_callback(RemoteStorageDownloadUGCResult_t * res);
 };
 
 static SteamGlobal global_steam_obj;
@@ -49,7 +54,8 @@ void SteamGlobal::init()
         std::cout << "Could not initialize Steam API" << std::endl;
         return;
     }
-    SteamUserStats()->RequestCurrentStats();
+	if (!SteamUserStats()->RequestCurrentStats())
+		std::cout << "Could not request Steam stats" << std::endl;
 
 #ifdef CHOWDREN_STEAM_APPID
     ISteamApps * ownapp = SteamApps();
@@ -82,6 +88,19 @@ void SteamGlobal::receive_callback(UserStatsReceived_t * callback)
     if (SteamUtils()->GetAppID() != callback->m_nGameID)
         return;
     has_data = true;
+}
+
+void SteamGlobal::download_callback(RemoteStorageDownloadUGCResult_t * res)
+{
+    if (res->m_eResult == k_EResultOK) {
+        if (download_success == NULL)
+            return;
+        (manager.frame->*download_success)();
+    } else {
+        if (download_fail == NULL)
+            return;
+        (manager.frame->*download_fail)();
+    }
 }
 
 #endif
@@ -144,6 +163,10 @@ void SteamObject::set_int(const std::string & name, int value)
 
 void SteamObject::unlock_achievement(const std::string & name)
 {
+#ifndef NDEBUG
+    std::cout << "Unlock achievement: " << name << std::endl;
+#endif
+
 #ifdef CHOWDREN_ENABLE_STEAM
     if (!global_steam_obj.initialized)
         return;
@@ -171,6 +194,103 @@ void SteamObject::store_user_data()
     if (!global_steam_obj.initialized)
         return;
     SteamUserStats()->StoreStats();
+#endif
+}
+
+#ifdef CHOWDREN_ENABLE_STEAM
+
+struct SubCallback
+{
+    struct Call
+    {
+        CCallResult<SubCallback, SteamUGCRequestUGCDetailsResult_t> call;
+    };
+
+    UGCQueryHandle_t handle;
+    Frame::EventFunction loop_callback, finish_callback;
+    int received;
+    vector<PublishedFileId_t> ids;
+    vector<Call> calls;
+    vector<SteamUGCDetails_t> details;
+
+    void start(Frame::EventFunction loop, Frame::EventFunction finish)
+    {
+        loop_callback = loop;
+        finish_callback = finish;
+        // handle = SteamUGC()->CreateQueryUserUGCRequest(
+        //     SteamUser()->GetSteamID().GetAccountID(), k_EUserUGCList_Published,
+        //     k_EUGCMatchingUGCType_Items,
+        //     k_EUserUGCListSortOrder_CreationOrderDesc,
+        //     0, CHOWDREN_STEAM_APPID, 1);
+        // SteamAPICall_t call_handle = SteamUGC()->SendQueryUGCRequest(handle);
+        int count = std::min<int>(50, SteamUGC()->GetNumSubscribedItems());
+        if (count <= 0) {
+            (manager.frame->*finish_callback)();
+            return;
+        }
+
+        received = 0;
+        ids.resize(count);
+        calls.resize(count);
+        details.resize(count);
+        SteamUGC()->GetSubscribedItems(&ids[0], count);
+
+        SteamAPICall_t call_handle;
+        for (int i = 0; i < count; ++i) {
+            std::cout << "Requesting for " << ids[i] << std::endl;
+            call_handle = SteamUGC()->RequestUGCDetails(ids[i], 0);
+            calls[i].call.Set(call_handle, this, &SubCallback::on_callback);
+        }
+    }
+
+	void on_callback(SteamUGCRequestUGCDetailsResult_t * result, bool fail)
+	{
+        std::cout << "Callback received!" << std::endl;
+		if (fail) {
+			std::cout << "Failed callback" << std::endl;
+			return;
+		}
+		SteamUGCDetails_t & d = result->m_details;
+		int index;
+		for (index = 0; index < int(ids.size()); ++index) {
+			if (ids[index] == d.m_nPublishedFileId)
+				break;
+		}
+
+		details[index] = d;
+		received++;
+		if (received < int(ids.size()))
+			return;
+
+		finish();
+	}
+
+	void finish()
+	{
+        SteamObject::SubResult & r = SteamObject::sub_result;
+        for (int i = 0; i < int(ids.size()); ++i) {
+			SteamUGCDetails_t & d = details[i];
+            r.index = i;
+            r.cloud_path = d.m_pchFileName;
+            r.publish_id = i;
+            (manager.frame->*loop_callback)();
+        }
+
+        (manager.frame->*finish_callback)();
+    }
+};
+
+static SubCallback ugc_callback;
+#endif
+
+bool SteamObject::get_subs(Frame::EventFunction loop,
+                           Frame::EventFunction finish)
+{
+#ifdef CHOWDREN_ENABLE_STEAM
+    ugc_callback.start(loop, finish);
+    return true;
+#else
+    return false;
 #endif
 }
 
@@ -260,12 +380,37 @@ bool SteamObject::has_app(int app)
 #endif
 }
 
+#ifdef CHOWDREN_ENABLE_STEAM
+struct DownloadCall
+{
+    CCallResult<DownloadCall, RemoteStorageDownloadUGCResult_t> call;
+
+	void on_callback(RemoteStorageDownloadUGCResult_t * result, bool fail)
+    {
+        global_steam_obj.download_callback(result);
+        delete this;
+    }
+};
+
+#endif
+
 void SteamObject::download(const std::string & name, int priority,
-                           int content_id)
+                           int content_id,
+                           Frame::EventFunction success,
+                           Frame::EventFunction fail)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
-    std::cout << "Content ID download not implemented: " << name << " "
-        << priority << " " << content_id << std::endl;
+    global_steam_obj.download_success = success;
+    global_steam_obj.download_fail = fail;
+    std::string filename = convert_path(name);
+    SteamAPICall_t handle;
+    UGCHandle_t id = ugc_callback.details[content_id].m_hFile;
+    handle = SteamRemoteStorage()->UGCDownloadToLocation(id, filename.c_str(),
+                                                         priority);
+    DownloadCall * call = new DownloadCall();
+	call->call.Set(handle, call, &DownloadCall::on_callback);
+    std::cout << "Download: " << id << " " << name << " " << priority
+        << std::endl;
 #endif
 }
 
@@ -319,3 +464,5 @@ void SteamObject::upload_time(int value)
 {
 }
 #endif
+
+SteamObject::SubResult SteamObject::sub_result;

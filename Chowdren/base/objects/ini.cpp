@@ -341,13 +341,19 @@ void INI::set_string(const std::string & item, const std::string & value)
 void INI::load_file(const std::string & fn, bool read_only, bool merge,
                     bool overwrite)
 {
+    std::string new_filename = convert_path(fn);
+#ifdef CHOWDREN_CACHE_INI
+    if (new_filename == filename)
+        return;
+#endif
+
 #ifndef CHOWDREN_AUTOSAVE_ON_CHANGE
     if (auto_save && changed)
         save_file(false);
 #endif
 
     this->read_only = read_only;
-    filename = convert_path(fn);
+    filename = new_filename;
 
 #ifdef CHOWDREN_USE_BLOWFISH_CACHE
     const std::string & cache = BlowfishObject::get_cache(filename);

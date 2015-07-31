@@ -279,7 +279,7 @@ float FTTextureFont::LineHeight() const
 
 template <typename T>
 inline FTBBox FTTextureFont::BBoxI(const T* string, const int len,
-                                FTPoint position, FTPoint spacing)
+                                   FTPoint position, FTPoint spacing)
 {
     FTBBox totalBBox;
 
@@ -419,11 +419,10 @@ FTPoint FTTextureFont::Render(const char * string, const int len,
 
 
 FTPoint FTTextureFont::Render(const wchar_t * string, const int len,
-                           FTPoint position, FTPoint spacing)
+                              FTPoint position, FTPoint spacing)
 {
     return RenderI(string, len, position, spacing);
 }
-
 
 // FTTextureFont
 
@@ -457,7 +456,8 @@ FTTextureFont::FTTextureFont(FileStream & stream)
 {
     glyphList = new FTGlyphContainer(this);
 
-    size = stream.read_int32();
+    size = stream.read_uint16();
+    flags = stream.read_uint16();
     width = stream.read_float();
     height = stream.read_float();
     ascender = stream.read_float();
@@ -549,7 +549,7 @@ FTGlyph::FTGlyph(FileStream & stream, char * data,
     y1 = stream.read_float();
     x2 = stream.read_float();
     y2 = stream.read_float();
-    bBox = FTBBox(x1, y1, 0.0f, x2, y2, 0.0f);
+    bBox = FTBBox(x1, y1, x2, y2);
     float advance_x, advance_y;
     advance_x = stream.read_float();
     advance_y = stream.read_float();
@@ -557,7 +557,7 @@ FTGlyph::FTGlyph(FileStream & stream, char * data,
     float corner_x, corner_y;
     corner_x = stream.read_float();
     corner_y = stream.read_float();
-    corner = FTPoint(corner_x, corner_y, 0.0f);
+    corner = FTPoint(corner_x, corner_y);
     width = stream.read_int32();
     height = stream.read_int32();
 
@@ -756,7 +756,8 @@ int FTSimpleLayout::get_lines(const char * string, const int len)
 {
     int lines;
     FTPoint p(0.0f, 0.0f);
-    WrapTextI(string, len, p, NULL, lines);
+    FTBBox tmp;
+    WrapTextI(string, len, p, &tmp, lines);
     return lines;
 }
 

@@ -1,11 +1,16 @@
 #include "collision.h"
 #include "gencol.cpp"
 
-bool collide_direct(CollisionBase * a, CollisionBase * b, int * aabb_2)
+template <bool check>
+inline bool collide_template(CollisionBase * a, CollisionBase * b,
+                             int * aabb_2)
 {
     int * aabb_1 = a->aabb;
-    if (!collides(aabb_1, aabb_2))
-        return false;
+
+    if (check) {
+        if (!collides(aabb_1, aabb_2))
+            return false;
+    }
 
     if ((a->flags & BOX_COLLISION) && (b->flags & BOX_COLLISION))
         return true;
@@ -97,4 +102,19 @@ bool collide_direct(CollisionBase * a, CollisionBase * b, int * aabb_2)
                     return true;
             }
     }
+}
+
+bool collide_direct(CollisionBase * a, CollisionBase * b)
+{
+    return collide_template<false>(a, b, b->aabb);
+}
+
+bool collide(CollisionBase * a, CollisionBase * b)
+{
+    return collide_template<true>(a, b, b->aabb);
+}
+
+bool collide(CollisionBase * a, CollisionBase * b, int * aabb_2)
+{
+    return collide_template<true>(a, b, aabb_2);
 }

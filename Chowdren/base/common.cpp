@@ -10,6 +10,7 @@
 #include "overlap.cpp"
 #include "collision.cpp"
 #include "objects/active.h"
+#include "fbo.h"
 
 // XXX move this?
 #include "staticlibs/utf16to8.cpp"
@@ -93,6 +94,14 @@ Font::Font(const std::string & name, int size, bool bold, bool italic,
 
 Background::Background()
 {
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+    col_w = manager.frame->width;
+    col_h = manager.frame->height;
+    int size = col_w * col_h;
+    size = GET_BITARRAY_SIZE(size);
+    col.data = (BaseBitArray::word_t*)malloc(size);
+    memset(col.data, 0, size);
+#endif
 }
 
 #ifdef CHOWDREN_PASTE_BROADPHASE
@@ -121,6 +130,11 @@ Background::~Background()
 {
     clear_back_vec(col_items);
     clear_back_vec(items);
+
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+    free(col.data);
+    col.data = NULL;
+#endif
 }
 
 void Background::reset(bool clear_items)
@@ -255,7 +269,26 @@ inline void remove_paste_item(BackgroundItem * item, BackgroundItems & items,
         it = items.erase(it);
     }
 }
+
+inline void remove_contained_item(BackgroundItem * item,
+                                  BackgroundItems & items)
+{
+    BackgroundItems::iterator it = items.begin();
+    while (it != items.end()) {
+        BackgroundItem * other = *it;
+        if (other == item) {
+            ++it;
+            continue;
+        }
+        if (!contains(item->aabb, other->aabb)) {
+            ++it;
+            continue;
+        }
+        it = items.erase(it);
+    }
+}
 #endif
+
 
 void Background::paste(Image * img, int dest_x, int dest_y,
                        int src_x, int src_y, int src_width, int src_height,
@@ -312,18 +345,30 @@ void Background::paste(Image * img, int dest_x, int dest_y,
     items.push_back(item);
 #endif
 
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+    int x1 = std::max(0, dest_x);
+    int y1 = std::max(0, dest_y);
+    int x2 = std::min(col_w, dest_x + src_width);
+    int y2 = std::min(col_h, dest_y + src_height);
+    if (collision_type == 0) {
+        for (int y = y1; y < y2; ++y)
+        for (int x = x1; x < x2; ++x) {
+            col.set(y * col_w + x);
+        }
+    } else if (collision_type == 1) {
+        for (int y = y1; y < y2; ++y)
+        for (int x = x1; x < x2; ++x) {
+            col.unset(y * col_w + x);
+        }
+    }
+#endif
+
 #ifdef CHOWDREN_PASTE_REMOVE
     if (collision_type == 0 || collision_type == 4) {
         remove_paste_item(item, col_items, false);
         remove_paste_item(item, items, true);
     }
 #endif
-}
-
-inline bool contains(int b1[4], int b2[4])
-{
-    return b2[0] >= b1[0] && b2[1] >= b1[1] &&
-           b2[2] <= b1[2] && b2[3] <= b1[3];
 }
 
 void Background::draw(int v[4])
@@ -385,21 +430,11 @@ void Background::draw(int v[4])
 
     Texture t = fbo.get_tex();
 
-    float ty1;
-    float ty2;
-#ifdef CHOWDREN_FBO_FLIP
-    ty1 = back_texcoords[5];
-    ty2 = back_texcoords[1];
-#else
-    ty1 = back_texcoords[1];
-    ty2 = back_texcoords[5];
-#endif
-
     Render::draw_tex(cache_pos[0], cache_pos[1],
                      cache_pos[2], cache_pos[3],
                      Color(), t,
-                     back_texcoords[0], ty1,
-                     back_texcoords[4], ty2);
+                     fbo_texcoords[0], fbo_texcoords[1],
+                     fbo_texcoords[2], fbo_texcoords[3]);
 #else
 
 #ifdef CHOWDREN_PASTE_BROADPHASE
@@ -824,7 +859,7 @@ struct BackgroundCallback
     bool on_callback(void * data)
     {
         FrameObject * obj = (FrameObject*)data;
-        if (obj->id != BACKGROUND_TYPE)
+        if (!(obj->flags & BACKGROUND_COL))
             return true;
         if (obj->collision == NULL)
             return true;
@@ -967,8 +1002,9 @@ void Layer::draw(int display_x, int display_y)
     PROFILE_BEGIN(Layer_draw_pasted);
 
     // draw pasted items
-    if (back != NULL)
+    if (back != NULL) {
         back->draw(v);
+    }
 
     PROFILE_END();
 
@@ -1321,7 +1357,30 @@ void Frame::draw(int remote)
                 continue;
         }
 #endif
+
+#ifdef CHOWDREN_IS_TE
+        static Framebuffer layer_fbo;
+        if (layer.blend_color.a < 255) {
+            if (layer_fbo.tex == 0)
+                layer_fbo.init(WINDOW_WIDTH, WINDOW_HEIGHT);
+            layer_fbo.bind();
+            Render::clear(255, 255, 255, 0);
+        }
+#endif
+
         layer.draw(off_x, off_y);
+
+#ifdef CHOWDREN_IS_TE
+        if (layer.blend_color.a < 255) {
+            Render::set_offset(0, 0);
+            layer_fbo.unbind();
+
+            Render::draw_tex(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
+                             layer.blend_color, layer_fbo.get_tex(),
+                             fbo_texcoords[0], fbo_texcoords[1],
+                             fbo_texcoords[2], fbo_texcoords[3]);
+        }
+#endif
     }
 
 #ifdef CHOWDREN_USE_CAPTURE
@@ -1687,7 +1746,7 @@ bool FrameObject::overlaps(FrameObject * other)
         other_aabb = ((Active*)other)->old_aabb;
     else
         other_aabb = other_col->aabb;
-    return collide_direct(collision, other_col, other_aabb);
+    return collide(collision, other_col, other_aabb);
 #else
     return collide(collision, other_col);
 #endif
@@ -1702,10 +1761,10 @@ struct BackgroundOverlapCallback
     {
     }
 
-    bool on_callback(void * data)
+    inline bool on_callback(void * data)
     {
         FrameObject * obj = (FrameObject*)data;
-        if (obj->id != BACKGROUND_TYPE)
+        if (!(obj->flags & BACKGROUND_COL))
             return true;
         CollisionBase * other = (CollisionBase*)obj->collision;
         if (other == NULL)
@@ -1726,8 +1785,34 @@ bool FrameObject::overlaps_background()
         return (flags & HAS_COLLISION) != 0;
     // XXX also cache pasted collisions? will need ID to see if
     // pasted items were changed
-    if (layer->back != NULL && layer->back->overlaps(collision))
-        return true;
+    Background * b = layer->back;
+    int * aabb = collision->aabb;
+    if (b != NULL) {
+        BackgroundItems::iterator it;
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+		int col_w = b->col_w;
+		BitArray & col = b->col;
+        int test[4] = {std::max(0, aabb[0]), std::min(col_w, aabb[1]),
+                       std::max(0, aabb[2]), std::min(b->col_h, aabb[3])};
+        bool miss = false;
+        for (int y = test[1]; y < test[3]; ++y)
+        for (int x = test[0]; x < test[2]; ++x) {
+            if (!col.get(y * col_w + x)) {
+                miss = true;
+                break;
+            }
+        }
+        if (!miss)
+            return false;
+#endif
+        for (it = b->col_items.begin(); it != b->col_items.end(); ++it) {
+            BackgroundItem * item = *it;
+            if (item->flags & LADDER_OBSTACLE)
+                continue;
+            if (::collide(collision, item))
+                return true;
+        }
+    }
     flags |= HAS_COLLISION_CACHE;
     BackgroundOverlapCallback callback(collision);
     if (!layer->broadphase.query_static(collision->proxy, callback)) {
@@ -2306,7 +2391,7 @@ bool init_font()
     return has_fonts;
 }
 
-FTTextureFont * get_font(int size)
+FTTextureFont * get_font(int size, int flags)
 {
     init_font();
 
@@ -2317,6 +2402,8 @@ FTTextureFont * get_font(int size)
     for (it = fonts.begin(); it != fonts.end(); ++it) {
         FTTextureFont * font = *it;
         int new_diff = get_abs(font->size - size);
+        if ((font->flags ^ flags) != 0)
+            new_diff += 200;
 
         if (picked == NULL || new_diff < diff) {
             picked = font;
@@ -2449,6 +2536,19 @@ void File::append_text(const std::string & text, const std::string & path)
         return;
     fp.write(&data[0], data.size());
     fp.close();
+}
+
+std::string File::get_ext(const std::string & path)
+{
+    std::string ext = get_path_ext(path);
+    if (ext.empty())
+        return ext;
+    return "." + ext;
+}
+
+std::string File::get_title(const std::string & path)
+{
+    return get_path_basename(path);
 }
 
 // joystick

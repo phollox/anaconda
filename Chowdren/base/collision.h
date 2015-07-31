@@ -462,14 +462,19 @@ public:
                     color);
         Render::disable_effect();
     }
+
+    void draw(int a)
+    {
+        Render::set_effect(effect);
+        Color c = color;
+        c.a = a;
+        image->draw(dest_x, dest_y, src_x, src_y, src_width, src_height, c);
+        Render::disable_effect();
+    }
 };
 
-bool collide_direct(CollisionBase * a, CollisionBase * b, int * aabb_2);
-
-inline bool collide(CollisionBase * a, CollisionBase * b)
-{
-    return collide_direct(a, b, b->aabb);
-}
+bool collide(CollisionBase * a, CollisionBase * b, int * aabb_2);
+bool collide(CollisionBase * a, CollisionBase * b);
 
 inline bool collide_box(FrameObject * a, int v[4])
 {

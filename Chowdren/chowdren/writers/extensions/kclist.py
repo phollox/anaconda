@@ -48,14 +48,16 @@ class KcList(ObjectWriter):
         if flags['Sort']:
             writer.putln('list_flags |= SORT_LIST;')
 
+        writer.putlnc('index_offset = current_line = %s;', index_offset)
+
 actions = make_table(ActionMethodWriter, {
     0 : 'load_file',
     5 : 'clear',
     6 : 'add_line',
-    8 : 'delete_line(%s - 1)',
+    8 : 'delete_line',
     9 : '.current_line = %s',
     21 : 'disable_focus',
-    30 : 'set_line(%s - 1, %s)'
+    30 : 'set_line(%s, %s)'
 })
 
 conditions = make_table(ConditionMethodWriter, {

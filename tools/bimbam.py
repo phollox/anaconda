@@ -39,7 +39,7 @@ def main():
     if input.endswith('.ccn'):
         newGame = GameData(fp)
     else:
-        newExe = ExecutableData(fp)
+        newExe = ExecutableData(fp, loadImages=False)
 
         for file in newExe.packData.items:
             name = file.filename.split('\\')[-1]

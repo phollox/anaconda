@@ -61,15 +61,11 @@ void Text::draw()
     if (layout != NULL) {
         int lines = layout->get_lines(draw_text.c_str(), -1);
         double box_h = lines * font->LineHeight();
-        // double box_h = box.Upper().Y() - box.Lower().Y();
-        // std::cout << box_h << " " << height << std::endl;
-        // if (alignment & ALIGN_VCENTER) {
-        //     off_y += (height - box_h) * 0.5;
-        // } else if (alignment & ALIGN_BOTTOM) {
-        //     off_y += box_h;
-        // }
-        std::cout << font->Ascender() << " " << height << " " << box_h << " "
-            << off_y << " " << font->LineHeight() << std::endl;
+        if (alignment & ALIGN_VCENTER) {
+            off_y += (height - box_h) * 0.5;
+        } else if (alignment & ALIGN_BOTTOM) {
+            off_y += box_h;
+        }
         int off_yy = int(off_y);
         layout->Render(draw_text.c_str(), -1, FTPoint(x, off_yy));
     } else {

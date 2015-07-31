@@ -21,6 +21,7 @@ public:
     StringList lines;
     int list_flags;
     int current_line;
+    int index_offset;
 
     ListObject(int x, int y, int type_id);
     void load_file(const std::string & name);

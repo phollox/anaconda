@@ -338,15 +338,26 @@ class Text(ObjectWriter):
     def write_init(self, writer):
         text = self.common.text
         lines = [paragraph.value for paragraph in text.items]
-        # objects_file.putln('font = font%s' % text.items[0].font)
         writer.putln('width = %s;' % text.width)
         writer.putln('height = %s;' % text.height)
         writer.putln('blend_color = %s;' % make_color(text.items[0].color))
+
         font = text.items[0].font
-        writer.putln('bold = font%s.bold;' % font)
-        writer.putln('italic = font%s.italic;' % font)
-        writer.putln('font_name = font%s.name;' % font)
-        writer.putln('font = get_font(font%s.size);' % font)
+        font_info = self.converter.fonts[font]
+
+        writer.putlnc('bold = %s;', font_info.isBold())
+        writer.putlnc('italic = %s;', bool(font_info.italic))
+        writer.putlnc('font_name = %r;', font_info.faceName)
+
+        flags = []
+        if font_info.isBold():
+            flags.append('FTTextureFont::BOLD')
+        flags = ' | '.join(flags)
+        if not flags:
+            flags = '0'
+
+        writer.putlnc('font = get_font(%s, %s);', font_info.getSize(),
+                      flags)
 
         paragraph = text.items[0]
         if paragraph.flags['HorizontalCenter']:
@@ -378,7 +389,6 @@ class RTFText(ObjectWriter):
     def write_init(self, writer):
         text = self.common.rtf
         writer.putln(to_c('add_line("");',))
-        # objects_file.putln('font = font%s' % text.items[0].font)
         writer.putln('width = %s;' % text.width)
         writer.putln('height = %s;' % text.height)
         writer.putln('blend_color = Color(0, 0, 0);')

@@ -14,6 +14,8 @@ def init(converter):
     converter.add_define('CHOWDREN_FORCE_X360')
     converter.add_define('CHOWDREN_FORCE_TRANSPARENT')
     converter.add_define('CHOWDREN_FORCE_TEXT_LAYOUT')
+    converter.add_define('CHOWDREN_PASTE_PRECEDENCE')
+    converter.add_define('CHOWDREN_STEAM_APPID', 298630)
 
 def use_image_preload(converter):
     return True

@@ -25,6 +25,7 @@ GameManager manager;
 #include "crossrand.h"
 #include "media.h"
 #include "crashdump.cpp"
+#include "transition.cpp"
 
 #if defined(CHOWDREN_IS_DESKTOP)
 #include "SDL.h"
@@ -382,9 +383,7 @@ void GameManager::draw_fade()
     if (fade_dir == 0.0f)
         return;
     Render::set_offset(0, 0);
-    Color c = fade_color;
-    c.set_alpha(int(fade_value * 255));
-    Render::draw_quad(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, c);
+    Transition::draw();
 }
 
 void GameManager::set_frame(int index)
@@ -428,10 +427,12 @@ void GameManager::set_frame(int index)
     std::cout << "Frame set" << std::endl;
 }
 
-void GameManager::set_fade(const Color & color, float fade_dir)
+void GameManager::set_fade(Transition::Type type, const Color & color,
+                           float dir)
 {
+    fade_type = type;
     fade_color = color;
-    this->fade_dir = fade_dir;
+    fade_dir = dir;
     if (fade_dir < 0.0f)
         fade_value = 1.0f;
     else

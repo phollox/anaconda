@@ -49,6 +49,7 @@ import hashlib
 import cPickle
 import multiprocessing
 from chowdren.local import write_locals
+from chowdren import transition
 
 WRITE_SOUNDS = True
 PROFILE = False
@@ -672,6 +673,7 @@ class Converter(object):
         fonts_file = self.open_code('fonts.cpp')
         fonts_file.putln('#include "fonts.h"')
         font_cache = set()
+        self.fonts = {}
         for game in self.games:
             if not game.fonts:
                 continue
@@ -683,6 +685,7 @@ class Converter(object):
                                   logfont.getSize(),
                                   logfont.isBold(), bool(logfont.italic),
                                   bool(logfont.underline), cpp=False)
+                self.fonts[font.handle] = logfont
                 if font_line in font_cache:
                     continue
                 font_cache.add(font_line)
@@ -1812,8 +1815,7 @@ class Converter(object):
             if fade.duration == 0:
                 print 'invalid fade duration:', fade.duration
             else:
-                start_writer.putlnc('manager.set_fade(%s, %s);',
-                    make_color(fade.color), -1.0 / (fade.duration / 1000.0))
+                transition.write(start_writer, fade, False)
 
         event_file.putmeth('void %s' % start_name)
         event_file.putcode(start_writer)
@@ -1980,6 +1982,8 @@ class Converter(object):
 
         if object_writer.is_background():
             objects_file.putln('flags |= BACKGROUND;')
+            if object_writer.is_background_collider():
+                objects_file.putln('flags |= BACKGROUND_COL;')
 
         if not object_writer.is_visible():
             objects_file.putln('set_visible(false);')

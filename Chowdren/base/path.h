@@ -7,6 +7,12 @@
 
 #define PATH_SEP "\\/"
 
+#ifdef _WIN32
+#define PATH_SEP_SINGLE "\\"
+#else
+#define PATH_SEP_SINGLE "/"
+#endif
+
 inline std::string get_app_path()
 {
     return "./";
@@ -57,6 +63,16 @@ inline std::string get_path_ext(const std::string & path)
         ext = path.substr(pos + 1);
     to_lower(ext);
     return ext;
+}
+
+inline std::string join_path(const std::string & a, const std::string & b)
+{
+    if (a.empty())
+        return b;
+    char c = a[a.size()-1];
+    if (c == '\\' || c == '/')
+        return a + b;
+    return a + PATH_SEP_SINGLE + b;
 }
 
 inline void make_ascii(std::string & path)

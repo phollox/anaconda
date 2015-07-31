@@ -1109,7 +1109,7 @@ void platform_hide_mouse()
 
 const std::string & platform_get_language()
 {
-    static std::string language("English");
+    static std::string language("French");
     return language;
 }
 
@@ -1118,8 +1118,39 @@ const std::string & platform_get_language()
 #include <sys/stat.h>
 
 void platform_walk_folder(const std::string & path,
-                          vector<FilesystemItem> items)
+                          FolderCallback & callback)
 {
+    if (path.empty())
+        return;
+#ifdef _WIN32
+    HANDLE hFind = INVALID_HANDLE_VALUE;
+    WIN32_FIND_DATA ffd;
+
+    std::string spec;
+    char c = path[path.size()-1];
+    if (c == '\\')
+        spec = path + "*";
+    else
+        spec = path + "\\*";
+
+    hFind = FindFirstFileA(spec.c_str(), &ffd);
+    if (hFind == INVALID_HANDLE_VALUE)
+        return;
+
+    FilesystemItem item;
+    do {
+        if (ffd.cFileName[0] == '.')
+            continue;
+        item.name = ffd.cFileName;
+        item.flags = 0;
+        if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+            item.flags |= FilesystemItem::FILE;
+        callback.on_item(item);
+    } while (FindNextFileA(hFind, &ffd) != 0);
+
+    FindClose(hFind);
+#else
+#endif
 }
 
 size_t platform_get_file_size(const char * filename)
@@ -1732,10 +1763,13 @@ void platform_set_remote_value(int v)
 
 void platform_set_lightbar(int r, int g, int b, int ms, int type)
 {
+    std::cout << "Set lightbar: " << r << " " << g << " " << b << " "
+        << ms << " " << type << std::endl;
 }
 
 void platform_reset_lightbar()
 {
+    std::cout << "Reset lightbar" << std::endl;
 }
 
 int platform_get_remote_value()

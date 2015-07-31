@@ -489,6 +489,11 @@ void Active::set_y_scale(float value)
 
 void Active::paste(int collision_type)
 {
+#ifdef CHOWDREN_IS_TE
+    // XXX hack, actually fix negated overlap check
+    if (flags & DESTROYING)
+        return;
+#endif
     layer->paste(image, x-image->hotspot_x, y-image->hotspot_y, 0, 0,
                  image->width, image->height, collision_type, effect,
                  blend_color);
@@ -541,9 +546,9 @@ void Active::destroy()
         if (forced_animation != DISAPPEARING) {
             restore_animation();
             force_animation(DISAPPEARING);
-            if (loop_count == -1)
-                loop_count = 1;
         }
+        if (loop_count == -1)
+            loop_count = 1;
     } else {
         fade_time = fade_duration;
     }

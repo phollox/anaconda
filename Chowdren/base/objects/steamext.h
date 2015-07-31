@@ -3,6 +3,7 @@
 
 #include <string>
 #include "frameobject.h"
+#include "types.h"
 
 class SteamObject : public FrameObject
 {
@@ -19,13 +20,26 @@ public:
     bool is_activated();
 
     void download(const std::string & name);
-    void download(const std::string & path, int priority,
-                  int content_id);
+    void download(const std::string & path, int priority, int content_id,
+                  Frame::EventFunction success, Frame::EventFunction fail);
     void upload(const std::string & name);
 
     void request_user_data();
     void store_user_data();
     bool has_app(int id);
+
+    struct SubResult
+    {
+        int index;
+        std::string cloud_path;
+        int publish_id;
+    };
+
+    static SubResult sub_result;
+
+    bool get_subs(Frame::EventFunction loop, Frame::EventFunction finish);
+    int get_sub_count();
+    void get_sub(int index);
 
     void set_int(const std::string & name, int value);
     int get_int(const std::string & name);

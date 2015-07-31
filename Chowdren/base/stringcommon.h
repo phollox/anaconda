@@ -31,7 +31,7 @@ inline int string_to_int(const std::string & in)
     return fast_atoi(in);
 }
 
-inline DynamicNumber string_to_number(const std::string & in)
+inline double string_to_number(const std::string & in)
 {
 #ifdef CHOWDREN_USE_DYNAMIC_NUMBER
     double ret = string_to_double(in);
@@ -65,6 +65,11 @@ inline std::string number_to_string(size_t value)
 }
 
 inline std::string number_to_string(long long value)
+{
+    return fast_lltoa(value);
+}
+
+inline std::string number_to_string(uint64_t value)
 {
     return fast_lltoa(value);
 }

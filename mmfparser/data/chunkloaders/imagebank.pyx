@@ -353,17 +353,48 @@ cdef class ImageItem(DataLoader):
         object image
         object alpha
         bint indexed
-        object createdImage
         char graphicMode
         tuple transparent
+
+        ByteReader reader
+        size_t pos
 
     cpdef initialize(self):
         self.flags = IMAGE_FLAGS.copy()
 
     cpdef read(self, ByteReader reader):
+        self.handle = reader.readInt()
+        cdef bint load_now = self.settings.get('loadImages', True)
+        self.reader = reader
+        self.pos = reader.tell()
+        if load_now:
+            self.load()
+            return
+
+        cdef bint old = self.settings.get('old', False)
+        if old:
+            raise NotImplementedError('not supported')
+
+        cdef bint debug = self.settings.get('debug', False)
+        cdef int size
+        if debug:
+            reader.skipBytes(8)
+            size = reader.readInt(True)
+            reader.skipBytes(size + 20)
+        else:
+            reader.skipBytes(4)
+            size = reader.readInt(True)
+            reader.skipBytes(size)
+
+    cpdef load(self):
+        cdef ByteReader reader = self.reader
+        if reader is None:
+            return
+        reader.seek(self.pos)
+        self.reader = None
+
         cdef bint old = self.settings.get('old', False)
         cdef bint debug = self.settings.get('debug', False)
-        self.handle = reader.readInt()
         cdef ByteReader newReader
         if old:
             newReader = onepointfive.decompress(reader)
@@ -404,45 +435,8 @@ cdef class ImageItem(DataLoader):
             decompressed = newReader.readInt()
             newReader = ByteReader(zlib.decompress(newReader.read()))
 
-        self.load(newReader, size)
-    
-    def write(self, reader):
-        cdef bint debug = self.settings.get('debug', False)
-        dataReader = ByteReader()
-        dataReader.write(generate_image(self))
-        if self.alpha is not None:
-            dataReader.write(generate_alpha(self))
-
-        newReader = ByteReader()
-        newReader.writeInt(self.checksum)
-        newReader.writeInt(self.references)
-        newReader.writeInt(len(dataReader))
-        newReader.writeShort(self.width)
-        newReader.writeShort(self.height)
-        newReader.writeByte(4)#self.graphicMode)
-        # simple hack kthxbye
-        if self.flags['Alpha']:
-            newReader.writeByte(16)
-        else:
-            newReader.writeByte(0)
-        newReader.write(<bytes>('\x00\x00'))
-        newReader.writeShort(self.xHotspot)
-        newReader.writeShort(self.yHotspot)
-        newReader.writeShort(self.actionX)
-        newReader.writeShort(self.actionY)
-        newReader.writeColor(self.transparent or (0, 0, 0))
-        newReader.writeReader(dataReader)
-
-        reader.writeInt(self.handle)
-        if debug:
-            reader.writeReader(newReader)
-        else:
-            reader.writeReader(zlibdata.compress(newReader))
-        
-    def load(self, reader, size):
         cdef BasePoint pointClass
         cdef char * data
-        start = reader.tell()
         cdef int width, height
         width, height = self.width, self.height
         if self.graphicMode == 2:
@@ -463,10 +457,11 @@ cdef class ImageItem(DataLoader):
         else:
             import code
             code.interact(local = locals())
-            reader.openEditor()
-            raise NotImplementedError('unknown graphic mode: %s' % self.graphicMode)
+            newReader.openEditor()
+            raise NotImplementedError('unknown graphic mode: %s'
+                                      % self.graphicMode)
 
-        readerData = reader.read()
+        readerData = newReader.read()
         data = readerData
         cdef int alphaSize, imageSize
         if self.flags['RLE'] or self.flags['RLEW'] or self.flags['RLET']:
@@ -481,6 +476,41 @@ cdef class ImageItem(DataLoader):
             pad = (alphaSize - width * height) / height
             self.alpha = read_alpha(data, width, height, size - alphaSize)
     
+    def write(self, reader):
+        cdef bint debug = self.settings.get('debug', False)
+        dataReader = ByteReader()
+
+        if False:
+            dataReader.write(generate_image(self))
+            if self.alpha is not None:
+                dataReader.write(generate_alpha(self))
+
+        newReader = ByteReader()
+        newReader.writeInt(self.checksum)
+        newReader.writeInt(self.references)
+        newReader.writeInt(len(dataReader))
+        newReader.writeShort(0) # newReader.writeShort(self.width)
+        newReader.writeShort(0) # newReader.writeShort(self.height)
+        newReader.writeByte(4)#self.graphicMode)
+        # simple hack kthxbye
+        if self.flags['Alpha']:
+            newReader.writeByte(16)
+        else:
+            newReader.writeByte(0)
+        newReader.write(<bytes>('\x00\x00'))
+        newReader.writeShort(self.xHotspot)
+        newReader.writeShort(self.yHotspot)
+        newReader.writeShort(self.actionX)
+        newReader.writeShort(self.actionY)
+        newReader.writeColor(self.transparent or (0, 0, 0))
+        newReader.writeReader(dataReader)
+
+        reader.writeInt(self.handle)
+        if debug:
+            reader.writeReader(newReader)
+        else:
+            reader.writeReader(zlibdata.compress(newReader))
+    
     def createDisplay(self, frame = None, **kw):
         foo = createDisplay(self, frame)
         self.unload()
@@ -494,7 +524,6 @@ cdef class ImageItem(DataLoader):
     def unload(self):
         self.image = None
         self.alpha = None
-        self.createdImage = None
     
     def getGraphicMode(self):
         return graphicModes[self.graphicMode]

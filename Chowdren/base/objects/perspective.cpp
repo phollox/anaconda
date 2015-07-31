@@ -33,7 +33,7 @@ void PerspectiveObject::draw()
     Render::draw_tex(x, y, x + width, y + height, Color(255, 255, 255, 255),
                      t,
                      back_texcoords[0], back_texcoords[1],
-                     back_texcoords[4], back_texcoords[5]);
+                     back_texcoords[2], back_texcoords[3]);
     Render::enable_blend();
     end_draw();
 }

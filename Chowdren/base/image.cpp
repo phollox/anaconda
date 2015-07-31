@@ -241,20 +241,26 @@ void Image::set_filter(bool linear)
 #if !defined(CHOWDREN_IS_WIIU)
 // XXX change glc_copy_color_buffer_rect so this isn't necessary
 
-const float back_texcoords[8] = {
+const float back_texcoords[4] = {
     0.0f, 1.0f,
-    1.0f, 1.0f,
-    1.0f, 0.0f,
-    0.0f, 0.0f
+    1.0f, 0.0f
 };
 #else
-const float back_texcoords[8] = {
+const float back_texcoords[4] = {
     0.0f, 0.0f,
-    1.0f, 0.0f,
-    1.0f, 1.0f,
-    0.0f, 1.0f
+    1.0f, 1.0f
 };
 #endif
+
+const float fbo_texcoords[4] = {
+#ifdef CHOWDREN_FBO_FLIP
+    back_texcoords[0], back_texcoords[3],
+    back_texcoords[2], back_texcoords[1]
+#else
+    back_texcoords[0], back_texcoords[1],
+    back_texcoords[2], back_texcoords[3]
+#endif
+};
 
 void Image::draw(int x, int y, Color color,
                  float angle, float scale_x, float scale_y)

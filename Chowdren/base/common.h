@@ -118,7 +118,7 @@ public:
 // static objects
 
 class FTTextureFont;
-FTTextureFont * get_font(int size);
+FTTextureFont * get_font(int size, int flags = 0);
 void set_font_path(const char * path);
 void set_font_path(const std::string & path);
 bool init_font();
@@ -147,6 +147,8 @@ public:
     static void rename_file(const std::string & src, const std::string & dst);
     static void append_text(const std::string & text,
                             const std::string & path);
+    static std::string get_ext(const std::string & path);
+    static std::string get_title(const std::string & path);
 };
 
 #include "extensions.h"
@@ -448,7 +450,14 @@ inline std::string get_command_arg(const std::string & arg)
 
 std::string get_md5(const std::string & value);
 
-inline float get_joystick_dummy(float value, int n)
+template <typename T, typename T1>
+inline T get_event_dummy(T value, T1 other)
+{
+    return value;
+}
+
+template <typename T, typename T1, typename T2>
+inline T get_event_dummy(T value, T1 a, T2 b)
 {
     return value;
 }

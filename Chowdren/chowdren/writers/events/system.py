@@ -12,6 +12,7 @@ from collections import defaultdict
 from chowdren.key import convert_key
 from mmfparser.bitdict import BitDict
 from chowdren.idpool import get_id
+from chowdren import transition
 from chowdren.shader import INK_EFFECTS, NATIVE_SHADERS
 
 def get_loop_running_name(name):
@@ -549,12 +550,14 @@ class Always(ConditionWriter):
 
 class MouseClicked(ConditionWriter):
     is_always = True
+    pre_event = True
 
     def write(self, writer):
         writer.put('is_mouse_pressed_once(%s)' % self.convert_index(0))
 
 class ObjectClicked(ConditionWriter):
     is_always = True
+    pre_event = True
     precedence = 1
 
     def get_object(self):
@@ -1713,11 +1716,9 @@ class SetFrameAction(ActionWriter):
             return
         if fade.duration == 0:
             return
-        color = fade.color
         writer.putln('if (loop_count != 0)')
         writer.indent()
-        writer.putln(to_c('manager.set_fade(%s, %s);', make_color(
-            color), 1.0 / (fade.duration / 1000.0)))
+        transition.write(writer, fade, True)
         writer.dedent()
 
 class JumpToFrame(SetFrameAction):

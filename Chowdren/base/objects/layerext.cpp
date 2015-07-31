@@ -64,6 +64,7 @@ void LayerObject::set_alpha_coefficient(int index, int alpha)
         FrameObject * obj = *it;
         obj->blend_color.set_alpha_coefficient(alpha);
     }
+    layer->blend_color.set_alpha_coefficient(alpha);
 }
 
 double LayerObject::get_alterable(const FrameObject & instance)

@@ -12,6 +12,7 @@
 #include "frameobject.h"
 #include "color.h"
 #include "instancemap.h"
+#include "bitarray.h"
 
 #ifdef CHOWDREN_PASTE_CACHE
 #include "fbo.h"
@@ -38,6 +39,11 @@ public:
     BackgroundItems new_paste;
     int cache_pos[4];
     Framebuffer fbo;
+#endif
+
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+    BitArray col;
+    int col_w, col_h;
 #endif
 
     Background();

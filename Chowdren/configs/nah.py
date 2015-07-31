@@ -4,6 +4,8 @@ import re
 def use_deferred_collisions(converter):
     return False
 
+FORCE_PS4 = True
+
 def init(converter):
     converter.add_define('CHOWDREN_IS_NAH')
     converter.add_define('CHOWDREN_QUICK_SCALE')
@@ -29,6 +31,9 @@ def init(converter):
         strings[8] = 'PS4'
     elif converter.platform_name in ('generic', 'd3d'):
         strings[8] = 'Desktop'
+
+    if FORCE_PS4:
+        strings[8] = 'PS4'
 
     converter.add_define('CHOWDREN_SAVE_PATH', 'save')
     
@@ -198,6 +203,6 @@ except ImportError:
     pass
 
 def get_locals(converter):
-    if converter.platform_name in ('generic', 'd3d'):
+    if not FORCE_PS4 and converter.platform_name in ('generic', 'd3d'):
         return None
     return nah.local_dict

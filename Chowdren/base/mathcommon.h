@@ -271,6 +271,12 @@ inline bool collides(int a[4], int b[4])
     return a[2] > b[0] && a[3] > b[1] && a[0] < b[2] && a[1] < b[3];
 }
 
+inline bool contains(int b[4], int s[4])
+{
+    return s[0] >= b[0] && s[1] >= b[1] &&
+           s[2] <= b[2] && s[3] <= b[3];
+}
+
 inline void rect_union(int a_x1, int a_y1, int a_x2, int a_y2,
                        int b_x1, int b_y1, int b_x2, int b_y2,
                        int & r_x1, int & r_y1, int & r_x2, int & r_y2)

@@ -4,7 +4,7 @@
 // ListObject
 
 ListObject::ListObject(int x, int y, int type_id)
-: FrameObject(x, y, type_id), current_line(0), list_flags(0)
+: FrameObject(x, y, type_id), list_flags(0)
 {
 
 }
@@ -27,6 +27,7 @@ void ListObject::load_file(const std::string & name)
 
 void ListObject::delete_line(int line)
 {
+    line += index_offset;
     if (line < 0 || line >= int(lines.size()))
         return;
     lines.erase(lines.begin() + line);
@@ -47,7 +48,7 @@ void ListObject::add_line(const std::string & value)
 
 const std::string & ListObject::get_line(int i)
 {
-    i--;
+    i += index_offset;
     if (i < 0 || i >= int(lines.size()))
         return empty_string;
     return lines[i];
@@ -74,8 +75,10 @@ int ListObject::find_string_exact(const std::string & text, int flag)
 
 void ListObject::set_line(int line, const std::string & value)
 {
-    std::cout << "ListObject::set_line not implemented: " << line
-        << " " << value << std::endl;
+    line += index_offset;
+    if (line < 0 || line >= int(lines.size()))
+        return;
+    lines[line] = value;
 
     if (list_flags & SORT_LIST)
         sort();
@@ -94,7 +97,7 @@ bool ListObject::get_focus()
 
 void ListObject::disable_focus()
 {
-    std::cout << "List: disable_focus not implemented" << std::endl;
+    // std::cout << "List: disable_focus not implemented" << std::endl;
 }
 
 void ListObject::sort()

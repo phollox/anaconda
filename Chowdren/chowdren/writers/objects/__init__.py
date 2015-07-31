@@ -141,6 +141,9 @@ class ObjectWriter(BaseWriter):
     def is_background(self):
         return self.common.isBackground()
 
+    def is_background_collider(self):
+        return self.is_static_background()
+
     def is_static_background(self):
         return self.is_background()
 
