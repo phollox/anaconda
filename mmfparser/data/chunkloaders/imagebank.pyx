@@ -480,19 +480,18 @@ cdef class ImageItem(DataLoader):
         cdef bint debug = self.settings.get('debug', False)
         dataReader = ByteReader()
 
-        if False:
-            dataReader.write(generate_image(self))
-            if self.alpha is not None:
-                dataReader.write(generate_alpha(self))
+        dataReader.write(generate_image(self))
+        if self.alpha is not None:
+            dataReader.write(generate_alpha(self))
 
         newReader = ByteReader()
         newReader.writeInt(self.checksum)
         newReader.writeInt(self.references)
         newReader.writeInt(len(dataReader))
-        newReader.writeShort(0) # newReader.writeShort(self.width)
-        newReader.writeShort(0) # newReader.writeShort(self.height)
+        newReader.writeShort(self.width)
+        newReader.writeShort(self.height)
         newReader.writeByte(4)#self.graphicMode)
-        # simple hack kthxbye
+        # XXX simple hack
         if self.flags['Alpha']:
             newReader.writeByte(16)
         else:
