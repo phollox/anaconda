@@ -2447,6 +2447,7 @@ const std::string & File::get_appdata_directory()
 #ifdef _WIN32
 #include <direct.h>
 #define chdir _chdir
+
 #else
 #include <unistd.h>
 #endif
@@ -2462,12 +2463,20 @@ void File::change_directory(const std::string & path)
 
 void File::create_directory(const std::string & path)
 {
+#ifdef _WIN32
     platform_create_directories(path);
+#else
+    platform_create_directories(convert_path(path));
+#endif
 }
 
 bool File::file_exists(const std::string & path)
 {
+#ifdef _WIN32
     return platform_is_file(path);
+#else
+    return platform_is_file(convert_path(path));
+#endif
 }
 
 bool File::file_readable(const std::string & path)
@@ -2478,12 +2487,20 @@ bool File::file_readable(const std::string & path)
 
 bool File::name_exists(const std::string & path)
 {
+#ifdef _WIN32
     return platform_path_exists(path);
+#else
+    return platform_path_exists(convert_path(path));
+#endif
 }
 
 bool File::directory_exists(const std::string & path)
 {
+#ifdef _WIN32
     return platform_is_directory(path);
+#else
+    return platform_is_directory(convert_path(path));
+#endif
 }
 
 void File::delete_file(const std::string & path)
@@ -2499,10 +2516,18 @@ void File::delete_folder(const std::string & path)
 
 bool File::copy_file(const std::string & src, const std::string & dst)
 {
+#ifdef _WIN32
+    std::string new_src = src;
+    std::string new_dst = dst;
+#else
+    std::string new_src = convert_path(src);
+    std::string new_dst = convert_path(dst);
+#endif
+
     std::string data;
-    if (!read_file(src.c_str(), data))
+    if (!read_file(new_src.c_str(), data))
         return false;
-    FSFile fp(dst.c_str(), "w");
+    FSFile fp(new_dst.c_str(), "w");
     if (!fp.is_open())
         return false;
     fp.write(&data[0], data.size());
@@ -2516,7 +2541,11 @@ bool File::copy_file(const std::string & src, const std::string & dst)
 
 int File::get_size(const std::string & path)
 {
+#ifdef _WIN32
+    return platform_get_file_size(path.c_str());
+#else
     return platform_get_file_size(convert_path(path).c_str());
+#endif
 }
 
 void File::rename_file(const std::string & src, const std::string & dst)
@@ -2527,11 +2556,17 @@ void File::rename_file(const std::string & src, const std::string & dst)
 
 void File::append_text(const std::string & text, const std::string & path)
 {
+#ifdef _WIN32
+    std::string new_path = path;
+#else
+    std::string new_path = convert_path(path);
+#endif
+
     std::string data;
-    if (!read_file(path.c_str(), data))
+    if (!read_file(new_path.c_str(), data))
         return;
     data += text;
-    FSFile fp(path.c_str(), "w");
+    FSFile fp(new_path.c_str(), "w");
     if (!fp.is_open())
         return;
     fp.write(&data[0], data.size());
