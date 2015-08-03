@@ -100,7 +100,8 @@ class LinuxBuilder(Builder):
             'i386': 'linux32'
         }
         arch_dir = arch_dirs[arch]
-        steam_bin = os.path.join(base_dir, 'steam', 'sdk', arch_dir,
+        steam_bin = os.path.join(base_dir, 'steam', 'sdk',
+                                 'redistributable_bin', arch_dir,
                                  'libsteam_api.so')
         shutil.copy(steam_bin,
                     os.path.join(self.install_dir, 'libsteam_api.so'))
