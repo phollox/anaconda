@@ -102,8 +102,8 @@ class LinuxBuilder(Builder):
         arch_dir = arch_dirs[arch]
         steam_bin = os.path.join(base_dir, 'steam', 'sdk', arch_dir,
                                  'libsteam_api.so')
-        shutil.copy(os.path.join(steam_bin,
-                                 self.install_dir, 'libsteam_api.so'))
+        shutil.copy(steam_bin,
+                    os.path.join(self.install_dir, 'libsteam_api.so'))
 
     def create_dist(self, arch):
         try:
