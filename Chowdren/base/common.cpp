@@ -2516,7 +2516,7 @@ bool File::copy_file(const std::string & src, const std::string & dst)
 
 int File::get_size(const std::string & path)
 {
-    return platform_get_file_size(path.c_str());
+    return platform_get_file_size(convert_path(path).c_str());
 }
 
 void File::rename_file(const std::string & src, const std::string & dst)
