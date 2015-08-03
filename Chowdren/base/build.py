@@ -15,6 +15,8 @@ chroots = '/var/chroots'
 steamrt_archive = ('https://codeload.github.com/ValveSoftware/steam-runtime/'
                    'tar.gz/master')
 
+base_dir = os.path.dirname(__file__)
+
 class Builder(object):
     def __init__(self, args):
         self.args = args
@@ -79,11 +81,31 @@ class LinuxBuilder(Builder):
         self.install_dir = os.path.join(self.build_dir, 'install')
         self.chroot = chroot
         self.create_project()
-        self.build_project()
         self.copy_dependencies(arch)
+        self.build_project()
+        self.create_dist(arch)
         self.chroot = None
 
     def copy_dependencies(self, arch):
+        try:
+            os.makedirs(self.install_dir)
+        except OSError:
+            pass
+
+        if not self.args.steam:
+            return
+
+        arch_dirs = {
+            'amd64': 'linux64',
+            'i386': 'linux32'
+        }
+        arch_dir = arch_dirs[arch]
+        steam_bin = os.path.join(base_dir, 'steam', 'sdk', arch_dir,
+                                 'libsteam_api.so')
+        shutil.copy(os.path.join(steam_bin,
+                                 self.install_dir, 'libsteam_api.so'))
+
+    def create_dist(self, arch):
         try:
             os.makedirs(self.dist_dir)
         except OSError:
