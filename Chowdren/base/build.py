@@ -79,6 +79,15 @@ class LinuxBuilder(Builder):
             self.dist_dir += '_steamworks'
 
         self.install_dir = os.path.join(self.build_dir, 'install')
+
+       if arch == 'amd64':
+            bin_dir = 'bin64'
+        else:
+            bin_dir = 'bin32'
+
+        self.src_bin_dir = os.path.join(self.install_dir, bin_dir)
+        self.dst_bin_dir = os.path.join(self.dist_dir, bin_dir)
+
         self.chroot = chroot
         self.create_project()
         self.copy_dependencies(arch)
@@ -104,7 +113,7 @@ class LinuxBuilder(Builder):
                                  'redistributable_bin', arch_dir,
                                  'libsteam_api.so')
         shutil.copy(steam_bin,
-                    os.path.join(self.install_dir, 'libsteam_api.so'))
+                    os.path.join(self.src_bin_dir, 'libsteam_api.so'))
 
     def create_dist(self, arch):
         try:
@@ -112,13 +121,8 @@ class LinuxBuilder(Builder):
         except OSError:
             pass
 
-        if arch == 'amd64':
-            bin_dir = 'bin64'
-        else:
-            bin_dir = 'bin32'
-
-        src_bin_dir = os.path.join(self.install_dir, bin_dir)
-        dst_bin_dir = os.path.join(self.dist_dir, bin_dir)
+        src_bin_dir = self.src_bin_dir
+        dst_bin_dir = self.dst_bin_dir
 
         shutil.rmtree(dst_bin_dir, ignore_errors=True)
         shutil.copytree(src_bin_dir, dst_bin_dir)
