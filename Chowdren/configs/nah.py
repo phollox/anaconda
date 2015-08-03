@@ -198,7 +198,7 @@ def get_string(converter, value):
     return value
 
 try:
-    from configs.local import nah 
+    from configs.local import nah
 except ImportError:
     pass
 

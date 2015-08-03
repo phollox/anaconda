@@ -178,6 +178,23 @@ void Image::replace(const Color & from, const Color & to)
     }
 }
 
+void Image::replace(const std::string & path)
+{
+    Image * other = get_image_cache(path, 0, 0, 0, 0, TransparentColor());
+    other->upload_texture();
+    if (other->width != width || other->height != height) {
+        std::cout << "Dimensions do not match: " << path << std::endl;
+        width = other->width;
+        height = other->height;
+    }
+
+    unload();
+    tex = other->tex;
+#ifndef CHOWDREN_IS_WIIU
+    alpha = other->alpha;
+#endif
+}
+
 void Image::upload_texture()
 {
     if (tex != 0 || image == NULL)

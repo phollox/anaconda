@@ -48,6 +48,7 @@ public:
     void destroy();
     Image * copy();
     void replace(const Color & from, const Color & to);
+    void replace(const std::string & path);
     void load();
     void set_static();
     void upload_texture();

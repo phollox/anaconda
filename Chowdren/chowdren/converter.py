@@ -59,7 +59,10 @@ PROFILE_EVENTS = PROFILE and False
 PROFILE_OBJECTS = PROFILE and False
 
 # enabled for porting
-NATIVE_EXTENSIONS = True
+if getattr(sys, 'frozen', False):
+    NATIVE_EXTENSIONS = False
+else:
+    NATIVE_EXTENSIONS = True
 
 if NATIVE_EXTENSIONS and sys.platform == 'win32':
     from mmfparser.extension import loadLibrary, LoadedExtension
@@ -743,6 +746,7 @@ class Converter(object):
         self.object_cache = {}
         self.global_object_data = {}
         self.back_ids = {}
+        self.name_to_writer = defaultdict(list)
 
         self.extension_includes = set()
         self.extension_sources = set()
@@ -1860,6 +1864,7 @@ class Converter(object):
                 print 'not implemented:', repr(frameitem.name), object_type,
                 print handle
                 continue
+            self.name_to_writer[name].append(object_writer)
             object_writer.new_class_name = class_name
             object_writer.object_type = object_type
             object_writer.handle = handle

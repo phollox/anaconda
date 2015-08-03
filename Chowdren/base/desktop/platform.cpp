@@ -34,11 +34,11 @@ static int global_window_id;
 
 #ifdef CHOWDREN_USE_D3D
 static D3DPRESENT_PARAMETERS pparams;
+static int device_display_index = -1;
 #else
 static SDL_GLContext global_context = NULL;
 #endif
 
-static int clear_backbuffer = 0;
 static bool in_reset = false;
 static bool is_fullscreen = false;
 static int fullscreen_width = -1;
@@ -334,7 +334,6 @@ void platform_poll_events()
                     int h = e.window.data2;
                     d3d_reset(w, h);
 #endif
-                    clear_backbuffer = 5;
                     break;
                 }
             }
@@ -424,8 +423,8 @@ static void APIENTRY on_debug_message_amd(GLuint id, GLenum category,
 #ifdef CHOWDREN_USE_D3D
 static void create_d3d_device()
 {
-    int display_index = SDL_GetWindowDisplayIndex(global_window);
-    int adapter_index = SDL_Direct3D9GetAdapterIndex(display_index);
+    device_display_index = SDL_GetWindowDisplayIndex(global_window);
+    int adapter_index = SDL_Direct3D9GetAdapterIndex(device_display_index);
 
     HRESULT hr;
     D3DDEVTYPE device_type = D3DDEVTYPE_HAL;
@@ -527,9 +526,10 @@ void d3d_reset(int w, int h)
     pparams.BackBufferWidth = w;
     pparams.BackBufferHeight = h;
 
-    if (is_fullscreen) {
+    int display = SDL_GetWindowDisplayIndex(global_window);
+
+    if (is_fullscreen && display == device_display_index) {
         SDL_DisplayMode mode;
-        int display = SDL_GetWindowDisplayIndex(global_window);
         SDL_GetDesktopDisplayMode(display, &mode);
         pparams.Windowed = FALSE;
         pparams.FullScreen_RefreshRateInHz = mode.refresh_rate;
@@ -564,16 +564,25 @@ void d3d_reset(int w, int h)
         d3d_set_window(w, h);
     }
 
-    bool show = false;
     HRESULT hr = render_data.device->Reset(&pparams);
-    if (hr == D3DERR_DEVICELOST || hr == D3DERR_INVALIDCALL) {
+    if (FAILED(hr)) {
+#ifndef NDEBUG
+        std::cout << "Failed reset: " << hr << std::endl;
+#endif
         if (is_fullscreen) {
             std::cout << "Failing fullscreen due to device lost" << std::endl;
             d3d_set_window(w, h);
+            hr = render_data.device->Reset(&pparams);
         }
 
-        while (hr == D3DERR_DEVICELOST || hr == D3DERR_DEVICENOTRESET) {
+        while (FAILED(hr)) {
+            while (FAILED(render_data.device->TestCooperativeLevel())) {
+                platform_sleep(0.2);
+            }
             hr = render_data.device->Reset(&pparams);
+#ifndef NDEBUG
+            std::cout << "Trying new reset: " << hr << std::endl;
+#endif
         }
     }
 
@@ -593,8 +602,6 @@ void d3d_reset(int w, int h)
 
     last_failed = false;
     in_reset = false;
-
-    clear_backbuffer = 5;
 
 #ifdef CHOWDREN_PASTE_CACHE
     vector<Layer>::iterator it;
@@ -985,8 +992,7 @@ void platform_swap_buffers()
     // resize the window contents if necessary (fullscreen mode)
     Render::set_view(0, 0, window_width, window_height);
     Render::set_offset(0, 0);
-    if (clear_backbuffer > 0) {
-        clear_backbuffer--;
+    if (draw_x_size != window_width || draw_y_size != window_height) {
         Render::clear(0, 0, 0, 255);
     }
 
@@ -1109,7 +1115,7 @@ void platform_hide_mouse()
 
 const std::string & platform_get_language()
 {
-    static std::string language("French");
+    static std::string language("Italian");
     return language;
 }
 
