@@ -15,7 +15,7 @@ chroots = '/var/chroots'
 steamrt_archive = ('https://codeload.github.com/ValveSoftware/steam-runtime/'
                    'tar.gz/master')
 
-base_dir = os.path.dirname(__file__)
+base_dir = os.path.abspath(os.path.dirname(__file__))
 
 class Builder(object):
     def __init__(self, args):
