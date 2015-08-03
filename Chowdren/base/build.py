@@ -80,7 +80,7 @@ class LinuxBuilder(Builder):
 
         self.install_dir = os.path.join(self.build_dir, 'install')
 
-       if arch == 'amd64':
+        if arch == 'amd64':
             bin_dir = 'bin64'
         else:
             bin_dir = 'bin32'
