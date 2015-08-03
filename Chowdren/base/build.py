@@ -97,7 +97,7 @@ class LinuxBuilder(Builder):
 
     def copy_dependencies(self, arch):
         try:
-            os.makedirs(self.install_dir)
+            os.makedirs(self.src_bin_dir)
         except OSError:
             pass
 
