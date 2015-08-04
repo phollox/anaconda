@@ -16,13 +16,26 @@ class ComboBox(ObjectWriter):
         data = self.get_data()
         width = data.readShort(True)
         height = data.readShort(True)
-        data.skipBytes(2) # bom
-        #f = open('g:\\buf', 'w')
-        #for _ in xrange(data.tell(), data.size()):
-        #    f.write(chr(data.readByte(True)))
-        #f.close()
+        log_font = LogFont(data, old = True)
+        font_color = data.readColor()
+        font_style = data.readString(40)
+        flags = data.readInt(True)
+        line_count = data.readShort(True)
+        bg_color = data.readColor()
+        data.skipBytes(12)
+
         writer.putlnc('width = %s;', width)
         writer.putlnc('height = %s;', height)
+        writer.putlnc('combo_box.m_BackgroundColor = Gwen::Color%s;', bg_color)
+        writer.putlnc('Gwen::Color font_color%s;', font_color)
+        writer.putlnc('combo_box.SetTextColorOverride(font_color);')
+        writer.putlnc('combo_box.m_Menu->m_Color = font_color;');
+        writer.putlnc('combo_box.m_Menu->m_BackgroundColor = combo_box.m_BackgroundColor;');
+
+        for _ in xrange(0, line_count):
+            line = data.readString()
+            writer.putlnc('combo_box.AddItem(L"%s");', line)
+
 
     def has_updates(self):
         return True

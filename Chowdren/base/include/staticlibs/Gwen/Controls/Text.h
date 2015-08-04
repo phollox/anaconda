@@ -67,7 +67,7 @@ namespace Gwen
 
 				virtual void SplitWords(const Gwen::UnicodeString &s, std::vector<Gwen::UnicodeString> &elems);
 			
-			private: 
+            public:
 
 				virtual void RefreshSizeWrap();
 

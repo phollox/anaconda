@@ -425,6 +425,8 @@ namespace Gwen
 				bool m_bCacheTextureDirty;
 				bool m_bCacheToTexture;
 
+                Gwen::Color m_BackgroundColor;
+
 				//
 				// Drag + Drop
 			public:

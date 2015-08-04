@@ -75,7 +75,7 @@ void ComboBox::Render( Skin::Base* skin )
 {
 	if ( !ShouldDrawBackground() ) { return; }
 
-	skin->DrawComboBox( this, IsDepressed(), IsMenuOpen() );
+    skin->DrawComboBox( this, IsDepressed(), IsMenuOpen() );
 }
 
 void ComboBox::Layout( Skin::Base* skin )

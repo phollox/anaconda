@@ -7,9 +7,6 @@ ComboBox::ComboBox(int x, int y, int type_id)
 : FrameObject(x, y, type_id), combo_box(gwen.canvas)
 {
     collision = new InstanceBox(this);
-    combo_box.AddItem(L"Hello");
-    combo_box.AddItem(L"World");
-    combo_box.AddItem(L"Test");
 }
 
 ComboBox::~ComboBox()

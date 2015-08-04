@@ -51,6 +51,7 @@ namespace Gwen
 				bool DeleteOnClose() { return m_bDeleteOnClose; }
 				void SetDeleteOnClose( bool b ) { m_bDeleteOnClose = b; }
 
+                Gwen::Color m_Color;
 
 			protected:
 

@@ -119,7 +119,7 @@ namespace Gwen
 				{
 					int w = control->Width();
 					int h = control->Height();
-					m_Render->SetDrawColor( m_colControlBright );
+					m_Render->SetDrawColor( control->m_BackgroundColor );
 					m_Render->DrawFilledRect( Gwen::Rect( 0, 0, w, h ) );
 
 					if ( !bPaddingDisabled )
@@ -276,7 +276,7 @@ namespace Gwen
 					Gwen::Rect rect = control->GetRenderBounds();
 					bool bHasFocus = control->HasFocus();
 					// Box inside
-					m_Render->SetDrawColor( Gwen::Color( 255, 255, 255, 255 ) );
+					m_Render->SetDrawColor( control->m_BackgroundColor );
 					m_Render->DrawFilledRect( Gwen::Rect( 1, 1, rect.w - 2, rect.h - 2 ) );
 					m_Render->SetDrawColor( m_colControlOutlineLight );
 					m_Render->DrawFilledRect( Gwen::Rect( rect.x + 1, rect.y, rect.w - 2, 1 ) );
