@@ -22,6 +22,7 @@ def init(converter):
     converter.add_define('CHOWDREN_FORCE_X360')
     converter.add_define('CHOWDREN_PASTE_CACHE')
     converter.add_define('CHOWDREN_DEFAULT_SCALE', 2)
+    converter.add_define('CHOWDREN_FORCE_16_9')
     # converter.add_define('CHOWDREN_PASTE_BROADPHASE')
 
     strings = converter.game.globalStrings.items

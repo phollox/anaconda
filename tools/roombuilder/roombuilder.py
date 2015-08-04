@@ -2,15 +2,15 @@ import sys
 sys.path.append('../../')
 
 from mmfparser.data.mfa import (MFA, Backdrop, FrameItem, ChunkList,
-                                ItemFolder, FrameInstance)
+                                ItemFolder, FrameInstance, QuickBackdrop)
 from mmfparser.bytereader import ByteReader
 from mmfparser.data.chunkloaders.imagebank import ImageItem
 from mmfparser.data.chunkloaders.objectinfo import BACKDROP, QUICKBACKDROP
 from mmfparser.data.chunkloaders.frame import NONE_PARENT
 from mmfparser.player.dialog import open_file_selector
+from mmfparser.data.chunkloaders import objects
 from PIL import Image
 
-import struct
 import sys
 import os
 
@@ -110,7 +110,8 @@ class Tiler(object):
         transparent = mask.getpixel((0, 0))
 
         if transparent != 0:
-            raise ValueError('The transparent color should be the first color in the palette')
+            raise ValueError('The transparent color should be the first color '
+                             'in the palette')
 
         buf = image.load()
 
@@ -123,7 +124,8 @@ class Tiler(object):
             tile_y = box[1] / self.y_size
             height = box[3] - box[1]
             width = box[2] - box[0]
-            new_image = Image.new('RGBA', (width, height), self.tileset_transparent)
+            new_image = Image.new('RGBA', (width, height),
+                                  self.tileset_transparent)
 
             buf2 = color_image.load()
             buf3 = new_image.load()
@@ -138,7 +140,8 @@ class Tiler(object):
                     buf3[(x, y)] = buf[(xx, yy)]
 
             obstacle = mask.getpixel((tile_x, tile_y)) == 255
-            self.create_object("%s%s" % (self.tileset, color), color, new_image, obstacle)
+            self.create_object("%s%s" % (self.tileset, color), color,
+                               new_image, obstacle)
 
         room_width = 0
         room_height = 0
@@ -181,7 +184,8 @@ class Tiler(object):
         transparent = mask.getpixel((0, 0))
 
         if transparent != 0:
-            raise ValueError('The transparent color should be the first color in the palette')
+            raise ValueError('The transparent color should be the first color '
+                             'in the palette')
 
         ini = open(os.path.join(DATA_DIR, tile_folder, 'tiles.ini'), 'w')
         for (_, color) in colors:
@@ -201,7 +205,8 @@ class Tiler(object):
                 for x in xrange(tile.size[0]):
                     if buf[(x, y)] == transparent_color:
                         buf[(x, y)] = (0, 0, 0, 0)
-            tile.save(os.path.join(DATA_DIR, tile_folder, "%s.png" % color), "PNG")
+            tile.save(os.path.join(DATA_DIR, tile_folder, "%s.png" % color),
+                      "PNG")
 
             x = box[0]
             y = box[1]
@@ -269,7 +274,7 @@ class Tiler(object):
         bank.itemDict[item.handle] = item
         return item
 
-    def create_object(self, name, key, image, obstacle):
+    def create_object(self, name, key, image, obstacle=False, size=None):
         item = self.create_image(image, False)
         icon = self.create_image(image, True)
 
@@ -278,7 +283,10 @@ class Tiler(object):
         frame.items.append(frameitem)
 
         frameitem.name = name
-        frameitem.objectType = BACKDROP
+        if size is not None:
+            frameitem.objectType = QUICKBACKDROP
+        else:
+            frameitem.objectType = BACKDROP
         frameitem.handle = self.object_id
         self.object_id += 1
         frameitem.transparent = True
@@ -287,10 +295,22 @@ class Tiler(object):
         frameitem.iconHandle = icon.handle
         frameitem.chunks = frameitem.new(ChunkList)
 
-        obj = frameitem.new(Backdrop)
+        if size is not None:
+            obj = frameitem.new(QuickBackdrop)
+            obj.width = size[0]
+            obj.height = size[1]
+            obj.shape = objects.RECTANGLE_SHAPE
+            obj.borderSize = 0
+            obj.borderColor = (0, 0, 0)
+            obj.fillType = objects.MOTIF_FILL
+            obj.color1 = (0, 0, 0)
+            obj.color2 = (0, 0, 0)
+            obj.image = item.handle
+        else:
+            obj = frameitem.new(Backdrop)
+            obj.handle = item.handle
         obj.obstacleType = 1 if obstacle else 0
         obj.collisionType = 0
-        obj.handle = item.handle
 
         frameitem.loader = obj
 
