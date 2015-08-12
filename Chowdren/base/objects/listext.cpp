@@ -61,15 +61,27 @@ const std::string & ListObject::get_current_line()
 
 int ListObject::find_string(const std::string & text, int flag)
 {
-    std::cout << "ListObject::find_string not implemented: " << text << " "
-        << flag << std::endl;
+#ifndef NDEBUG
+    if (flag != -1)
+        std::cout << "Unsupported find_string: " << flag << std::endl;
+#endif
+    for (int i = 0; i < int(lines.size()); ++i) {
+        if (starts_with(lines[i], text))
+            return i - index_offset;
+    }
     return -1;
 }
 
 int ListObject::find_string_exact(const std::string & text, int flag)
 {
-    std::cout << "ListObject::find_string_exact not implemented: "
-        << text << " " << flag << std::endl;
+#ifndef NDEBUG
+    if (flag != -1)
+        std::cout << "Unsupported find_string_exact: " << flag << std::endl;
+#endif
+    for (int i = 0; i < int(lines.size()); ++i) {
+        if (lines[i] == text)
+            return i - index_offset;
+    }
     return -1;
 }
 
@@ -103,4 +115,12 @@ void ListObject::disable_focus()
 void ListObject::sort()
 {
     std::sort(lines.begin(), lines.end());
+}
+
+void ListObject::set_current_line(int index)
+{
+    int i = index + index_offset;
+    if (i < 0 || i >= int(lines.size()))
+        return;
+    current_line = index;
 }

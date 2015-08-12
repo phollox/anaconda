@@ -185,7 +185,7 @@ class TextBlitter(ObjectWriter):
                           make_color(self.trans_color))
 
         writer.putlnc('wrap = %s;', bool(self.flags & FLAGS_WORDWRAPPING))
-        writer.putlnc('set_text(%r);', self.text)
+        writer.putlnc('set_text(%s);', self.converter.intern_string(self.text))
 
         writer.putlnc('has_callback = %s;', self.has_callback)
 

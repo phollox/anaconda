@@ -55,6 +55,7 @@ class ActionWriter(ACBase):
 class ConditionWriter(ACBase):
     is_always = None
     in_place = False
+    negate_select = True
     pre_event = None
     post_event = None
     precedence = 0

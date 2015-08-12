@@ -817,7 +817,7 @@ public:
     void select_single(FrameObject * obj)
     {
         int i;
-        for (i = 0; i < count; i++) {
+        for (i = 0; i < count; ++i) {
             ObjectList & list = *items[i];
             if (list.empty()) {
                 list.empty_selection();
@@ -828,6 +828,7 @@ public:
                 continue;
             }
             list.select_single(obj);
+            ++i;
             break;
         }
 

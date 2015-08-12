@@ -45,7 +45,8 @@ def get_system_color(index):
         return (0, 0, 0)
 
 def read_system_color(reader):
-    return get_system_color(reader.readInt(True))
+    value = reader.readInt(True)
+    return get_system_color(value)
 
 FLAGS = BitDict(
     'AlignTop',
@@ -119,19 +120,6 @@ class SystemBox(ObjectWriter):
         border2 = read_system_color(data)
         self.image = data.readShort()
 
-        if self.image == -1:
-            writer.putln('image = NULL;')
-            writer.putlnc('blend_color = %s;', make_color(fill))
-        else:
-            writer.putln('image = %s;' % self.converter.get_image(self.image))
-            if pattern:
-                writer.putln('type = PATTERN_IMAGE;')
-            elif align_center:
-                writer.putln('type = CENTER_IMAGE;')
-            elif align_top_left:
-                writer.putln('type = TOPLEFT_IMAGE;')
-            else:
-                raise NotImplementedError()
 
         data.skipBytes(2) # rData_wFree
         text_color = read_system_color(data)
@@ -153,22 +141,49 @@ class SystemBox(ObjectWriter):
         new_width = width - margin_left - margin_right
         new_height = height - margin_top - margin_bottom
 
+        alignment = []
+        if flags['AlignTop']:
+            alignment.append('ALIGN_TOP')
+        elif flags['AlignVerticalCenter']:
+            alignment.append('ALIGN_VCENTER')
+        elif flags['AlignBottom']:
+            alignment.append('ALIGN_BOTTOM')
+
+        if flags['AlignLeft']:
+            alignment.append('ALIGN_LEFT')
+        elif flags['AlignHorizontalCenter']:
+            alignment.append('ALIGN_HCENTER')
+        elif flags['AlignRight']:
+            alignment.append('ALIGN_RIGHT')
+
+        if alignment:
+            alignment = ' | '.join(alignment)
+        else:
+            alignment = '0'
+
+        if self.image == -1:
+            writer.putln('image = NULL;')
+            if border1 is None or fill is None:
+                color = (0, 0, 0, 0)
+            else:
+                color = fill + (255,)
+            writer.putlnc('blend_color = %s;', make_color(color))
+            writer.putlnc('text_color = %s;', make_color(text_color))
+            writer.putlnc('alignment = %s;', alignment)
+        else:
+            writer.putln('image = %s;' % self.converter.get_image(self.image))
+            if pattern:
+                writer.putln('type = PATTERN_IMAGE;')
+            elif align_center:
+                writer.putln('type = CENTER_IMAGE;')
+            elif align_top_left:
+                writer.putln('type = TOPLEFT_IMAGE;')
+            else:
+                raise NotImplementedError()
+
         if text:
             writer.putlnc('text = %r;', text)
 
-        if flags['AlignTop']:
-            y_align = 'top'
-        elif flags['AlignVerticalCenter']:
-            y_align = 'center'
-        elif flags['AlignBottom']:
-            y_align = 'bottom'
-
-        if flags['AlignLeft']:
-            x_align = 'left'
-        elif flags['AlignHorizontalCenter']:
-            x_align = 'center'
-        elif flags['AlignRight']:
-            x_align = 'right'
 
         version = data.readInt()
         hyperlink_color = read_system_color(data)

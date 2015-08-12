@@ -85,6 +85,8 @@ void set_gl_state()
     glTexCoordPointer(2, GL_FLOAT, 0, (void*)&render_texcoords2[0]);
 
     glClientActiveTexture(GL_TEXTURE0);
+
+    BaseShader::current = NULL;
 }
 
 #endif

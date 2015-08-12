@@ -22,6 +22,8 @@ public:
     int type;
     std::string text;
     FTSimpleLayout * layout;
+    Color text_color;
+    int alignment;
 
     SystemBox(int x, int y, int type_id);
     ~SystemBox();

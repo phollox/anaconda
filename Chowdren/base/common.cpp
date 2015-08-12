@@ -1717,7 +1717,7 @@ int FrameObject::get_direction()
 
 bool FrameObject::mouse_over()
 {
-    if (flags & DESTROYING)
+    if (flags & (DESTROYING | FADEOUT))
         return false;
     int x, y;
     frame->get_mouse_pos(&x, &y);
@@ -2741,16 +2741,18 @@ int get_joystick_degrees(int n)
 
 #define DEADZONE 0.15f
 #define DEADZONE_MUL (1.0f / (1.0f - 0.15f))
+#define DEADZONE_BIAS 0.01f
 
 float get_joystick_axis(int n, int axis)
 {
     float v = get_joystick_axis_raw(n, axis);
     if (v > DEADZONE)
-        return (v - DEADZONE) * DEADZONE_MUL;
+        v = (v - DEADZONE) * DEADZONE_MUL + DEADZONE_BIAS;
     else if (v < -DEADZONE)
-        return (v + DEADZONE) * DEADZONE_MUL;
+        v = (v + DEADZONE) * DEADZONE_MUL - DEADZONE_BIAS;
     else
-        return 0.0f;
+        v = 0.0f;
+    return clamp(v, -1.0f, 1.0f);
 }
 
 int get_joystick_z(int n)

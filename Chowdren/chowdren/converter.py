@@ -474,6 +474,12 @@ class MultiFileWriter(CodeWriter):
         self.putln('')
         self.index += 1
 
+    def ensure(self, count):
+        if self.function_count + count < self.max_count:
+            return
+        self.open_next()
+        self.function_count = 0
+
     def putmeth(self, name, *arg, **kw):
         self.function_count += 1
         if self.function_count >= self.max_count:
@@ -796,6 +802,7 @@ class Converter(object):
                                  lists_file, lists_header)
 
         # write object updates
+        event_file.ensure(1)
         update_calls = defaultdict(list)
         updated_objs = set()
         updaters = {}
@@ -2606,7 +2613,10 @@ class Converter(object):
                         object_name = '(*it)'
 
                 for write_condition in write_conditions:
-                    negated = not write_condition.is_negated()
+                    negated = write_condition.is_negated()
+                    select_obj = (not negated or
+                                  condition_writer.negate_select)
+                    negated = not negated
                     writer.putindent()
                     if negated:
                         writer.put('if (!(')
@@ -2630,7 +2640,10 @@ class Converter(object):
                     if negated:
                         writer.put(')')
                     if has_multiple:
-                        writer.put(') { it.deselect(); continue; }\n')
+                        if select_obj:
+                            writer.put(') { it.deselect(); continue; }\n')
+                        else:
+                            writer.putc(') %s\n', event_break)
 
                 if has_multiple:
                     writer.end_brace()

@@ -6,6 +6,7 @@ def init(converter):
     converter.add_define('CHOWDREN_FORCE_TRANSPARENT')
     converter.add_define('CHOWDREN_16BIT_IMAGE')
     converter.add_define('CHOWDREN_FORCE_TEXT_LAYOUT')
+    converter.add_define('CHOWDREN_TEXT_USE_UTF8')
 
 def init_container(converter, container):
     pass
@@ -105,7 +106,7 @@ def get_dynamic_loop_index(converter, exp):
     return None
 
 def get_fonts(converter):
-    return ('SmallFonts',)
+    return ('Escapists',)
 
 def use_edit_obj(converter):
     return True

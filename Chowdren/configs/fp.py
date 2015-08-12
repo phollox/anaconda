@@ -10,6 +10,7 @@ def init(converter):
     # converter.add_define('CHOWDREN_JOYSTICK2_CONTROLLER')
     converter.add_define('CHOWDREN_TEXTURE_GC')
     converter.add_define('CHOWDREN_FORCE_REMOTE')
+    converter.add_define('CHOWDREN_DISABLE_DPAD_BUTTONS')
 
     frameitems = converter.game.frameItems
     for item in frameitems.itemDict.itervalues():

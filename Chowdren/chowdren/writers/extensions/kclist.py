@@ -55,7 +55,7 @@ actions = make_table(ActionMethodWriter, {
     5 : 'clear',
     6 : 'add_line',
     8 : 'delete_line',
-    9 : '.current_line = %s',
+    9 : 'set_current_line',
     21 : 'disable_focus',
     30 : 'set_line(%s, %s)'
 })

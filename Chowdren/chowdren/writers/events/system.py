@@ -30,6 +30,9 @@ def get_repeat_name(group):
 def get_restrict_name(group):
     return 'restrict_%s' % group.unique_id
 
+def get_foreach_name(name, converter):
+    return 'foreach_%s_%s' % (name, converter.current_frame_index)
+
 PROFILE_LOOPS = set([])
 
 class SystemObject(ObjectWriter):
@@ -39,6 +42,7 @@ class SystemObject(ObjectWriter):
         self.converter = converter
         self.data = None
         self.foreach_names = {}
+        self.foreach_force_write = set()
 
     def write_frame(self, writer):
         self.write_group_activated(writer)
@@ -300,6 +304,7 @@ class SystemObject(ObjectWriter):
         self.foreach_names = {}
         self.converter.begin_events()
         for real_name, groups in loops.iteritems():
+            force_write = real_name in self.foreach_force_write
             obj = loop_objects[real_name]
             name = get_method_name(real_name)
             instance_name = 'foreach_instance_' + name
@@ -307,9 +312,22 @@ class SystemObject(ObjectWriter):
             object_class = self.converter.get_object_class(obj[1])
             self.converter.set_object(obj, '((%s)%s)' % (object_class,
                                                          instance_name))
-            name = 'foreach_%s_%s' % (name, self.converter.current_frame_index)
-            name = self.converter.write_generated(name, writer, groups)
-            self.foreach_names[real_name] = name
+            name = get_foreach_name(name, self.converter)
+            new_name = self.converter.write_generated(name, writer, groups)
+            self.foreach_names[real_name] = new_name
+            if force_write and new_name != name:
+                print 'creating wrapper for', real_name
+                # XXX add call rewrite feature
+                writer.putmeth('void %s' % new_name)
+                writer.putlnc('%s();', new_name)
+                writer.end_brace()
+            self.foreach_force_write.discard(real_name)
+
+        for name in self.foreach_force_write:
+            print 'creating dummy wrapper for', name
+            name = get_foreach_name(get_method_name(name), self.converter)
+            writer.putmeth('void %s' % name)
+            writer.end_brace()
 
     def write_loops(self, writer):
         self.loop_names = set()
@@ -535,6 +553,8 @@ class ObjectInvisible(ConditionWriter):
         return True
 
 class MouseOnObject(ConditionWriter):
+    negate_select = False
+
     def get_object(self):
         data = self.data.items[0].loader
         return data.objectInfo, data.objectType
@@ -1449,12 +1469,13 @@ class Foreach(ActionWriter):
             raise NotImplementedError()
         name = get_method_name(real_name)
         if real_name not in self.converter.system_object.foreach_names:
-            writer.putlnc('// nested foreach not implemented: %s',
-                          real_name)
-            writer.end_brace()
-            print 'foreach error! nested foreach not implemented yet'
-            return
-        func_call = self.converter.system_object.foreach_names[real_name]
+            self.converter.system_object.foreach_force_write.add(real_name)
+            func_call = get_foreach_name(name, self.converter)
+            # writer.end_brace()
+            # print 'foreach error! nested foreach not implemented yet'
+            # return
+        else:
+            func_call = self.converter.system_object.foreach_names[real_name]
         with self.converter.iterate_object(obj, writer):
             selected = self.converter.get_object(obj)
             writer.putlnc('foreach_instance_%s = %s;', name, selected)
@@ -1500,6 +1521,8 @@ class StartLoop(ActionWriter):
                 if real_name not in self.loop_warnings:
                     print 'Could not find loop %r' % real_name
                     print '(ignoring all future instances)'
+                    writer.putlnc('// could not find loop %s',
+                                  real_name)
                     self.loop_warnings.add(real_name)
                 return
             loop_funcs = self.converter.system_object.loop_funcs

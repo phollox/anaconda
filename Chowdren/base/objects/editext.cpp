@@ -43,7 +43,8 @@ void EditObject::enable_focus()
 #else
 
 EditObject::EditObject(int x, int y, int type_id)
-: FrameObject(x, y, type_id), edit_flags(0), edit_col(this), font(get_font(14))
+: FrameObject(x, y, type_id), edit_flags(0), edit_col(this),
+  font(get_font(14)), limit(-1)
 {
     collision = &edit_col;
 }
@@ -61,8 +62,10 @@ void EditObject::update()
     }
 
     if (!(edit_flags & FOCUS))
-        return; 
-    text += manager.input;
+        return;
+
+    if (limit == -1 || int(text.size()) < limit)
+        text += manager.input;
 
     if (is_key_pressed_once(SDLK_BACKSPACE))
         text = text.substr(0, text.size() - 1);
@@ -104,6 +107,10 @@ void EditObject::draw()
 
 void EditObject::set_text(const std::string & value)
 {
+    if (limit != -1) {
+        text = value.substr(0, limit);
+        return;
+    }
     text = value;
 }
 
@@ -119,7 +126,7 @@ bool EditObject::get_focus()
 
 void EditObject::set_limit(int size)
 {
-    std::cout << "Edit: set_limit not implemented" << std::endl;
+    limit = size;
 }
 
 void EditObject::disable_focus()

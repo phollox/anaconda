@@ -34,6 +34,7 @@ public:
     InstanceBox edit_col;
     std::string text;
     FTTextureFont * font;
+    int limit;
 
     void update();
     void draw();

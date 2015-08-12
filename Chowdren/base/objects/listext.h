@@ -37,6 +37,7 @@ public:
     int find_string(const std::string & text, int flag);
     int find_string_exact(const std::string & text, int flag);
     void sort();
+    void set_current_line(int index);
 };
 
 #endif // CHOWDREN_LISTEXT_H

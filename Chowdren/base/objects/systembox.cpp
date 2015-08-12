@@ -30,7 +30,7 @@ void SystemBox::draw()
         int y1 = y;
         int x2 = x1 + width;
         int y2 = y1 + height;
-        Render::draw_quad(x1, y1, x2, y2, Color(0, 0, 0));
+        Render::draw_quad(x1, y1, x2, y2, Color(0, 0, 0, blend_color.a));
         x1++;
         y1++;
         x2--;
@@ -44,7 +44,7 @@ void SystemBox::draw()
             layout = new FTSimpleLayout();
             font = get_font(12);
             layout->SetFont(font);
-            layout->SetAlignment(ALIGN_HCENTER);
+            layout->SetAlignment((TextAlignment)alignment);
             layout->SetLineLength(width);
         } else {
             font = get_font(12);
@@ -56,7 +56,7 @@ void SystemBox::draw()
         double box_h = bb.Upper().Y() - bb.Lower().Y(); 
         off_y += (height - box_h) * 0.5;
 
-        FTTextureFont::color = Color(0, 0, 0, 255);
+        FTTextureFont::color = text_color;
         layout->Render(text.c_str(), -1, FTPoint(x, int(off_y) - 1));
         // std::cout << "Draw system text: " << text << " " << name << std::endl;
         return;

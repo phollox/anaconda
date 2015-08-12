@@ -113,3 +113,19 @@ void convert_utf16_to_utf8(const std::string & value, std::string & out)
     out.resize(size_t(targetEnd - target));
     // return result;
 }
+
+void convert_windows1252_to_utf8(const std::string & value, std::string & out)
+{
+    std::string::const_iterator it;
+    out.clear();
+    for (it = value.begin(); it != value.end(); ++it) {
+        char c = *it;
+        unsigned char cc = (unsigned char)c;
+        if (cc < 128) {
+            out.push_back(c);
+        } else {
+            out.push_back(char(0xC2 + (cc > 0xBF)));
+            out.push_back(char(cc & 0x3F + 0x80));
+        }
+    }
+}

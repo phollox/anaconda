@@ -129,4 +129,11 @@ inline bool ends_with(const std::string & str, const std::string & suffix)
     return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
+inline bool starts_with(const std::string & str, const std::string & prefix)
+{
+    if (str.size() < prefix.size())
+        return false;
+    return str.compare(0, prefix.size(), prefix) == 0;
+}
+
 #endif // CHOWDREN_STRINGCOMMON_H
