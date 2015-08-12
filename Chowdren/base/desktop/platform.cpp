@@ -675,10 +675,10 @@ void platform_create_display(bool fullscreen)
 #ifdef __linux
     SDL_Surface * icon = SDL_LoadBMP("icon.bmp");
     if (icon == NULL) {
+        std::cout << "Could not load icon.bmp" << std::endl;
+    } else {
         SDL_SetWindowIcon(global_window, icon);
         SDL_FreeSurface(icon);
-    } else {
-        std::cout << "Could not load icon.bmp" << std::endl;
     }
 #endif
 
