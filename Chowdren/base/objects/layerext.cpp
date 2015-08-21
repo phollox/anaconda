@@ -20,12 +20,12 @@ void LayerObject::set_layer(int value)
 
 void LayerObject::hide_layer(int index)
 {
-    frame->layers[index].visible = false;
+    frame->layers[index].hide();
 }
 
 void LayerObject::show_layer(int index)
 {
-    frame->layers[index].visible = true;
+    frame->layers[index].show();
 }
 
 void LayerObject::set_position(int index, int x, int y)

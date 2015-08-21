@@ -227,3 +227,4 @@ def get_sized_data(data):
     return str(writer)
 
 TEMPORARY_GROUP_ID = 'thisisthetempid'
+TEMPORARY_GROUP_NAME = 'thisisthetempgroupname'

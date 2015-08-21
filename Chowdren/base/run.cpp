@@ -111,12 +111,16 @@ void GameManager::init()
 #elif defined(CHOWDREN_IS_FP)
     player_died = false;
     lives = 3;
-    // start_frame = 56;
+    start_frame = 31;
     // values->set(1, 2);
     // values->set(12, 2);
 #elif defined(CHOWDREN_IS_NAH)
     platform_set_scale_type(2);
-    // start_frame = 8;
+    // start_frame = 3;
+    // set_local("fre");
+    // values->set(13, 25);
+    // strings->set(23, "OBJETS");
+    // strings->set(9, "-fre");
 #else
     start_frame = 0;
 #endif
@@ -1088,7 +1092,6 @@ static void open_console()
     if (getenv("CHOWDREN_SHOW_DEBUGGER") == NULL)
         return;
 #endif
-
     int outHandle, errHandle, inHandle;
     FILE *outFile, *errFile, *inFile;
     AllocConsole();

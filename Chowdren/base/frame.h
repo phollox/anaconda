@@ -53,7 +53,7 @@ public:
     void paste(Image * img, int dest_x, int dest_y,
                int src_x, int src_y, int src_width, int src_height,
                int collision_type, int effect, const Color & color);
-    void draw(int v[4]);
+    void draw(Layer * layer, int v[4]);
     CollisionBase * collide(CollisionBase * a);
     CollisionBase * overlaps(CollisionBase * a);
 };
@@ -113,6 +113,9 @@ public:
                int src_x, int src_y, int src_width, int src_height,
                int collision_type, int effect, const Color & color);
     void draw(int off_x, int off_y);
+    void set_visible(bool value);
+    void show();
+    void hide();
 
 #ifdef CHOWDREN_HAS_MRT
     int remote;

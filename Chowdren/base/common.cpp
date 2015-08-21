@@ -10,7 +10,10 @@
 #include "overlap.cpp"
 #include "collision.cpp"
 #include "objects/active.h"
+
+#ifndef CHOWDREN_IS_WIIU
 #include "fbo.h"
+#endif
 
 // XXX move this?
 #include "staticlibs/utf16to8.cpp"
@@ -101,6 +104,12 @@ Background::Background()
     size = GET_BITARRAY_SIZE(size);
     col.data = (BaseBitArray::word_t*)malloc(size);
     memset(col.data, 0, size);
+#endif
+
+#ifdef CHOWDREN_PASTE_CACHE
+    dirty = true;
+    for (int i = 0; i < 4; ++i)
+        cache_pos[i] = 0;
 #endif
 }
 
@@ -350,7 +359,7 @@ void Background::paste(Image * img, int dest_x, int dest_y,
     int y1 = std::max(0, dest_y);
     int x2 = std::min(col_w, dest_x + src_width);
     int y2 = std::min(col_h, dest_y + src_height);
-    if (collision_type == 0) {
+    if (collision_type == 0 && color.a == 255) {
         for (int y = y1; y < y2; ++y)
         for (int x = x1; x < x2; ++x) {
             col.set(y * col_w + x);
@@ -371,7 +380,7 @@ void Background::paste(Image * img, int dest_x, int dest_y,
 #endif
 }
 
-void Background::draw(int v[4])
+void Background::draw(Layer * layer, int v[4])
 {
 #ifdef CHOWDREN_PASTE_CACHE
     if (dirty || !contains(cache_pos, v)) {
@@ -394,7 +403,7 @@ void Background::draw(int v[4])
                          cache_pos[3] - cache_pos[1]);
 		int old_offset[2] = {Render::offset[0], Render::offset[1]};
         Render::set_offset(-cache_pos[0], -cache_pos[1]);
-        Render::clear(255, 255, 255, 0);
+        Render::clear(0, 0, 0, 0);
 
         BackgroundItems::const_iterator it;
         for (it = items.begin(); it != items.end(); ++it) {
@@ -430,11 +439,13 @@ void Background::draw(int v[4])
 
     Texture t = fbo.get_tex();
 
+    Render::set_effect(Render::PREMUL);
     Render::draw_tex(cache_pos[0], cache_pos[1],
                      cache_pos[2], cache_pos[3],
                      Color(), t,
                      fbo_texcoords[0], fbo_texcoords[1],
                      fbo_texcoords[2], fbo_texcoords[3]);
+    Render::disable_effect();
 #else
 
 #ifdef CHOWDREN_PASTE_BROADPHASE
@@ -690,6 +701,11 @@ void Layer::update_position()
 
 void Layer::add_background_object(FrameObject * instance)
 {
+    if (visible)
+        instance->flags |= LAYER_VISIBLE;
+    else
+        instance->flags &= ~LAYER_VISIBLE;
+
     if (background_instances.empty())
         instance->depth = 0;
     else
@@ -735,6 +751,11 @@ inline unsigned int sub_depth(unsigned int start, unsigned int sub,
 
 void Layer::add_object(FrameObject * instance)
 {
+    if (visible)
+        instance->flags |= LAYER_VISIBLE;
+    else
+        instance->flags &= ~LAYER_VISIBLE;
+
     bool reset = false;
     if (instances.empty())
         instance->depth = LAYER_DEPTH_START;
@@ -755,8 +776,12 @@ void Layer::add_object(FrameObject * instance)
 
 void Layer::insert_object(FrameObject * instance, int index)
 {
-    bool reset = false;
+    if (visible)
+        instance->flags |= LAYER_VISIBLE;
+    else
+        instance->flags &= ~LAYER_VISIBLE;
 
+    bool reset = false;
     if (index == 0) {
         if (instances.empty())
             instance->depth = LAYER_DEPTH_START;
@@ -829,6 +854,42 @@ int Layer::get_level(FrameObject * instance)
         i++;
     }
     return -1;
+}
+
+void Layer::show()
+{
+    if (visible)
+        return;
+    visible = true;
+    LayerInstances::iterator it;
+    FlatObjectList::iterator it2;
+    for (it = instances.begin(); it != instances.end(); ++it) {
+        it->flags |= LAYER_VISIBLE;
+    }
+
+    for (it2 = background_instances.begin();
+         it2 != background_instances.end(); ++it2)
+    {
+        (*it2)->flags |= LAYER_VISIBLE;
+    }
+}
+
+void Layer::hide()
+{
+    if (!visible)
+        return;
+    visible = false;
+    LayerInstances::iterator it;
+    FlatObjectList::iterator it2;
+    for (it = instances.begin(); it != instances.end(); ++it) {
+        it->flags &= ~LAYER_VISIBLE;
+    }
+
+    for (it2 = background_instances.begin();
+         it2 != background_instances.end(); ++it2)
+    {
+        (*it2)->flags &= ~LAYER_VISIBLE;
+    }
 }
 
 void Layer::destroy_backgrounds()
@@ -1003,7 +1064,7 @@ void Layer::draw(int display_x, int display_y)
 
     // draw pasted items
     if (back != NULL) {
-        back->draw(v);
+        back->draw(this, v);
     }
 
     PROFILE_END();

@@ -107,7 +107,10 @@ enum ObjectFlags
     HAS_COLLISION_CACHE = (1 << 8),
     HAS_COLLISION = (1 << 9),
     DEFER_COLLISIONS = (1 << 10),
-    REPEAT_BACK_COLLISION = (1 << 11)
+    REPEAT_BACK_COLLISION = (1 << 11),
+    LAYER_VISIBLE = (1 << 12),
+
+    ALL_VISIBLE = VISIBLE | LAYER_VISIBLE
 };
 
 enum AnimationIndex
@@ -356,6 +359,10 @@ public:
     virtual void set_angle(float angle, int quality = 0);
     void create_alterables();
     void set_visible(bool value);
+    bool get_visible()
+    {
+        return (flags & ALL_VISIBLE) == ALL_VISIBLE;
+    }
     void set_blend_color(int color);
     virtual void draw();
     void draw_image(Image * img, int x, int y, Color c);

@@ -7,6 +7,8 @@
 #include <string.h>
 #include "media.h"
 
+// #define USE_PARTOPEN
+
 namespace ChowdrenAudio {
 
 template <typename T>
@@ -32,8 +34,6 @@ public:
 
     std::size_t get_samples()
     {
-        if (samples == std::size_t(-1))
-            post_init();
         return samples;
     }
 
@@ -50,6 +50,7 @@ ov_callbacks callbacks = {
     tell_func
 };
 
+
 class OggDecoder : public SoundDecoder
 {
 public:
@@ -60,26 +61,33 @@ public:
     OggVorbis_File ogg_file;
     vorbis_info * ogg_info;
     int ogg_bitstream;
-    bool fully_open;
 
     OggDecoder(FSFile & fp, size_t size)
-    : ogg_info(NULL), ogg_bitstream(0), size(size), fully_open(false), fp(fp)
+    : ogg_info(NULL), ogg_bitstream(0), size(size), fp(fp)
     {
         start = fp.tell();
         pos = 0;
 
-        if (ov_test_callbacks((void*)this, &ogg_file, NULL, 0, callbacks) != 0)
+        if (ov_open_callbacks((void*)this, &ogg_file, NULL, 0, callbacks) != 0)
+        {
+#ifndef NDEBUG
+            std::cout << "ov_open_callbacks failed" << std::endl;
+#endif
             return;
+        }
 
         ogg_info = ov_info(&ogg_file, -1);
         if (!ogg_info) {
+#ifndef NDEBUG
+            std::cout << "ov_info failed" << std::endl;
+#endif
             ov_clear(&ogg_file);
             return;
         }
 
         channels = ogg_info->channels;
         sample_rate = ogg_info->rate;
-        samples = -1;
+        samples = ov_pcm_total(&ogg_file, -1) * channels;
     }
 
     ~OggDecoder()
@@ -94,20 +102,10 @@ public:
         return ogg_info != NULL;
     }
 
-    void post_init()
-    {
-        if (ogg_file.ready_state != PARTOPEN)
-            return;
-        ov_test_open(&ogg_file);
-        samples = ov_pcm_total(&ogg_file, -1) * channels;
-    }
-
     size_t read(signed short * sdata, std::size_t samples)
     {
         if (!(sdata && samples))
             return 0;
-        if (ogg_file.ready_state == PARTOPEN)
-            post_init();
         unsigned int got = 0;
         int bytes = samples * 2;
         char * data = (char*)sdata;
@@ -130,8 +128,6 @@ public:
 
     void seek(double value)
     {
-        if (ogg_file.ready_state == PARTOPEN)
-            post_init();
         value = std::max(0.0, value);
         int ret = ov_time_seek(&ogg_file, value);
         if (ret == 0)

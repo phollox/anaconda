@@ -115,6 +115,11 @@ void shader_set_effect(int effect, FrameObject * obj,
             SET_BLEND_FUNC(FUNC_SRC_ALPHA, FUNC_ONE,
                            FUNC_ZERO, FUNC_ONE);
             break;
+        case Render::PREMUL:
+            texture_shader.begin(NULL, 0, 0);
+            SET_BLEND_FUNC(FUNC_ONE, FUNC_ONE_MINUS_SRC_ALPHA,
+                           FUNC_ONE, FUNC_ONE_MINUS_SRC_ALPHA);
+            break;
         HANDLE_SHADER(FONTOUTLINE, fontoutline_shader);
         HANDLE_SHADER(BRIGHTSATBG, brightsatbg_shader);
         HANDLE_SHADER(PERSPECTIVE, perspective_shader);

@@ -161,8 +161,8 @@ class Active(ObjectWriter):
                 writer.putlnc('static Direction %s = {%s, %s, %s, %s, %s, %s, '
                               '%s};', direction_name, direction_index,
                               direction.minSpeed, direction.maxSpeed,
-                              direction.backTo, loop_count, images_name,
-                              image_count)
+                              direction.backTo, loop_count, image_count,
+                              images_name)
                 direction_map[direction_index] = '&%s' % direction_name
 
             directions = []

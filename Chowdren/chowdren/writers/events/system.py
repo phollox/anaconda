@@ -545,9 +545,8 @@ class OnBackgroundCollision(CollisionCondition):
             func_name = 'overlaps_background'
         writer.put('%s()' % func_name)
 
-class ObjectInvisible(ConditionWriter):
-    def write(self, writer):
-        writer.put('flags & VISIBLE')
+class ObjectInvisible(ConditionMethodWriter):
+    method = 'get_visible'
 
     def is_negated(self):
         return True
@@ -2243,7 +2242,7 @@ conditions = make_table(ConditionMethodWriter, {
     'Compare' : make_comparison('%s'),
     'IsOverlapping' : IsOverlapping,
     'OnCollision' : OnCollision,
-    'ObjectVisible' : '.flags & VISIBLE',
+    'ObjectVisible' : 'get_visible',
     'ObjectInvisible' : ObjectInvisible,
     'WhileMousePressed' : 'is_mouse_pressed',
     'MouseOnObject' : MouseOnObject,

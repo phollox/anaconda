@@ -28,7 +28,8 @@ from chowdren.writers.events.system import SystemObject
 from chowdren.writers.objects.system import system_objects
 from chowdren.common import (get_method_name, get_class_name, check_digits,
     to_c, make_color, parse_direction, get_base_path, get_root_path, makedirs,
-    is_qualifier, get_qualifier, TEMPORARY_GROUP_ID, get_color_tuple)
+    is_qualifier, get_qualifier, TEMPORARY_GROUP_ID, TEMPORARY_GROUP_NAME,
+    get_color_tuple)
 from chowdren.writers.extensions import load_extension_module
 from chowdren.key import VK_TO_SDL, VK_TO_NAME, convert_key, KEY_TO_NAME
 from chowdren import extra
@@ -382,6 +383,10 @@ class EventGroup(object):
             raise NotImplementedError()
         new_id = '%s_%s' % (self.global_id, self.converter.current_frame_index)
         data = data.replace(TEMPORARY_GROUP_ID, new_id)
+        container_name = 'None'
+        if self.container:
+            container_name = self.container.name
+        data = data.replace(TEMPORARY_GROUP_NAME, container_name)
         return data
 
     def fire_write_callbacks(self):
@@ -2559,8 +2564,8 @@ class Converter(object):
             if has_container_check:
                 condition = self.get_container_check(container)
                 writer.putln('if (!(%s)) %s' % (condition, event_break))
-            elif container:
-                writer.putln('// group: %s' % container.name)
+            else:
+                writer.putlnc('// group: %s', TEMPORARY_GROUP_NAME)
 
             condition_index = -1
             while condition_index < len(conditions) - 1:

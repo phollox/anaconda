@@ -102,6 +102,8 @@ void Text::draw()
 
 void Text::set_string(const std::string & value)
 {
+    if (text == value)
+        return;
     text = value;
     draw_text_set = false;
 }

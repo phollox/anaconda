@@ -345,7 +345,7 @@ void TextBlitter::draw()
     int yy = y + y_scroll;
     if (alignment & ALIGN_VCENTER)
         yy += height / 2 - lines.size() * char_height / 2
-              - (lines.size() - 1) * y_spacing;
+              - (lines.size()) * y_spacing / 2;
 
     int bottom_y = y + height;
 

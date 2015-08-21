@@ -92,7 +92,7 @@ void Active::force_speed(int value)
     int delta = direction_data->max_speed - direction_data->min_speed;
     if (delta != 0) {
         value = (value * delta) / 100 + direction_data->min_speed;
-        value = std::min(direction_data->max_speed, value);
+        value = std::min<int>(direction_data->max_speed, value);
     }
     forced_speed = value;
 
@@ -501,7 +501,11 @@ void Active::paste(int collision_type)
 
 bool Active::test_animation(int value)
 {
+#ifdef CHOWDREN_IS_NAH
+    // XXX this is necessary since an animation is forced beyond bounds,
+    // and we use real animation index for current_animation
     value = std::min(value, animations->count - 1);
+#endif
     if (value != current_animation)
         return false;
     if (loop_count == 0)

@@ -235,11 +235,7 @@ if(APPLE)
     set(MACOSX_BUNDLE_BUNDLE_VERSION "${APP_VERSION}")
     set(MACOSX_BUNDLE_COPYRIGHT "${APP_COPYRIGHT}")
     set(DATA_SRCS ${DATA_SRCS} "${CMAKE_SOURCE_DIR}/${MACOSX_BUNDLE_ICON_FILE}")
-    # set(DATA_SRCS ${DATA_SRCS} "${CHOWDREN_BASE_DIR}/alsoft.conf")
 endif()
-
-# include alsoft.conf
-# set(DATA_SRCS ${DATA_SRCS} "${CHOWDREN_BASE_DIR}/alsoft.conf")
 
 if(LINUX)
     set(DATA_SRCS ${DATA_SRCS} "${CHOWDREN_BASE_DIR}/run.sh")
