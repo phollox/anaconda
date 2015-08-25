@@ -104,6 +104,9 @@ void Text::set_string(const std::string & value)
 {
     if (text == value)
         return;
+    if (name == "Dialogue 2") {
+        std::cout << "Set dialogue 2: " << value << std::endl;
+    }
     text = value;
     draw_text_set = false;
 }

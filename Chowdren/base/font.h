@@ -388,10 +388,9 @@ class FTSimpleLayout
 {
     public:
         FTSimpleLayout();
-        FTBBox BBox(const char* string, const int len = -1,
-                    FTPoint position = FTPoint());
-        FTBBox BBox(const wchar_t* string, const int len = -1,
-                    FTPoint position = FTPoint());
+        FTBBox BBox(const char* string, const int len = -1);
+        FTBBox BBoxL(const char* string, const int len = -1);
+        FTBBox BBox(const wchar_t* string, const int len = -1);
         int get_lines(const char * s, const int len = -1);
         void Render(const char *string, const int len = -1,
                     FTPoint position = FTPoint());
@@ -417,17 +416,10 @@ class FTSimpleLayout
         float lineSpacing;
         float tabSpacing;
 
-        void WrapText(const char *buf, const int len, FTPoint position,
-                      FTBBox *bounds);
-        void WrapText(const wchar_t *buf, const int len, FTPoint position,
-                      FTBBox *bounds);
         void OutputWrapped(const char *buf, const int len, FTPoint position,
                            const float RemainingWidth, FTBBox *bounds);
         void OutputWrapped(const wchar_t *buf, const int len, FTPoint position,
                            const float RemainingWidth, FTBBox *bounds);
-
-        template <typename T>
-        inline FTBBox BBoxI(const T* string, const int len, FTPoint position);
 
         template <typename T>
         inline void RenderI(const T* string, const int len,

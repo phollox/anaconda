@@ -19,6 +19,11 @@ def init(converter):
     converter.add_define('CHOWDREN_TEXT_USE_UTF8')
     converter.add_define('CHOWDREN_INI_USE_UTF8')
 
+def init_obj(converter, obj):
+    if obj.data.name == 'Dialogue 2':
+        # we could use use_iteration_index, but let's use a simple fix
+        obj.common.text.items[0].value = ''
+
 def use_image_preload(converter):
     return True
 

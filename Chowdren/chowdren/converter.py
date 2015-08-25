@@ -51,6 +51,7 @@ import cPickle
 import multiprocessing
 from chowdren.local import write_locals
 from chowdren import transition
+from chowdren.runinfo import RunInfo
 
 WRITE_SOUNDS = True
 PROFILE = False
@@ -758,6 +759,7 @@ class Converter(object):
         self.global_object_data = {}
         self.back_ids = {}
         self.name_to_writer = defaultdict(list)
+        self.qualifier_objects = defaultdict(set)
 
         self.extension_includes = set()
         self.extension_sources = set()
@@ -765,6 +767,9 @@ class Converter(object):
         self.application_writers = set()
 
         self.type_ids = itertools.count(2)
+
+        # runinfo
+        self.runinfo = RunInfo(self, self.get_filename('runinfo.dat'))
 
         for game_index, game in enumerate(self.games):
             self.game_index = game_index
@@ -796,15 +801,23 @@ class Converter(object):
         self.processed_frames = []
         self.frame_srcs = []
 
+        # import objgraph
         for game in self.games:
             self.frame_index_offset = game.frame_offset
             self.game = game
             self.game_index = game.index
             frame_dict = dict(enumerate(game.frames))
             frame_dict = self.config.get_frames(game, frame_dict)
+            # objgraph.show_growth(limit=8)
             for frame in frame_dict.itervalues():
+                print 'Write frame:', frame.offset_index
                 self.write_frame(frame.offset_index, frame, event_file,
                                  lists_file, lists_header)
+                # import gc
+                # gc.collect()
+                # objgraph.show_growth(limit=8)
+                # import code
+                # code.interact(local=locals())
 
         # write object updates
         event_file.ensure(1)
@@ -1091,6 +1104,9 @@ class Converter(object):
         with open(self.get_filename('strings.py'), 'wb') as fp:
             fp.write(repr(self.strings.keys()))
 
+        with open(self.get_filename('qualifiers.py'), 'wb') as fp:
+            fp.write(repr(dict(self.qualifier_objects)))
+
         if not self.assets.skip:
             self.write_config(self.info_dict, 'config.py')
             self.assets.write_code()
@@ -1320,10 +1336,14 @@ class Converter(object):
         self.qualifier_names = {}
         self.qualifiers = {}
         self.qualifier_types = {}
+        self.qualifier_runinfo = {}
         qualifier_setup = {}
         for qualifier in events.qualifier_list:
             qual_obj = (qualifier.objectInfo, qualifier.type)
             object_infos = qualifier.resolve_objects(self.game.frameItems)
+
+            runinfo = self.runinfo.get_qualifier(qualifier.getQualifier())
+            self.qualifier_runinfo[qual_obj] = runinfo
             object_infos = tuple(
                 [self.filter_object_type((info, qualifier.type))
                 for info in object_infos])
@@ -1862,11 +1882,11 @@ class Converter(object):
             name = frameitem.name
             self.name_to_item[(name, self.game_index)] = frameitem
             handle = (frameitem.handle, frameitem.objectType, self.game_index)
+            source_id = self.object_class_index
             if name is None:
                 class_name = 'Object%s' % handle[0]
             else:
-                class_name = (get_class_name(name) + '_' +
-                              str(self.object_class_index))
+                class_name = (get_class_name(name) + '_' + str(source_id))
             self.object_class_index += 1
             object_type = frameitem.properties.objectType
             try:
@@ -1986,6 +2006,9 @@ class Converter(object):
         # write qualifiers in comments so the object aliases properly
         try:
             qualifiers = common.qualifiers[:]
+            name = object_writer.data.name
+            for qualifier in qualifiers:
+                self.qualifier_objects[(qualifier, self.game_index)].add(name)
             qualifiers.sort()
             qualifiers = [str(item) for item in qualifiers]
             qualifiers = ', '.join(qualifiers)
@@ -3125,6 +3148,13 @@ class Converter(object):
         elif obj == self.iterated_object:
             return True
         return False
+
+    def get_runinfo(self, obj):
+        if len(obj) == 2:
+            obj = obj + (self.game_index,)
+        if is_qualifier(obj[0]):
+            return self.qualifier_runinfo.get(obj, None)
+        return self.runinfo.objects.get(obj, None)
 
     def get_object(self, obj, as_list=False, use_default=False, index=None):
         handle = obj[0]

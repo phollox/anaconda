@@ -599,6 +599,15 @@ void GameManager::reset_map()
 
 bool GameManager::update()
 {
+#ifdef CHOWDREN_USE_DYNAMIC_NUMBER
+    static int save_time = 0;
+    save_time--;
+    if (save_time <= 0) {
+        save_alterable_debug();
+        save_time += 60;
+    }
+#endif
+
 #ifdef SHOW_STATS
     bool show_stats = false;
     static int measure_time = 0;

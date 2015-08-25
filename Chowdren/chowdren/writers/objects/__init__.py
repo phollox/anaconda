@@ -235,6 +235,16 @@ class ObjectWriter(BaseWriter):
 
             writer.indent()
 
+        runinfo = self.converter.get_runinfo(self.handle)
+        if runinfo is None:
+            pass
+            # print 'Missing runinfo:', self.data.name
+        else:
+            for k, v in runinfo.iteritems():
+                if v != 3:
+                    continue
+                writer.putlnc('alterables->values.set_fp(%s);', k)
+
         common = self.common
         if common.values:
             for index, value in enumerate(common.values.items):

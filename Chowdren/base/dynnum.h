@@ -4,6 +4,13 @@
 #include "chowconfig.h"
 #include <iostream>
 
+#define CHOWDREN_FORCE_ALT_DOUBLE
+
+#if !defined(NDEBUG) && defined(CHOWDREN_IS_DESKTOP) && \
+    !defined(CHOWDREN_FORCE_ALT_DOUBLE)
+#define CHOWDREN_USE_DYNAMIC_NUMBER
+#endif
+
 #ifdef CHOWDREN_USE_DYNAMIC_NUMBER
 
 struct DynamicNumber
@@ -26,6 +33,11 @@ struct DynamicNumber
     {
     }
 
+    DynamicNumber(float value)
+    : value(value), is_fp(true)
+    {
+    }
+
     DynamicNumber(double value, bool is_fp)
     : value(value), is_fp(is_fp)
     {
@@ -38,9 +50,17 @@ struct DynamicNumber
         return *this;
     }
 
-    // plus
-    template <typename T>
-    DynamicNumber operator+(T rhs)
+    DynamicNumber operator+(int rhs)
+    {
+        return *this + DynamicNumber(rhs);
+    }
+
+    DynamicNumber operator+(double rhs)
+    {
+        return *this + DynamicNumber(rhs);
+    }
+
+    DynamicNumber operator+(float rhs)
     {
         return *this + DynamicNumber(rhs);
     }
@@ -51,8 +71,17 @@ struct DynamicNumber
     }
 
     // minus
-    template <typename T>
-    DynamicNumber operator-(T rhs)
+    DynamicNumber operator-(int rhs)
+    {
+        return *this - DynamicNumber(rhs);
+    }
+
+    DynamicNumber operator-(double rhs)
+    {
+        return *this - DynamicNumber(rhs);
+    }
+
+    DynamicNumber operator-(float rhs)
     {
         return *this - DynamicNumber(rhs);
     }
@@ -63,8 +92,17 @@ struct DynamicNumber
     }
 
     // multiply
-    template <typename T>
-    DynamicNumber operator*(T rhs)
+    DynamicNumber operator*(int rhs)
+    {
+        return *this * DynamicNumber(rhs);
+    }
+
+    DynamicNumber operator*(double rhs)
+    {
+        return *this * DynamicNumber(rhs);
+    }
+
+    DynamicNumber operator*(float rhs)
     {
         return *this * DynamicNumber(rhs);
     }
@@ -75,8 +113,17 @@ struct DynamicNumber
     }
 
     // divide
-    template <typename T>
-    DynamicNumber operator/(T rhs)
+    DynamicNumber operator/(int rhs)
+    {
+        return *this / DynamicNumber(rhs);
+    }
+
+    DynamicNumber operator/(double rhs)
+    {
+        return *this / DynamicNumber(rhs);
+    }
+
+    DynamicNumber operator/(float rhs)
     {
         return *this / DynamicNumber(rhs);
     }
@@ -84,7 +131,7 @@ struct DynamicNumber
     DynamicNumber operator/(DynamicNumber rhs)
     {
         if (!is_fp && !rhs.is_fp)
-            return DynamicNumber(int(value / rhs.value));
+            return DynamicNumber(int(value) / int(rhs.value));
         return DynamicNumber(value / rhs.value);
     }
 
@@ -99,28 +146,64 @@ struct DynamicNumber
     }
 };
 
-// lhs type T as first argument
+// lhs as first argument
 
-template <typename T>
-DynamicNumber operator+(T lhs, DynamicNumber rhs)
+inline DynamicNumber operator+(int lhs, DynamicNumber rhs)
 {
     return DynamicNumber(lhs) + rhs;
 }
 
-template <typename T>
-DynamicNumber operator-(T lhs, DynamicNumber rhs)
+inline DynamicNumber operator+(double lhs, DynamicNumber rhs)
+{
+    return DynamicNumber(lhs) + rhs;
+}
+
+inline DynamicNumber operator+(float lhs, DynamicNumber rhs)
+{
+    return DynamicNumber(lhs) + rhs;
+}
+
+inline DynamicNumber operator-(int lhs, DynamicNumber rhs)
 {
     return DynamicNumber(lhs) - rhs;
 }
 
-template <typename T>
-DynamicNumber operator/(T lhs, DynamicNumber rhs)
+inline DynamicNumber operator-(double lhs, DynamicNumber rhs)
+{
+    return DynamicNumber(lhs) - rhs;
+}
+
+inline DynamicNumber operator-(float lhs, DynamicNumber rhs)
+{
+    return DynamicNumber(lhs) - rhs;
+}
+
+inline DynamicNumber operator/(int lhs, DynamicNumber rhs)
 {
     return DynamicNumber(lhs) / rhs;
 }
 
-template <typename T>
-DynamicNumber operator*(T lhs, DynamicNumber rhs)
+inline DynamicNumber operator/(double lhs, DynamicNumber rhs)
+{
+    return DynamicNumber(lhs) / rhs;
+}
+
+inline DynamicNumber operator/(float lhs, DynamicNumber rhs)
+{
+    return DynamicNumber(lhs) / rhs;
+}
+
+inline DynamicNumber operator*(int lhs, DynamicNumber rhs)
+{
+    return DynamicNumber(lhs) * rhs;
+}
+
+inline DynamicNumber operator*(double lhs, DynamicNumber rhs)
+{
+    return DynamicNumber(lhs) * rhs;
+}
+
+inline DynamicNumber operator*(float lhs, DynamicNumber rhs)
 {
     return DynamicNumber(lhs) * rhs;
 }

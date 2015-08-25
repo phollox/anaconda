@@ -35,7 +35,7 @@ void SystemBox::draw()
         y1++;
         x2--;
         y2--;
-        Render::draw_quad(x1, y1, x2, y2, blend_color);
+        Render::draw_quad(x1, y1, x2, y2, box_color);
 
         FTTextureFont * font;
         if (layout == NULL) {
@@ -56,7 +56,7 @@ void SystemBox::draw()
         double box_h = bb.Upper().Y() - bb.Lower().Y(); 
         off_y += (height - box_h) * 0.5;
 
-        FTTextureFont::color = text_color;
+        FTTextureFont::color = blend_color;
         layout->Render(text.c_str(), -1, FTPoint(x, int(off_y) - 1));
         // std::cout << "Draw system text: " << text << " " << name << std::endl;
         return;
@@ -151,7 +151,7 @@ void SystemBox::set_border_2(Color color)
 
 void SystemBox::set_fill(Color color)
 {
-    blend_color = color;
+    box_color = color;
 }
 
 const std::string & SystemBox::get_font_name()

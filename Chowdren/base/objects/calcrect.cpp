@@ -16,7 +16,7 @@ void CalcRect::set_text(const std::string & text)
     if (!layout_init)
         set_font(empty_string, 12, 0);
     calc_text = text;
-    FTBBox bb = layout.BBox(text.c_str(), -1);
+    FTBBox bb = layout.BBoxL(text.c_str(), -1);
     calc_width = bb.Upper().X() - bb.Lower().X();
     calc_height = bb.Upper().Y() - bb.Lower().Y();
     // std::cout << "calc size: " << text << " " << calc_width << " "

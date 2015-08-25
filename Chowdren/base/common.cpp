@@ -1735,9 +1735,57 @@ void FrameObject::set_y(int new_y)
     collision->update_proxy();
 }
 
+#ifdef CHOWDREN_USE_DYNAMIC_NUMBER
+static bool alterable_debug_loaded = false;
+static hash_map<std::string, AlterableValues::AlterableDebug> alterable_debug;
+
+static void load_alterable_debug()
+{
+    if (alterable_debug_loaded)
+        return;
+	alterable_debug_loaded = true;
+    FSFile fp("runinfo.dat", "r");
+    if (!fp.is_open())
+        return;
+    FileStream stream(fp);
+    int count = stream.read_uint32();
+    std::string name;
+    for (int i = 0; i < count; ++i) {
+        stream.read_string(name, stream.read_uint32());
+        AlterableValues::AlterableDebug & debug = alterable_debug[name];
+        for (int i = 0; i < ALT_VALUES; ++i) {
+            debug.is_fp[i] = stream.read_uint8();
+        }
+    }
+}
+
+void save_alterable_debug()
+{
+    if (!alterable_debug_loaded)
+        return;
+    FSFile fp("runinfo.dat", "w");
+    WriteStream stream;
+    stream.write_uint32(alterable_debug.size());
+    hash_map<std::string, AlterableValues::AlterableDebug>::iterator it;
+    for (it = alterable_debug.begin(); it != alterable_debug.end(); ++it) {
+        stream.write_uint32(it->first.size());
+        stream.write_string(it->first);
+        AlterableValues::AlterableDebug & debug = it->second;
+        for (int i = 0; i < ALT_VALUES; ++i) {
+            stream.write_uint8(debug.is_fp[i]);
+        }
+    }
+    stream.save(fp);
+}
+#endif
+
 void FrameObject::create_alterables()
 {
     alterables = Alterables::create();
+#ifdef CHOWDREN_USE_DYNAMIC_NUMBER
+    load_alterable_debug();
+    alterables->values.debug = &alterable_debug[name];
+#endif
 }
 
 void FrameObject::set_visible(bool value)
@@ -1853,8 +1901,8 @@ bool FrameObject::overlaps_background()
 #ifdef CHOWDREN_PASTE_PRECEDENCE
 		int col_w = b->col_w;
 		BitArray & col = b->col;
-        int test[4] = {std::max(0, aabb[0]), std::min(col_w, aabb[1]),
-                       std::max(0, aabb[2]), std::min(b->col_h, aabb[3])};
+        int test[4] = {std::max(0, aabb[0]), std::max(0, aabb[1]),
+                       std::min(col_w, aabb[2]), std::min(b->col_h, aabb[3])};
         bool miss = false;
         for (int y = test[1]; y < test[3]; ++y)
         for (int x = test[0]; x < test[2]; ++x) {

@@ -727,29 +727,30 @@ FTSimpleLayout::FTSimpleLayout()
     tabSpacing = 1.0f / 0.6f;
 }
 
-
-template <typename T>
-inline FTBBox FTSimpleLayout::BBoxI(const T* string, const int len,
-                                    FTPoint position)
+FTBBox FTSimpleLayout::BBox(const char *string, const int len)
 {
     FTBBox tmp;
-    WrapText(string, len, position, &tmp);
-
+    int lines;
+    WrapTextI(string, len, FTPoint(), &tmp, lines);
     return tmp;
 }
 
-
-FTBBox FTSimpleLayout::BBox(const char *string, const int len,
-                            FTPoint position)
+FTBBox FTSimpleLayout::BBoxL(const char *string, const int len)
 {
-    return BBoxI(string, len, position);
+    FTBBox tmp;
+    int lines;
+    WrapTextI(string, len, FTPoint(), &tmp, lines);
+    double h = lines * currentFont->LineHeight();
+    tmp.upper.values[1] = tmp.lower.values[1] + h;
+    return tmp;
 }
 
-
-FTBBox FTSimpleLayout::BBox(const wchar_t *string, const int len,
-                            FTPoint position)
+FTBBox FTSimpleLayout::BBox(const wchar_t *string, const int len)
 {
-    return BBoxI(string, len, position);
+    FTBBox tmp;
+    int lines;
+    WrapTextI(string, len, FTPoint(), &tmp, lines);
+    return tmp;
 }
 
 int FTSimpleLayout::get_lines(const char * string, const int len)
@@ -769,7 +770,9 @@ inline void FTSimpleLayout::RenderI(const T *string, const int len,
         Render::set_effect(Render::FONT);
     }
     pen = FTPoint(0.0f, 0.0f);
-    WrapText(string, len, position, NULL);
+
+    int lines;
+    WrapTextI(string, len, position, NULL, lines);
 
     if (!FTTextureFont::custom_shader) {
         Render::disable_effect();
@@ -975,23 +978,6 @@ inline void FTSimpleLayout::WrapTextI(const T *buf, const int len,
                       remainingWidth, bounds);
     }
 }
-
-
-void FTSimpleLayout::WrapText(const char *buf, const int len,
-                              FTPoint position, FTBBox *bounds)
-{
-    int lines;
-    WrapTextI(buf, len, position, bounds, lines);
-}
-
-
-void FTSimpleLayout::WrapText(const wchar_t* buf, const int len,
-                              FTPoint position, FTBBox *bounds)
-{
-    int lines;
-    WrapTextI(buf, len, position, bounds, lines);
-}
-
 
 template <typename T>
 inline void FTSimpleLayout::OutputWrappedI(const T *buf, const int len,

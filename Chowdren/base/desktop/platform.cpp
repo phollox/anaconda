@@ -43,8 +43,14 @@ static SDL_GLContext global_context = NULL;
 static bool is_fullscreen = false;
 static int fullscreen_width = -1;
 static int fullscreen_height = -1;
+
+#ifdef CHOWDREN_DEFAULT_SCALE
+static int windowed_width = WINDOW_WIDTH * CHOWDREN_DEFAULT_SCALE;
+static int windowed_height = WINDOW_HEIGHT * CHOWDREN_DEFAULT_SCALE;
+#else
 static int windowed_width = WINDOW_WIDTH;
 static int windowed_height = WINDOW_HEIGHT;
+#endif
 static bool hide_cursor = false;
 static bool has_closed = false;
 static Uint64 start_time;
@@ -342,6 +348,10 @@ void platform_poll_events()
                         break;
                     d3d_do_reset = true;
                     break;
+                } else if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
+                    int w = e.window.data1;
+                    int h = e.window.data2;
+                    std::cout << "Resized: " << w << " " << h << std::endl;
                 }
             }
 #endif
@@ -1126,7 +1136,7 @@ void platform_hide_mouse()
 
 const std::string & platform_get_language()
 {
-    static std::string language("Spanish");
+    static std::string language("Italian");
     return language;
 }
 

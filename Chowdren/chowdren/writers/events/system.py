@@ -5,7 +5,7 @@ from chowdren.writers.events import (ActionWriter, ConditionWriter,
     make_expression, make_comparison, EmptyAction, FalseCondition)
 from chowdren.common import (get_method_name, to_c, make_color,
                              parse_direction, get_flag_direction,
-                             TEMPORARY_GROUP_ID, is_qualifier)
+                             TEMPORARY_GROUP_ID, is_qualifier, get_qualifier)
 from chowdren.writers.objects import ObjectWriter
 from chowdren import shader
 from collections import defaultdict
@@ -1037,6 +1037,45 @@ class LeavingPlayfield(CollisionCondition):
 
 # actions
 
+class AlterableAction(ActionMethodWriter):
+    def __init__(self, *arg, **kw):
+        ActionMethodWriter.__init__(self, *arg, **kw)
+        return
+        obj = self.get_object()
+        runinfo = self.converter.get_runinfo(obj)
+        if runinfo is None:
+            self.method += '_int'
+            return
+        index_param = self.parameters[0].loader
+        if index_param.isExpression:
+            items = index_param.items
+            if len(items) != 2 or items[0].getName() != 'Long':
+                index = None
+            else:
+                index = items[0].loader.value
+        else:
+            index = index_param.value
+        if index is None:
+            pass
+
+    def write(self, writer):
+        ActionMethodWriter.write(self, writer)
+        obj = self.get_object()
+        if is_qualifier(obj[0]):
+            name = (get_qualifier(obj[0]), self.converter.game_index)
+        else:
+            name = self.converter.get_object_writer(obj).data.name
+        writer.put(' // %s' % repr(name))
+
+class SetAlterableValue(AlterableAction):
+    method = 'alterables->values.set'
+
+class AddToAlterable(AlterableAction):
+    method = 'alterables->values.add'
+
+class SubtractFromAlterable(AlterableAction):
+    method = 'alterables->values.sub'
+
 class CollisionAction(ActionWriter):
     def write(self, writer):
         obj = self.get_object()
@@ -1952,6 +1991,9 @@ class GlobalValueExpression(ExpressionWriter):
             func = 'global_values->get'
         return '%s(%s)' % (func, self.data.loader.value)
 
+class GlobalValueDynamic(ExpressionMethodWriter):
+    method = '.global_values->get(-1 + '
+
 class GlobalStringExpression(ExpressionWriter):
     def get_string(self):
         return 'global_strings->get(%s)' % self.data.loader.value
@@ -2082,10 +2124,10 @@ actions = make_table(ActionMethodWriter, {
     'SwapPosition' : SwapPosition,
     'SetX' : 'set_x',
     'SetY' : 'set_y',
-    'SetAlterableValue' : 'alterables->values.set',
-    'AddToAlterable' : 'alterables->values.add',
+    'SetAlterableValue' : SetAlterableValue,
+    'AddToAlterable' : AddToAlterable,
     'SpreadValue' : SpreadValue,
-    'SubtractFromAlterable' : 'alterables->values.sub',
+    'SubtractFromAlterable' : SubtractFromAlterable,
     'SetAlterableString' : 'alterables->strings.set',
     'AddCounterValue' : 'add',
     'SubtractCounterValue' : 'subtract',
@@ -2340,7 +2382,7 @@ expressions = make_table(ExpressionMethodWriter, {
     'AlterableString' : AlterableStringExpression,
     'GlobalString' : GlobalStringExpression,
     'GlobalValue' : GlobalValueExpression,
-    'GlobalValueExpression' : '.global_values->get(-1 + ',
+    'GlobalValueExpression' : GlobalValueDynamic,
     'YPosition' : 'get_y()',
     'XPosition' : 'get_x()',
     'ActionX' : 'get_action_x()',

@@ -167,8 +167,8 @@ class SystemBox(ObjectWriter):
                 color = (0, 0, 0, 0)
             else:
                 color = fill + (255,)
-            writer.putlnc('blend_color = %s;', make_color(color))
-            writer.putlnc('text_color = %s;', make_color(text_color))
+            writer.putlnc('box_color = %s;', make_color(color))
+            writer.putlnc('blend_color = %s;', make_color(text_color))
             writer.putlnc('alignment = %s;', alignment)
         else:
             writer.putln('image = %s;' % self.converter.get_image(self.image))
