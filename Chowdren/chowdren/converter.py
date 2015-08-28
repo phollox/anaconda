@@ -583,6 +583,7 @@ class Converter(object):
 
         # DLL architecture
         self.use_dlls = args.dlls
+        self.use_zlib = args.zlib
         self.event_hash_id = 0
 
         self.clear_selection()
@@ -1180,7 +1181,7 @@ class Converter(object):
         in_queue = multiprocessing.Queue()
         worker_count = 8
         workers = []
-        use_zopfli = not args.zlib
+        use_zopfli = not self.use_zlib
         if use_zopfli:
             print 'Using zopfli for compression'
         else:
