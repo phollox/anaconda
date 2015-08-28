@@ -95,7 +95,7 @@ Font::Font(const std::string & name, int size, bool bold, bool italic,
 
 // Background
 
-Background::Background()
+Background::Background(Layer * layer)
 {
 #ifdef CHOWDREN_PASTE_PRECEDENCE
     col_w = manager.frame->width;
@@ -103,7 +103,12 @@ Background::Background()
     int size = col_w * col_h;
     size = GET_BITARRAY_SIZE(size);
     col.data = (BaseBitArray::word_t*)malloc(size);
-    memset(col.data, 0, size);
+    int fill = 0;
+#ifdef CHOWDREN_IS_TE
+    if (layer->index == 0)
+        fill = 0xFF;
+#endif
+    memset(col.data, fill, size);
     col_img.width = col_w;
     col_img.height = col_h;
     col_img.alpha.data = col.data;
@@ -978,7 +983,7 @@ void Layer::paste(Image * img, int dest_x, int dest_y,
             << std::endl;
     }
     if (back == NULL)
-        back = new Background;
+        back = new Background(this);
     back->paste(img, dest_x, dest_y, src_x, src_y,
                 src_width, src_height, collision_type, effect, color);
 }

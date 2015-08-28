@@ -161,7 +161,7 @@ static void dump_map(int dest_x, int dest_y, PathPlanner * planner)
                 continue;
             }
             int i = planner->to_index(x, y);
-            bool ret = planner->map.get(i);
+            bool ret = planner->map.get(i) != 0;
             if (ret)
                 fp.write("X", 1);
             else

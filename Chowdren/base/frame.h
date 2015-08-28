@@ -118,7 +118,7 @@ public:
     SpriteCollision back_col;
 #endif
 
-    Background();
+    Background(Layer * layer);
     ~Background();
     void reset(bool clear_items = true);
     void destroy_at(int x, int y);

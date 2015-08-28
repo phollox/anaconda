@@ -191,11 +191,11 @@ public:
 	void putheader( const char* header, int numericvalue );	// alternate version
 
 	// Finished adding headers, issue the request.
-	void endheaders();
+	bool endheaders();
 
 	// send body data if any.
 	// To be called after endheaders()
-	void send( const unsigned char* buf, int numbytes );
+	bool send( const unsigned char* buf, int numbytes );
 
 protected:
 	// some bits of implementation exposed to Response class

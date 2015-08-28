@@ -26,6 +26,9 @@ def init_obj(converter, obj):
     elif obj.data.name == 'LoS':
         # stupid F2.5 bug
         obj.common.newFlags['CollisionBox'] = False
+    elif obj.data.name == 'soil background':
+        # XXX nasty hack, but probably better this way
+        obj.common.newFlags['ObstacleSolid'] = False
 
 def use_image_preload(converter):
     return True
