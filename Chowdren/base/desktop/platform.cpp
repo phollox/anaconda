@@ -1,5 +1,6 @@
 #ifdef _WIN32
 #include <windows.h>
+#include <mmsystem.h>
 #include <io.h>
 #include <fcntl.h>
 #else
@@ -15,6 +16,8 @@
 #include <iostream>
 #include "platform.h"
 #include <SDL.h>
+// SDL_syswm.h defines WIN32_LEAN_AND_MEAN
+#undef WIN32_LEAN_AND_MEAN
 #include <SDL_syswm.h>
 #include <time.h>
 #include <boost/cstdint.hpp>

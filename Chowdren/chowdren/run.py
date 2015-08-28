@@ -33,6 +33,8 @@ def main():
                         help='game-specific configuration file')
     parser.add_argument('--copy_base', action='store_true',
                         help='copy base runtime')
+    parser.add_argument('--zlib', action='store_true',
+                        help='use zlib instead of zopfli')
     args = parser.parse_args()
     Converter(args)
 

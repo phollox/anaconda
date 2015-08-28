@@ -30,7 +30,7 @@ void SystemBox::draw()
         int y1 = y;
         int x2 = x1 + width;
         int y2 = y1 + height;
-        Render::draw_quad(x1, y1, x2, y2, Color(0, 0, 0, blend_color.a));
+        Render::draw_quad(x1, y1, x2, y2, Color(0, 0, 0, box_color.a));
         x1++;
         y1++;
         x2--;

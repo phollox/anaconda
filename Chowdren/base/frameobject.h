@@ -271,6 +271,7 @@ class FrameObject
 public:
 #ifndef NDEBUG
     std::string name;
+    
 #endif
     int x, y;
     Layer * layer;
@@ -310,6 +311,7 @@ public:
     {
         int x, y, dest_x, dest_y;
         vector<PathNode> nodes;
+        int flags;
         FrameObject * planner;
         FrameObject * obj;
 

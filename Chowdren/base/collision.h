@@ -24,7 +24,8 @@ enum CollisionType
 enum CollisionFlags
 {
     BOX_COLLISION = 1 << 0,
-    LADDER_OBSTACLE = 1 << 1
+    LADDER_OBSTACLE = 1 << 1,
+    DISABLED = 1 << 2
 };
 
 class CollisionBase
@@ -317,20 +318,16 @@ public:
             height = image->height;
             new_hotspot_x = hotspot_x;
             new_hotspot_y = hotspot_y;
-            x_t = y_t = 0;
-            if (type != NONE_COLLISION) {            
-                if (flags & BOX_COLLISION)
-                    type = SPRITE_BOX;
-                else
-                    type = SPRITE_COLLISION;
-            }
+            x_t = y_t = 0;        
+            if (flags & BOX_COLLISION)
+                type = SPRITE_BOX;
+            else
+                type = SPRITE_COLLISION;
             update_aabb();
             return;
         }
 
-        if (type != NONE_COLLISION)
-            type = TRANSFORM_SPRITE_COLLISION;
-
+        type = TRANSFORM_SPRITE_COLLISION;
         float xx = image->width * x_scale;
         float yy = image->height * y_scale;
         float x_scale_inv = 1.0f / x_scale;

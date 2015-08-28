@@ -23,6 +23,9 @@ def init_obj(converter, obj):
     if obj.data.name == 'Dialogue 2':
         # we could use use_iteration_index, but let's use a simple fix
         obj.common.text.items[0].value = ''
+    elif obj.data.name == 'LoS':
+        # stupid F2.5 bug
+        obj.common.newFlags['CollisionBox'] = False
 
 def use_image_preload(converter):
     return True

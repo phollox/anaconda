@@ -1180,8 +1180,15 @@ class Converter(object):
         in_queue = multiprocessing.Queue()
         worker_count = 8
         workers = []
+        use_zopfli = not args.zlib
+        if use_zopfli:
+            print 'Using zopfli for compression'
+        else:
+            print 'Using zlib for compression'
+
         for _ in xrange(worker_count):
-            p = multiprocessing.Process(target=worker, args=(in_queue,))
+            p = multiprocessing.Process(target=worker,
+                                        args=(in_queue, use_zopfli))
             p.start()
             workers.append(p)
 

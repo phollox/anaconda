@@ -37,7 +37,6 @@ class KcList(ObjectWriter):
         line_count = data.readShort(True)
         index_offset = -1 if data.readInt() == 1 else 0
         data.skipBytes(4 * 3)
-        lines = []
         for _ in xrange(line_count):
             line = self.data.readString(data)
             writer.putln(to_c('add_line(%r);', line))
@@ -47,6 +46,8 @@ class KcList(ObjectWriter):
 
         if flags['Sort']:
             writer.putln('list_flags |= SORT_LIST;')
+            if line_count:
+                writer.putln('sort();')
 
         writer.putlnc('index_offset = current_line = %s;', index_offset)
 

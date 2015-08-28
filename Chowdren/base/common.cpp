@@ -104,6 +104,14 @@ Background::Background()
     size = GET_BITARRAY_SIZE(size);
     col.data = (BaseBitArray::word_t*)malloc(size);
     memset(col.data, 0, size);
+    col_img.width = col_w;
+    col_img.height = col_h;
+    col_img.alpha.data = col.data;
+    back_col.image = &col_img;
+    back_col.aabb[0] = 0;
+    back_col.aabb[1] = 0;
+    back_col.aabb[2] = col_w;
+    back_col.aabb[3] = col_h;
 #endif
 
 #ifdef CHOWDREN_PASTE_CACHE
@@ -141,6 +149,7 @@ Background::~Background()
     clear_back_vec(items);
 
 #ifdef CHOWDREN_PASTE_PRECEDENCE
+	col_img.alpha.data = NULL;
     free(col.data);
     col.data = NULL;
 #endif
@@ -362,12 +371,20 @@ void Background::paste(Image * img, int dest_x, int dest_y,
     if (collision_type == 0 && color.a == 255) {
         for (int y = y1; y < y2; ++y)
         for (int x = x1; x < x2; ++x) {
-            col.set(y * col_w + x);
+            col.unset(y * col_w + x);
         }
     } else if (collision_type == 1) {
-        for (int y = y1; y < y2; ++y)
-        for (int x = x1; x < x2; ++x) {
-            col.unset(y * col_w + x);
+        img->upload_texture(); // can't be bothered to handle both cases
+        BitArray & alpha = img->alpha;
+        for (int y = y1; y < y2; ++y) {
+            int img_y = (y - y1) * img->width;
+            int col_y = y * col_w;
+            for (int x = x1; x < x2; ++x) {
+                if (alpha.get(img_y + (x - x1)))
+                    col.set(col_y + x);
+                else
+                    col.unset(col_y + x);
+            }
         }
     }
 #endif
@@ -1838,17 +1855,17 @@ bool FrameObject::mouse_over()
 
 bool FrameObject::overlaps(FrameObject * other)
 {
-    if (flags & INACTIVE || other->flags & INACTIVE)
-        return false;
     if (other == this)
         return false;
-    if (collision->type == NONE_COLLISION)
+    // this is intentional. we actually allow destroying objects to overlap,
+    // but only on lhs and unless they are fading out.
+    if (flags & (INACTIVE | FADEOUT))
         return false;
-    CollisionBase * other_col = other->collision;
-    if (other_col->type == NONE_COLLISION)
+    if (other->flags & (INACTIVE | DESTROYING | FADEOUT))
         return false;
     if (other->layer != layer)
         return false;
+    CollisionBase * other_col = other->collision;
 #ifdef CHOWDREN_DEFER_COLLISIONS
     int * other_aabb;
     if (other->flags & DEFER_COLLISIONS)
@@ -1888,7 +1905,12 @@ struct BackgroundOverlapCallback
 
 bool FrameObject::overlaps_background()
 {
-    if (flags & DESTROYING || collision == NULL)
+#ifndef CHOWDREN_IS_TE
+    // XXX this actually seems to be wrong, but just safeguarding
+    if (flags & DESTROYING)
+        return false;
+#endif
+    if (collision == NULL)
         return false;
     if (flags & HAS_COLLISION_CACHE)
         return (flags & HAS_COLLISION) != 0;
@@ -1899,21 +1921,9 @@ bool FrameObject::overlaps_background()
     if (b != NULL) {
         BackgroundItems::iterator it;
 #ifdef CHOWDREN_PASTE_PRECEDENCE
-		int col_w = b->col_w;
-		BitArray & col = b->col;
-        int test[4] = {std::max(0, aabb[0]), std::max(0, aabb[1]),
-                       std::min(col_w, aabb[2]), std::min(b->col_h, aabb[3])};
-        bool miss = false;
-        for (int y = test[1]; y < test[3]; ++y)
-        for (int x = test[0]; x < test[2]; ++x) {
-            if (!col.get(y * col_w + x)) {
-                miss = true;
-                break;
-            }
-        }
-        if (!miss)
-            return false;
-#endif
+		if (collide(&b->back_col, collision))
+			return true;
+#else
         for (it = b->col_items.begin(); it != b->col_items.end(); ++it) {
             BackgroundItem * item = *it;
             if (item->flags & LADDER_OBSTACLE)
@@ -1921,6 +1931,7 @@ bool FrameObject::overlaps_background()
             if (::collide(collision, item))
                 return true;
         }
+#endif
     }
     flags |= HAS_COLLISION_CACHE;
     BackgroundOverlapCallback callback(collision);
@@ -2065,8 +2076,6 @@ void FrameObject::destroy()
     if (flags & DESTROYING)
         return;
     flags |= DESTROYING;
-    if (collision != NULL)
-        collision->type = NONE_COLLISION;
     frame->destroyed_instances.push_back(this);
 }
 

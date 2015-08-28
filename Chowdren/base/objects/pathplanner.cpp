@@ -44,8 +44,8 @@ void PathPlanner::add_agent(FrameObject * obj)
         obj->agent = new PathAgent();
     obj->agent->planner = this;
     obj->agent->obj = obj;
-    obj->agent->x = to_grid(obj->x);
-    obj->agent->y = to_grid(obj->y);
+    obj->agent->x = obj->agent->dest_x = to_grid(obj->x);
+    obj->agent->y = obj->agent->dest_y = to_grid(obj->y);
     agents.push_back(obj);
 }
 
@@ -84,13 +84,19 @@ void PathPlanner::set_destination(FrameObject * obj, int x, int y)
 void PathPlanner::orient(FrameObject * obj)
 {
     PathAgent & agent = *obj->agent;
-    if (agent.nodes.empty())
-        return;
     PathPlanner * planner = (PathPlanner*)agent.planner;
-    PathNode & node = agent.nodes.back();
-    int dest_x = planner->to_pixels(node.x)
+    int node_x, node_y;
+    if (agent.nodes.empty()) {
+        node_x = agent.x;
+        node_y = agent.y;
+    } else {
+        PathNode & node = agent.nodes.back();
+        node_x = node.x;
+        node_y = node.y;
+    }
+    int dest_x = planner->to_pixels(node_x)
                  + planner->tile_size / (2 * GRID_UPSCALE);
-    int dest_y = planner->to_pixels(node.y)
+    int dest_y = planner->to_pixels(node_y)
                  + planner->tile_size / (2 * GRID_UPSCALE);
     int dir = get_direction_int(obj->get_x(), obj->get_y(), dest_x, dest_y);
     obj->set_direction(dir);
@@ -143,17 +149,43 @@ struct Grid
     }
 };
 
+static void dump_map(int dest_x, int dest_y, PathPlanner * planner)
+{
+    std::string v = number_to_string(dest_x) + "_" + number_to_string(dest_y)
+                    + ".txt";
+    FSFile fp(v.c_str(), "w");
+    for (int y = 0; y < planner->map_height; ++y) {
+        for (int x = 0; x < planner->map_width; ++x) {
+            if (x == dest_x && y == dest_y) {
+                fp.write("Z", 1);
+                continue;
+            }
+            int i = planner->to_index(x, y);
+            bool ret = planner->map.get(i);
+            if (ret)
+                fp.write("X", 1);
+            else
+                fp.write("O", 1);
+        }
+        fp.write("\n", 1);
+    }
+}
+
 void PathPlanner::plan_path(FrameObject * obj)
 {
     // XXX this is stupid and slow, but should work well enough
     FrameObject::PathAgent & agent = *obj->agent;
-    PathPlanner * planner = (PathPlanner*)agent.planner;
     agent.nodes.clear();
+    PathPlanner * planner = (PathPlanner*)agent.planner;
     if (agent.x == agent.dest_x && agent.y == agent.dest_y)
         return;
-    int test = planner->to_index(agent.dest_x / GRID_UPSCALE,
-                                 agent.dest_y / GRID_UPSCALE);
+    int grid_x = clamp(agent.dest_x / GRID_UPSCALE,
+                       0, planner->map_width - 1);
+    int grid_y = clamp(agent.dest_y / GRID_UPSCALE,
+                       0, planner->map_height - 1);
+    int test = planner->to_index(grid_x, grid_y);
     if (planner->map.get(test)) {
+        dump_map(grid_x, grid_y, planner);
         std::cout << "Destination not possible" << std::endl;
         return;
     }
@@ -174,7 +206,7 @@ void PathPlanner::plan_path(FrameObject * obj)
 }
 
 FrameObject::PathAgent::PathAgent()
-: dest_x(0), dest_y(0)
+: dest_x(0), dest_y(0), flags(0)
 {
 }
 
@@ -187,12 +219,12 @@ FrameObject::PathAgent::~PathAgent()
 
 bool FrameObject::PathAgent::at_destination()
 {
-    return nodes.empty();
+    return x == dest_x && y == dest_y;
 }
 
 bool FrameObject::PathAgent::not_at_destination()
 {
-    return !nodes.empty();
+    return !at_destination();
 }
 
 bool FrameObject::PathAgent::is_stopping()

@@ -558,7 +558,6 @@ void Active::destroy()
     }
 
     flags |= FADEOUT;
-    collision->type = NONE_COLLISION;
 }
 
 bool Active::has_animation(int anim)

@@ -36,7 +36,10 @@
 	#include <errno.h>
 	#include <unistd.h>
 #else
-	#include <winsock2.h>
+ 	#include <windows.h>
+    // winsock2.h defines _WINSOCKAPI_
+    #undef _WINSOCKAPI_
+	// #include <winsock2.h>
 	#include <ws2tcpip.h>
  	#pragma comment(lib, "Ws2_32.lib")
 #endif

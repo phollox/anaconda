@@ -107,10 +107,6 @@ void EditObject::draw()
 
 void EditObject::set_text(const std::string & value)
 {
-    if (limit != -1) {
-        text = value.substr(0, limit);
-        return;
-    }
     text = value;
 }
 

@@ -171,6 +171,9 @@ if (EMULATE_WIIU)
 endif()
 
 if(WIN32)
+    add_definitions(-D_WINSOCKAPI_)
+    add_definitions(-DWIN32_LEAN_AND_MEAN)
+    add_definitions(-DNOMINMAX)
     if (MINGW)
         set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES} imm32 version)
         set(CMAKE_LIBRARY_PATH "${CHOWDREN_BASE_DIR}/lib/mingw"
