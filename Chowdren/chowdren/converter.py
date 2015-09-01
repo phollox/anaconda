@@ -261,6 +261,12 @@ def fix_conditions(conditions):
         conditions.pop(0)
     return conditions
 
+class CustomGroup(object):
+    global_id = 0
+    def __init__(self, name, precedence):
+        self.event_name = name
+        self.precedence = precedence
+
 class EventGroup(object):
     global_id = None
     local_id = None
@@ -802,29 +808,27 @@ class Converter(object):
         self.processed_frames = []
         self.frame_srcs = []
 
-        # import objgraph
         for game in self.games:
             self.frame_index_offset = game.frame_offset
             self.game = game
             self.game_index = game.index
             frame_dict = dict(enumerate(game.frames))
             frame_dict = self.config.get_frames(game, frame_dict)
-            # objgraph.show_growth(limit=8)
             for frame in frame_dict.itervalues():
                 print 'Write frame:', frame.offset_index
                 self.write_frame(frame.offset_index, frame, event_file,
                                  lists_file, lists_header)
-                # import gc
-                # gc.collect()
-                # objgraph.show_growth(limit=8)
-                # import code
-                # code.interact(local=locals())
 
         # write object updates
         event_file.ensure(1)
         update_calls = defaultdict(list)
         updated_objs = set()
         updaters = {}
+        obj_keys = {}
+        list_to_writers = defaultdict(set)
+        special_objs = set()
+
+        # assimilate objects that share their list
         for handle, writer in self.all_objects.iteritems():
             self.game_index = handle[2]
             self.game = self.games[self.game_index]
@@ -837,15 +841,21 @@ class Converter(object):
             has_kill = writer.has_kill()
             if not has_updates and not has_movements:
                 continue
+            key = (writer.class_name, has_updates, has_movements, has_sleep,
+                   has_kill)
             list_name = self.get_object_list(handle)
-            if list_name in updated_objs:
-                continue
+            list_to_writers[list_name].add(writer)
+            if list_name not in special_objs and list_name in updated_objs:
+                if list_name in obj_keys and obj_keys[list_name] != key:
+                    print 'Using custom update for %s' % list_name
+                    special_objs.add(list_name)
+                else:
+                    continue
+            obj_keys[list_name] = key
             updated_objs.add(list_name)
 
             func_name = 'update_%s_%s' % (writer.class_name.lower(),
                                           len(updaters))
-            key = (writer.class_name, has_updates, has_movements, has_sleep,
-                   has_kill)
             func_name = updaters.get(key, None)
             has_func = func_name is not None
             if not has_func:
@@ -897,12 +907,44 @@ class Converter(object):
 
             event_file.end_brace()
 
+        for k, v in update_calls.iteritems():
+            v[:] = [obj for obj in v if obj not in special_objs]
+
         event_file.putmeth('void update_objects')
         for func_name, lists in update_calls.iteritems():
+            if not lists:
+                continue
             event_file.add_member('ObjectList * %s_list[%s]' % (func_name,
                                                                 len(lists)))
             event_file.putlnc('%s(%s_list, %s);', func_name, func_name,
                               len(lists))
+        event_file.putln('ObjectList * special_list[1];')
+        frame_objs = defaultdict(list)
+        for obj in special_objs:
+            writers = list_to_writers[obj]
+            for writer in list_to_writers[obj]:
+                for frame_index in writer.get_used_frames():
+                    frame_objs[frame_index].append((writer, obj))
+
+        event_file.putlnc('switch (index) {')
+        event_file.indent()
+        for frame_index, objs in frame_objs.iteritems():
+            event_file.putlnc('case %s:', frame_index)
+            event_file.indent()
+            for (writer, list_name) in objs:
+                has_updates = writer.has_updates()
+                has_movements = writer.has_movements()
+                has_sleep = writer.has_sleep()
+                has_kill = writer.has_kill()
+                key = (writer.class_name, has_updates, has_movements,
+                       has_sleep, has_kill)
+                updater = updaters[key]
+                event_file.putlnc('special_list[0] = &%s;', list_name)
+                event_file.putlnc('%s(special_list, 1);', updater)
+
+            event_file.putln('break;')
+            event_file.dedent()
+        event_file.end_brace()
         event_file.end_brace()
 
         event_file.putmeth('Frames', init_list=['Frame()'])
@@ -1283,6 +1325,10 @@ class Converter(object):
         cache['count'] = self.image_count
         self.assets.write_cache(cache)
 
+    def add_custom_group(self, func, precedence):
+        group = CustomGroup(func, precedence)
+        self.custom_pre_groups.append(group)
+
     def write_frame(self, frame_index, frame, event_file, lists_file,
                     lists_header):
         events_ref = '((Frames*)frame)->'
@@ -1304,6 +1350,7 @@ class Converter(object):
         self.static_instances = {}
         object_writers = []
 
+        self.custom_pre_groups = []
         self.system_object = SystemObject(self)
         object_writers.append(self.system_object)
 
@@ -1313,6 +1360,7 @@ class Converter(object):
             all_startup_infos.add(obj)
             try:
                 object_writer = self.get_object_writer(obj)
+                object_writer.set_used_frame(self.current_frame_index)
                 if object_writer not in object_writers:
                     object_writers.append(object_writer)
                 if object_writer.static:
@@ -1536,6 +1584,7 @@ class Converter(object):
         for obj in all_startup_infos:
             if obj in self.multiple_instances:
                 continue
+            # XXX this is a hack
             self.get_object_writer(obj).disable_kill = True
 
         for k, v in containers.iteritems():
@@ -1777,6 +1826,9 @@ class Converter(object):
             if v != 0:
                 return v
             return cmp(a.global_id, b.global_id)
+
+        # add custom groups
+        pre_groups.extend(self.custom_pre_groups)
 
         for group_list in (first_groups, last_groups, pre_groups):
             group_list.sort(cmp=cmp_group)
@@ -2269,11 +2321,11 @@ class Converter(object):
         if is_qual:
             writer.putlnc('for (int i = 0; i < %s.count; i++)', list_name)
             list_name = '(*%s.items[i])' % list_name
-        writer.putlnc('for (ObjectList::iterator %s = %s.begin(); '
-                      '%s != %s.end(); ++%s) {',
-                      name, list_name, name, list_name, name)
-        self.set_iterator(object_info, list_name, '%s->obj' % name)
+        writer.putlnc('for (int ii = 0; ii < %s.size(); ++ii) {',
+                      list_name)
         writer.indent()
+        writer.putlnc('FrameObject * %s = %s[ii];', name, list_name)
+        self.set_iterator(object_info, list_name, name)
 
     def end_flat_iteration(self, object_info, writer, name='it'):
         writer.end_brace()
@@ -2617,6 +2669,7 @@ class Converter(object):
                     except KeyError:
                         pass
                 write_conditions = [condition_writer]
+                global_select_obj = condition_writer.use_select()
                 if obj in self.has_single_selection:
                     object_name = self.has_single_selection[obj]
                     self.set_iterator(obj, None, object_name)
@@ -2634,6 +2687,8 @@ class Converter(object):
                                 break
                             if next_cond.iterate_objects is False:
                                 break
+                            global_select_obj = (global_select_obj or
+                                                 next_cond.use_select())
                             condition_index += 1
 
                         write_conditions = conditions[start_index:
@@ -2649,10 +2704,8 @@ class Converter(object):
                         object_name = '(*it)'
 
                 for write_condition in write_conditions:
-                    negated = write_condition.is_negated()
-                    select_obj = (not negated or
-                                  condition_writer.negate_select)
-                    negated = not negated
+                    select_obj = write_condition.use_select()
+                    negated = not write_condition.is_negated()
                     writer.putindent()
                     if negated:
                         writer.put('if (!(')
@@ -2684,8 +2737,9 @@ class Converter(object):
                 if has_multiple:
                     writer.end_brace()
                     writer.indented = False
-                    writer.putlnc('if (!%s.has_selection()) %s',
-                                  selected_name, event_break)
+                    if global_select_obj:
+                        writer.putlnc('if (!%s.has_selection()) %s',
+                                      selected_name, event_break)
                 else:
                     writer.put(') %s\n' % event_break)
                 self.set_iterator(None)

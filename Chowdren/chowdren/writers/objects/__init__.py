@@ -18,6 +18,7 @@ class ObjectWriter(BaseWriter):
     default_instance = None
     has_collision_events = False
     disable_kill = False
+    used_frames = 0
 
     def __init__(self, *arg, **kw):
         self.event_callbacks = {}
@@ -83,6 +84,13 @@ class ObjectWriter(BaseWriter):
         except AttributeError:
             pass
         return False
+
+    def has_manual_sleep(self):
+        try:
+            return self.common.flags['ManualSleep']
+        except AttributeError:
+            pass
+        return True
 
     def has_kill(self):
         if not self.has_sleep() or self.disable_kill:
@@ -280,7 +288,7 @@ class ObjectWriter(BaseWriter):
 
     def get_list_id(self):
         list_id = (self.data.name, self.class_name, self.has_updates(),
-                   self.has_movements(), self.has_sleep())
+                   self.has_movements())
         list_id = list_id + tuple(self.get_qualifiers())
         return list_id
 
@@ -297,6 +305,18 @@ class ObjectWriter(BaseWriter):
         self.converter.global_object_header.putlnc('extern %s %s;', typ, name)
         self.converter.global_object_code.putlnc('%s %s;', typ, name)
         return name
+
+    def set_used_frame(self, frame):
+        self.used_frames |= 1 << frame
+
+    def get_used_frames(self):
+        frames = self.used_frames
+        index = 0
+        while frames:
+            if frames & 1:
+                yield index
+            frames = frames >> 1
+            index += 1
 
     @staticmethod
     def write_application(converter):

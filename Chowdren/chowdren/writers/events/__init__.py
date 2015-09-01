@@ -69,6 +69,9 @@ class ConditionWriter(ACBase):
     def get_comparison(self):
         return COMPARISONS[self.parameters[-1].loader.comparison]
 
+    def use_select(self):
+        return not self.is_negated() or self.negate_select
+
 class ExpressionWriter(EventWriter):
     use_default = True
 

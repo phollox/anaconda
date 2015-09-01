@@ -26,6 +26,8 @@ static happyhttp::Connection conn;
 static Thread http_thread;
 static volatile bool has_http_thread = false;
 
+static volatile int current_id = 0;
+static volatile int thread_id = 0;
 static volatile bool has_request = false;
 static HTTPRequest http_request;
 static Mutex request_mutex;
@@ -47,13 +49,14 @@ static void on_data(const happyhttp::Response * r, void * userdata,
 
 static void on_done(const happyhttp::Response * r, void * userdata)
 {
+    if (thread_id != current_id)
+        return;
     response_mutex.lock();
     http_response = http_data;
     has_response = true;
     response_mutex.unlock();
     http_data.clear();
 }
-
 
 int http_thread_func(void * data)
 {
@@ -68,6 +71,7 @@ int http_thread_func(void * data)
 
         HTTPRequest request = http_request;
         has_request = false;
+        thread_id = current_id;
         request_mutex.unlock();
 
 		std::cout << "Got request" << std::endl;
@@ -126,13 +130,15 @@ void HTTPObject::get(const std::string & url)
     }
 
     request_mutex.lock();
-	http_request.host = host;
-	http_request.path = path;
-	http_request.args = args;
-	has_request = true;
+    current_id++;
+    http_request.host = host;
+    http_request.path = path;
+    http_request.args = args;
+    has_request = true;
     request_mutex.unlock();
 
     args.clear();
+
 }
 
 void HTTPObject::update()

@@ -78,10 +78,12 @@ void BlowfishObject::decrypt_file(const std::string & key,
                                           TransparentColor(255, 255, 255));
         image->load_data((unsigned char*)&out[0], out.size());
         set_image_cache(filename, image);
+#ifndef NDEBUG
         std::string save_filename = filename + ".decrypted.gif";
         FSFile fp(save_filename.c_str(), "w");
         fp.write(&out[0], out.size());
         fp.close();
+#endif
     } else {
         cache = out;
     }

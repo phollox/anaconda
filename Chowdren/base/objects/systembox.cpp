@@ -52,12 +52,12 @@ void SystemBox::draw()
 
         double off_y = y + font->Ascender();
 
-        FTBBox bb = layout->BBox(text.c_str(), -1);
+        FTBBox bb = layout->BBoxL(text.c_str(), -1);
         double box_h = bb.Upper().Y() - bb.Lower().Y(); 
         off_y += (height - box_h) * 0.5;
 
         FTTextureFont::color = blend_color;
-        layout->Render(text.c_str(), -1, FTPoint(x, int(off_y) - 1));
+        layout->Render(text.c_str(), -1, FTPoint(x, int(off_y)));
         // std::cout << "Draw system text: " << text << " " << name << std::endl;
         return;
     }

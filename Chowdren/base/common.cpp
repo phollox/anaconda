@@ -322,8 +322,17 @@ void Background::paste(Image * img, int dest_x, int dest_y,
     // 1: obstacle
     // 3: ladder
     // 4: no effect on collisions
-    src_width = std::min<int>(img->width, src_x + src_width) - src_x;
-    src_height = std::min<int>(img->height, src_y + src_height) - src_y;
+
+    {    
+        int x1 = std::max<int>(0, src_x);
+        int y1 = std::max<int>(0, src_y);
+        int x2 = std::min<int>(img->width, src_x + src_width);
+        int y2 = std::min<int>(img->height, src_y + src_height);
+        src_width = x2 - x1;
+        src_height = y2 - y1;
+        src_x = x1;
+        src_y = y1;
+    }
 
     if (src_width <= 0 || src_height <= 0)
         return;
@@ -382,10 +391,10 @@ void Background::paste(Image * img, int dest_x, int dest_y,
         img->upload_texture(); // can't be bothered to handle both cases
         BitArray & alpha = img->alpha;
         for (int y = y1; y < y2; ++y) {
-            int img_y = (y - y1) * img->width;
+            int img_y = (src_y + y - y1) * img->width;
             int col_y = y * col_w;
             for (int x = x1; x < x2; ++x) {
-                if (alpha.get(img_y + (x - x1)))
+                if (alpha.get(img_y + (src_x + x - x1)))
                     col.set(col_y + x);
                 else
                     col.unset(col_y + x);
@@ -480,7 +489,6 @@ void Background::draw(Layer * layer, int v[4])
         item->draw();
     }
 #endif
-
 #endif
 }
 
@@ -1848,7 +1856,7 @@ int FrameObject::get_direction()
 
 bool FrameObject::mouse_over()
 {
-    if (flags & (DESTROYING | FADEOUT))
+    if (flags & (DESTROYING | DISABLE_COL))
         return false;
     int x, y;
     frame->get_mouse_pos(&x, &y);
@@ -1864,9 +1872,9 @@ bool FrameObject::overlaps(FrameObject * other)
         return false;
     // this is intentional. we actually allow destroying objects to overlap,
     // but only on lhs and unless they are fading out.
-    if (flags & (INACTIVE | FADEOUT))
+    if (flags & (INACTIVE | DISABLE_COL))
         return false;
-    if (other->flags & (INACTIVE | DESTROYING | FADEOUT))
+    if (other->flags & (INACTIVE | DESTROYING | DISABLE_COL))
         return false;
     if (other->layer != layer)
         return false;

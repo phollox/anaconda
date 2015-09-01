@@ -557,7 +557,7 @@ void Active::destroy()
         fade_time = fade_duration;
     }
 
-    flags |= FADEOUT;
+    flags |= FADEOUT | DISABLE_COL;
 }
 
 bool Active::has_animation(int anim)

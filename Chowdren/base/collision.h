@@ -472,6 +472,8 @@ public:
 
 bool collide(CollisionBase * a, CollisionBase * b, int * aabb_2);
 bool collide(CollisionBase * a, CollisionBase * b);
+void save_bitarray(const char * filename, BitArray & array,
+                   int width, int height);
 
 inline bool collide_box(FrameObject * a, int v[4])
 {

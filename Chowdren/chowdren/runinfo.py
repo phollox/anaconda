@@ -59,10 +59,10 @@ class RunInfo(object):
             for frameitem in game.frameItems.items:
                 self.add_object(game_index, frameitem, self.qualifiers,
                                 qual_to_obj)
-            for qual, objs in qual_to_obj:
+            for qual, objs in qual_to_obj.iteritems():
                 qual_alts = self.qualifiers[(qual, game_index)]
                 for obj in objs:
-                    self.info[obj.data.name].update(qual_alts)
+                    self.info[obj.name].update(qual_alts)
 
     def get_qualifier(self, qualifier, game_index=None):
         if game_index is None:

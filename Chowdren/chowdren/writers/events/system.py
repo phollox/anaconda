@@ -49,6 +49,7 @@ class SystemObject(ObjectWriter):
         self.write_loops(writer)
         self.write_foreach(writer)
         self.write_collisions(writer)
+        self.write_clicked(writer)
 
     def write_start(self, writer):
         for name in self.loops.keys():
@@ -291,6 +292,69 @@ class SystemObject(ObjectWriter):
 
         writer.end_brace()
 
+    def write_clicked(self, writer):
+        converter = self.converter
+        objs = defaultdict(list)
+        clicks = set()
+        objs_to_qual = defaultdict(set)
+        for group in self.get_conditions('ObjectClicked'):
+            cond = group.conditions[0].data
+            mouse_key = converter.convert_parameter(cond.items[0])
+            clicks.add(mouse_key)
+            data = cond.items[1].loader
+            obj = (data.objectInfo, data.objectType)
+            for new_obj in converter.resolve_qualifier(obj):
+                objs[(new_obj, mouse_key)].append(group)
+                objs_to_qual[new_obj].add(obj)
+
+        if not objs:
+            return
+
+        objs = objs.items()
+        objs.sort(key=lambda x: x[0][0])
+
+        writer.add_member('FrameObject * clicked_obj')
+
+        obj_funcs = []
+        for (obj, mouse_key), groups in objs:
+            object_class = converter.get_object_class(obj[1])
+            for qual_obj in objs_to_qual[obj]:
+                converter.set_object(qual_obj,
+                                     '((%s)clicked_obj)' % object_class)
+            key_name = mouse_key.split('_')[-1].lower()
+            name = 'on_click_%s_%s_%s_%s' % (obj[0], obj[1], key_name,
+                                             converter.current_frame_index)
+            name = converter.write_generated(name, writer, groups)
+            obj_funcs.append((obj, mouse_key, name))
+
+        event_name = 'test_clicked_%s' % converter.current_frame_index
+        writer.putmeth('void %s' % event_name)
+
+        test_click = []
+        for click in clicks:
+            test_click.append('is_mouse_pressed_once(%s)' % click)
+        test_click = '!(%s)' % ' || '.join(test_click)
+        writer.putlnc('if (%s) return;', test_click)
+
+        for (obj, mouse_key, func) in obj_funcs:
+            writer.putlnc('if (is_mouse_pressed_once(%s)) {', mouse_key)
+            writer.indent()
+
+            converter.start_flat_iteration(obj, writer)
+            obj = converter.get_object(obj)
+            writer.putlnc('if (%s->mouse_over()) {', obj)
+            writer.indent()
+            writer.putlnc('clicked_obj = %s;', obj)
+            writer.putlnc('%s();', func)
+            writer.end_brace()
+            converter.end_flat_iteration(obj, writer)
+
+            writer.end_brace()
+        writer.end_brace()
+
+        # pregroup, precedence 1
+        converter.add_custom_group(event_name, 1)
+
     def write_foreach(self, writer):
         loops = defaultdict(list)
         loop_objects = {}
@@ -310,8 +374,11 @@ class SystemObject(ObjectWriter):
             instance_name = 'foreach_instance_' + name
             writer.add_member('FrameObject * %s' % instance_name)
             object_class = self.converter.get_object_class(obj[1])
-            self.converter.set_object(obj, '((%s)%s)' % (object_class,
-                                                         instance_name))
+            set_value = '((%s)%s)' % (object_class, instance_name)
+            self.converter.set_object(obj, set_value)
+            for qual_obj in self.converter.resolve_qualifier(obj):
+                self.converter.set_object(qual_obj, set_value)
+
             name = get_foreach_name(name, self.converter)
             new_name = self.converter.write_generated(name, writer, groups)
             self.foreach_names[real_name] = new_name
@@ -575,9 +642,9 @@ class MouseClicked(ConditionWriter):
         writer.put('is_mouse_pressed_once(%s)' % self.convert_index(0))
 
 class ObjectClicked(ConditionWriter):
-    is_always = True
-    pre_event = True
-    precedence = 1
+    # is_always = True
+    # pre_event = True
+    # precedence = 1
 
     def get_object(self):
         data = self.data.items[1].loader
@@ -1669,10 +1736,10 @@ class StartLoop(ActionWriter):
             self.converter.clear_selection()
             self.group.force_multiple = set()
         else:
-            writer.putln('// %r' % selection_after)
+            # writer.putln('// %r' % selection_after)
             self.converter.has_selection.update(selection_after)
             self.converter.saved_selections.update(selection_after.iterkeys())
-            writer.putln('// %r' % self.converter.has_selection)
+            # writer.putln('// %r' % self.converter.has_selection)
 
 
 class DeactivateGroup(ActionWriter):
