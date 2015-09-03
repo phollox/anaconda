@@ -1195,11 +1195,10 @@ void platform_walk_folder(const std::string & path,
 
     FindClose(hFind);
 #else
-    DIR *dir;
     class dirent *ent;
     class stat st;
 
-    dir = opendir(directory);
+    DIR * dir = opendir(path.c_str());
     FilesystemItem item;
     while ((ent = readdir(dir)) != NULL) {
         if (ent->d_name[0] == '.')
