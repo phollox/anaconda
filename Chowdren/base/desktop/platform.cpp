@@ -24,6 +24,23 @@
 #include "path.h"
 #include "render.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#include "shlobj.h"
+#include <shellapi.h>
+#elif __APPLE__
+#include <CoreServices/CoreServices.h>
+#include <limits.h>
+#include <unistd.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <sys/param.h> // For MAXPATHLEN
+#elif __linux
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <dirent.h>
+#endif
+
 enum ScaleType
 {
     BEST_FIT = 0,
@@ -175,8 +192,6 @@ void d3d_reset_state();
 void d3d_set_backtex_size(int w, int h);
 
 #ifdef __APPLE__
-#include <CoreFoundation/CoreFoundation.h>
-#include <sys/param.h> // For MAXPATHLEN
 
 static void set_resources_dir()
 {
@@ -1298,19 +1313,6 @@ void platform_create_directories(const std::string & value)
     create_dirs(value);
 }
 
-#ifdef _WIN32
-#include "windows.h"
-#include "shlobj.h"
-#elif __APPLE__
-#include <CoreServices/CoreServices.h>
-#include <limits.h>
-#include <unistd.h>
-#elif __linux
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
-#endif
-
 const std::string & platform_get_appdata_dir()
 {
     static bool initialized = false;
@@ -1710,9 +1712,6 @@ float get_joystick_axis_raw(int n, int axis)
 
 #ifdef _WIN32
 
-#include <windows.h>
-#include <shellapi.h>
-
 void open_url(const std::string & name)
 {
     ShellExecute(NULL, "open", name.c_str(), NULL, NULL, SW_SHOWNORMAL);
@@ -1730,9 +1729,6 @@ void open_url(const std::string & name)
 }
 
 #elif __linux
-
-#include <sys/types.h>
-#include <dirent.h>
 
 void open_url(const std::string & name)
 {
