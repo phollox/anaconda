@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <sys/param.h> // For MAXPATHLEN
+#include <dirent.h>
 #elif __linux
 #include <unistd.h>
 #include <sys/types.h>
@@ -1788,8 +1789,8 @@ struct RemoveDirectoryCallback : FolderCallback
         if (item.is_file()) {
             remove(join_path(path, item.name).c_str());
         } else if (item.is_folder()) {
-            std::string path = join_path(path, item.name);
-            remove_directory_recurse(path);
+            std::string new_path = join_path(path, item.name);
+            remove_directory_recurse(new_path);
         }
     }
 };
