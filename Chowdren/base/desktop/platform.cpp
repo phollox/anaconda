@@ -1162,11 +1162,12 @@ const std::string & platform_get_language()
 
 #include <sys/stat.h>
 
-void platform_walk_folder(const std::string & path,
+void platform_walk_folder(const std::string & in_path,
                           FolderCallback & callback)
 {
-    if (path.empty())
+    if (in_path.empty())
         return;
+    std::string path = convert_path(in_path);
 #ifdef _WIN32
     HANDLE hFind = INVALID_HANDLE_VALUE;
     WIN32_FIND_DATA ffd;
@@ -1199,6 +1200,8 @@ void platform_walk_folder(const std::string & path,
     class stat st;
 
     DIR * dir = opendir(path.c_str());
+    if (dir == NULL)
+        return;
     FilesystemItem item;
     while ((ent = readdir(dir)) != NULL) {
         if (ent->d_name[0] == '.')
