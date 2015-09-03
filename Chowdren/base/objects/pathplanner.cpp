@@ -11,6 +11,14 @@ PathPlanner::PathPlanner(int x, int y, int type_id)
 PathPlanner::~PathPlanner()
 {
     free(map.data);
+    FlatObjectList::iterator it;
+    for (it = agents.begin(); it != agents.end(); ++it) {
+        FrameObject * obj = *it;
+        obj->agent->planner = NULL;
+        delete obj->agent;
+        obj->agent = NULL;
+    }
+    agents.clear();
 }
 
 void PathPlanner::create_map()
@@ -182,6 +190,8 @@ FrameObject::PathAgent::PathAgent()
 FrameObject::PathAgent::~PathAgent()
 {
     PathPlanner * p = (PathPlanner*)planner;
+    if (p == NULL)
+        return;
     p->agents.erase(std::remove(p->agents.begin(), p->agents.end(), obj),
                     p->agents.end());
 }
