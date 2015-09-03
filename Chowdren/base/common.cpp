@@ -2642,7 +2642,7 @@ void File::delete_file(const std::string & path)
 
 void File::delete_folder(const std::string & path)
 {
-    std::cout << "Delete folder not implemented: " << path << std::endl;
+    platform_remove_directory(path);
 }
 
 bool File::copy_file(const std::string & src, const std::string & dst)

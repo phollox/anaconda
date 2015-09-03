@@ -38,6 +38,7 @@ void platform_begin_draw();
 void platform_swap_buffers();
 void platform_prepare_frame_change();
 bool platform_remove_file(const std::string & path);
+bool platform_remove_directory(const std::string & path);
 const std::string & platform_get_appdata_dir();
 const std::string & platform_get_language();
 void platform_set_vsync(bool value);

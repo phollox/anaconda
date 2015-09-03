@@ -5,7 +5,7 @@
 #include "image.h"
 #include <iostream>
 #include "types.h"
-
+#include "platform.h"
 
 static Blowfish cipher;
 static std::string last_cipher;
@@ -91,11 +91,13 @@ void BlowfishObject::decrypt_file(const std::string & key,
 
 const std::string & BlowfishObject::get_cache(const std::string & filename)
 {
-	hash_map<std::string, std::string>::iterator it;
-	it = cipher_store.find(filename);
-	if (it == cipher_store.end())
-		return empty_string;
-	return it->second;
+    if (!platform_is_file(filename))
+        return empty_string;
+    hash_map<std::string, std::string>::iterator it;
+    it = cipher_store.find(filename);
+    if (it == cipher_store.end())
+        return empty_string;
+    return it->second;
 }
 
 bool BlowfishObject::set_cache(const std::string & filename,

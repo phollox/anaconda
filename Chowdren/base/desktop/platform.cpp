@@ -1180,6 +1180,22 @@ void platform_walk_folder(const std::string & path,
 
     FindClose(hFind);
 #else
+    DIR *dir;
+    class dirent *ent;
+    class stat st;
+
+    dir = opendir(directory);
+    FilesystemItem item;
+    while ((ent = readdir(dir)) != NULL) {
+        if (ent->d_name[0] == '.')
+            continue;
+        item.name = ent->d_name;
+        item.flags = 0;
+        if (ent->d_type != DT_DIR)
+            item.flags |= FilesystemItem::FILE;
+        callback.on_item(item);
+    }
+    closedir(dir);
 #endif
 }
 
@@ -1288,6 +1304,7 @@ void platform_create_directories(const std::string & value)
 #elif __APPLE__
 #include <CoreServices/CoreServices.h>
 #include <limits.h>
+#include <unistd.h>
 #elif __linux
 #include <unistd.h>
 #include <sys/types.h>
@@ -1746,6 +1763,55 @@ bool platform_remove_file(const std::string & file)
     }
 #endif
     return remove(convert_path(file).c_str()) == 0;
+}
+
+bool remove_directory_recurse(const std::string & path);
+
+static bool remove_directory(const char * filename)
+{
+#ifdef _WIN32
+    return RemoveDirectory(filename) != 0;
+#else
+    return rmdir(filename) == 0;
+#endif
+}
+
+struct RemoveDirectoryCallback : FolderCallback
+{
+    const std::string & path;
+
+	RemoveDirectoryCallback(const std::string & path)
+    : path(path)
+    {
+    }
+
+    void on_item(FilesystemItem & item)
+    {
+        if (item.is_file()) {
+            remove(join_path(path, item.name).c_str());
+        } else if (item.is_folder()) {
+            std::string path = join_path(path, item.name);
+            remove_directory_recurse(path);
+        }
+    }
+};
+
+static bool remove_directory_recurse(const std::string & dir)
+{
+    if (remove_directory(dir.c_str()))
+        return true;
+    RemoveDirectoryCallback callback(dir);
+    platform_walk_folder(dir, callback);
+	if (remove_directory(dir.c_str()))
+        return true;
+    std::cout << "Could not remove directory: " << dir << std::endl;
+    return false;
+}
+
+bool platform_remove_directory(const std::string & dir)
+{
+    std::string path = convert_path(dir);
+    return remove_directory_recurse(path);
 }
 
 #include "fileio.cpp"
