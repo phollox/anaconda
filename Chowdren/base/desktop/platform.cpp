@@ -1760,7 +1760,7 @@ bool platform_remove_file(const std::string & file)
     return remove(convert_path(file).c_str()) == 0;
 }
 
-bool remove_directory_recurse(const std::string & path);
+static bool remove_directory_recurse(const std::string & path);
 
 static bool remove_directory(const char * filename)
 {
