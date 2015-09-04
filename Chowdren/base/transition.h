@@ -13,7 +13,7 @@ public:
     // Type type;
     // Color color;
 
-    static void draw();
+    static void draw(int fade_type, float fade_value, Color color);
 
     // Transition(Type type, const Color & color, float dir);
 };

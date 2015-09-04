@@ -267,17 +267,17 @@ add_definitions(-DBOOST_ALL_NO_LIB)
 add_definitions(-DBOOST_NO_EXCEPTIONS)
 add_definitions(-DBOOST_EXCEPTION_DISABLE)
 
-include_directories(${CHOWDREN_BASE_DIR}/include/staticlibs)
-if (NOT NO_STATIC_OGG)
-    # libogg
-    file(GLOB LIBOGG_C
-         "${CHOWDREN_BASE_DIR}/staticlibs/libogg/src/*.c")
-    file(GLOB LIBVORBIS_C
-         "${CHOWDREN_BASE_DIR}/staticlibs/libvorbis/lib/*.c")
-    set(VORBIS_INCLUDE_DIR
-        "${CHOWDREN_BASE_DIR}/staticlibs/libvorbis/lib")
-    set(SRCS ${LIBOGG_C} ${LIBVORBIS_C} ${SRCS})
-endif()
+# include_directories(${CHOWDREN_BASE_DIR}/include/staticlibs)
+# if (NOT NO_STATIC_OGG)
+#     # libogg
+#     file(GLOB LIBOGG_C
+#          "${CHOWDREN_BASE_DIR}/staticlibs/libogg/src/*.c")
+#     file(GLOB LIBVORBIS_C
+#          "${CHOWDREN_BASE_DIR}/staticlibs/libvorbis/lib/*.c")
+#     set(VORBIS_INCLUDE_DIR
+#         "${CHOWDREN_BASE_DIR}/staticlibs/libvorbis/lib")
+#     set(SRCS ${LIBOGG_C} ${LIBVORBIS_C} ${SRCS})
+# endif()
 
 if (USE_WEBP)
     file(GLOB WEBP_C

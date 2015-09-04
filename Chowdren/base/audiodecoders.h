@@ -1,4 +1,3 @@
-#include <vorbis/vorbisfile.h>
 #include <string>
 #include "stringcommon.h"
 #include "fileio.h"
@@ -6,8 +5,37 @@
 #include "path.h"
 #include <string.h>
 #include "media.h"
+#include "mathcommon.h"
 
-// #define USE_PARTOPEN
+#define USE_STB_VORBIS
+
+namespace ChowdrenAudio
+{
+    static size_t read_func(void * ptr, size_t size, size_t nmemb, void *fp);
+    static int seek_func(void *fp, size_t offset, int whence);
+    static long tell_func(void *fp);
+    static int getc_func(void * fp);
+}
+
+#ifdef USE_STB_VORBIS
+#define STB_VORBIS_NO_PUSHDATA_API
+#define STB_VORBIS_NO_MEMORY
+#define FILE void
+#define ftell ChowdrenAudio::tell_func
+#define fread ChowdrenAudio::read_func
+#define fseek ChowdrenAudio::seek_func
+#define fopen(name, mode) {}
+#define fclose(fp) {}
+#define fgetc ChowdrenAudio::getc_func
+#include "stb_vorbis.c"
+#undef FILE
+#undef ftell
+#undef fseek
+#undef fopen
+#undef fclose
+#else
+#include <vorbis/vorbisfile.h>
+#endif
 
 namespace ChowdrenAudio {
 
@@ -36,20 +64,16 @@ public:
     {
         return samples;
     }
-
 };
 
-static size_t read_func(void * ptr, size_t size, size_t nmemb, void *fp);
-static int seek_func(void *fp, ogg_int64_t offset, int whence);
-static long tell_func(void *fp);
-
+#ifndef USE_STB_VORBIS
 ov_callbacks callbacks = {
     read_func,
     seek_func,
     NULL,
     tell_func
 };
-
+#endif
 
 class OggDecoder : public SoundDecoder
 {
@@ -58,16 +82,37 @@ public:
     size_t start;
     size_t pos;
     size_t size;
+#ifdef USE_STB_VORBIS
+    stb_vorbis * ogg;
+#else
     OggVorbis_File ogg_file;
     vorbis_info * ogg_info;
     int ogg_bitstream;
+#endif
 
     OggDecoder(FSFile & fp, size_t size)
-    : ogg_info(NULL), ogg_bitstream(0), size(size), fp(fp)
+    : size(size), fp(fp)
     {
         start = fp.tell();
         pos = 0;
 
+#ifdef USE_STB_VORBIS
+        int error;
+        ogg = stb_vorbis_open_file_section((void*)this, 0, &error, NULL, size);
+        if (ogg == NULL) {
+            std::cout << "stb_vorbis_open_file_section failed: " << error
+                << std::endl;
+            return;
+        }
+
+        stb_vorbis_info info = stb_vorbis_get_info(ogg);
+        channels = info.channels;
+        sample_rate = info.sample_rate;
+        samples = stb_vorbis_stream_length_in_samples(ogg) * channels;
+#else
+        ogg_info = NULL;
+        ogg_bitstream = 0;
+ 
         if (ov_open_callbacks((void*)this, &ogg_file, NULL, 0, callbacks) != 0)
         {
 #ifndef NDEBUG
@@ -88,24 +133,51 @@ public:
         channels = ogg_info->channels;
         sample_rate = ogg_info->rate;
         samples = ov_pcm_total(&ogg_file, -1) * channels;
+#endif
+        channels = clamp(channels, 1, 2);
     }
 
     ~OggDecoder()
     {
+#ifdef USE_STB_VORBIS
+        if (ogg == NULL)
+            return;
+        stb_vorbis_close(ogg);
+        ogg = NULL;
+#else
         if (ogg_info)
             ov_clear(&ogg_file);
         ogg_info = NULL;
+#endif
     }
 
     bool is_valid()
     {
+#ifdef USE_STB_VORBIS
+        return ogg != NULL;
+#else
         return ogg_info != NULL;
+#endif
     }
 
     size_t read(signed short * sdata, std::size_t samples)
     {
         if (!(sdata && samples))
             return 0;
+#ifdef USE_STB_VORBIS
+        unsigned int got = 0;
+        int ret;
+        while (samples > 0) {
+            ret = stb_vorbis_get_samples_short_interleaved(ogg, channels,
+                                                           sdata, samples) * 2;
+            if (ret <= 0)
+                break;
+            sdata += ret;
+            samples -= ret;
+            got += ret;
+        }
+        return got;
+#else
         unsigned int got = 0;
         int bytes = samples * 2;
         char * data = (char*)sdata;
@@ -124,14 +196,22 @@ public:
         }
         // XXX support exotic channel formats?
         return got / 2;
+#endif
     }
 
     void seek(double value)
     {
         value = std::max(0.0, value);
+#ifdef USE_STB_VORBIS
+        unsigned int sample_number = value * sample_rate;
+        int ret = stb_vorbis_seek(ogg, sample_number);
+        if (ret == 1)
+            return;
+#else
         int ret = ov_time_seek(&ogg_file, value);
         if (ret == 0)
             return;
+#endif
         std::cout << "Seek failed: " << ret << " with time " << value
             << std::endl;
     }
@@ -141,14 +221,32 @@ size_t read_func(void * ptr, size_t size, size_t nmemb, void *fp)
 {
     OggDecoder * file = (OggDecoder*)fp;
     size *= nmemb;
+#ifdef USE_STB_VORBIS
+    return file->fp.read(ptr, size) / size;
+#else
     size = std::min(file->size - file->pos, size);
     file->pos += size;
     return file->fp.read(ptr, size);
+#endif
 }
 
-int seek_func(void *fp, ogg_int64_t offset, int whence)
+int getc_func(void * fp)
 {
     OggDecoder * file = (OggDecoder*)fp;
+    unsigned char c;
+    if (file->fp.read(&c, 1) == 1)
+        return c;
+    return EOF;
+}
+
+int seek_func(void *fp, size_t offset, int whence)
+{
+    OggDecoder * file = (OggDecoder*)fp;
+#ifdef USE_STB_VORBIS
+    if (file->fp.seek(offset, whence))
+        return 0;
+    return 1;
+#else
     switch (whence) {
         case SEEK_SET:
             break;
@@ -159,17 +257,22 @@ int seek_func(void *fp, ogg_int64_t offset, int whence)
             offset += file->pos;
             break;
     }
-    offset = std::min<ogg_int64_t>(file->size, offset);
-    offset = std::max<ogg_int64_t>(0, offset);
+    offset = std::min<size_t>(file->size, offset);
+    offset = std::max<size_t>(0, offset);
     file->pos = offset;
     file->fp.seek(offset + file->start, SEEK_SET);
     return 1;
+#endif
 }
 
 long tell_func(void *fp)
 {
     OggDecoder * file = (OggDecoder*)fp;
+#ifdef USE_STB_VORBIS
+    return file->fp.tell();
+#else
     return file->pos;
+#endif
 }
 
 inline unsigned int read_le32(FSFile & file)

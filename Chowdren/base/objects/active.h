@@ -39,7 +39,8 @@ public:
     {
         ANIMATION_STOPPED = 1 << 0,
         AUTO_ROTATE = 1 << 1,
-        TRANSPARENT = 1 << 2
+        TRANSPARENT = 1 << 2,
+        DOOR_FADEOUT = 1 << 3
     };
 
     Animations * animations;
@@ -82,6 +83,7 @@ public:
     void update_action_point();
     void update();
     void draw();
+    void draw_door_fadeout();
     int get_action_x();
     int get_action_y();
     void set_angle(float angle, int quality = 0);

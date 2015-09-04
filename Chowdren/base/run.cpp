@@ -386,7 +386,7 @@ void GameManager::draw_fade()
     if (fade_dir == 0.0f)
         return;
     Render::set_offset(0, 0);
-    Transition::draw();
+    Transition::draw(manager.fade_type, fade_value, fade_color);
 }
 
 void GameManager::set_frame(int index)

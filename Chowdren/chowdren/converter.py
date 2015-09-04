@@ -914,11 +914,22 @@ class Converter(object):
         for func_name, lists in update_calls.iteritems():
             if not lists:
                 continue
+            if 'pathplanner' not in func_name:
+                continue
             event_file.add_member('ObjectList * %s_list[%s]' % (func_name,
                                                                 len(lists)))
             event_file.putlnc('%s(%s_list, %s);', func_name, func_name,
                               len(lists))
-        event_file.putln('ObjectList * special_list[1];')
+
+        for func_name, lists in update_calls.iteritems():
+            if not lists:
+                continue
+            if 'pathplanner' in func_name:
+                continue
+            event_file.add_member('ObjectList * %s_list[%s]' % (func_name,
+                                                                len(lists)))
+            event_file.putlnc('%s(%s_list, %s);', func_name, func_name,
+                              len(lists))
         frame_objs = defaultdict(list)
         for obj in special_objs:
             writers = list_to_writers[obj]
@@ -926,25 +937,28 @@ class Converter(object):
                 for frame_index in writer.get_used_frames():
                     frame_objs[frame_index].append((writer, obj))
 
-        event_file.putlnc('switch (index) {')
-        event_file.indent()
-        for frame_index, objs in frame_objs.iteritems():
-            event_file.putlnc('case %s:', frame_index)
+        if frame_objs:
+            event_file.putln('ObjectList * special_list[1];')
+            event_file.putlnc('switch (index) {')
             event_file.indent()
-            for (writer, list_name) in objs:
-                has_updates = writer.has_updates()
-                has_movements = writer.has_movements()
-                has_sleep = writer.has_sleep()
-                has_kill = writer.has_kill()
-                key = (writer.class_name, has_updates, has_movements,
-                       has_sleep, has_kill)
-                updater = updaters[key]
-                event_file.putlnc('special_list[0] = &%s;', list_name)
-                event_file.putlnc('%s(special_list, 1);', updater)
+            for frame_index, objs in frame_objs.iteritems():
+                event_file.putlnc('case %s:', frame_index)
+                event_file.indent()
+                for (writer, list_name) in objs:
+                    has_updates = writer.has_updates()
+                    has_movements = writer.has_movements()
+                    has_sleep = writer.has_sleep()
+                    has_kill = writer.has_kill()
+                    key = (writer.class_name, has_updates, has_movements,
+                           has_sleep, has_kill)
+                    updater = updaters[key]
+                    event_file.putlnc('special_list[0] = &%s;', list_name)
+                    event_file.putlnc('%s(special_list, 1);', updater)
 
-            event_file.putln('break;')
-            event_file.dedent()
-        event_file.end_brace()
+                event_file.putln('break;')
+                event_file.dedent()
+            event_file.end_brace()
+
         event_file.end_brace()
 
         event_file.putmeth('Frames', init_list=['Frame()'])

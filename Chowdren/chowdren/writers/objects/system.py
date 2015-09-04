@@ -56,6 +56,7 @@ class Active(ObjectWriter):
     default_instance = 'default_active_instance'
     filename = 'active'
     destruct = False
+    use_door_fadeout = False
 
     def write_init(self, writer):
         common = self.common
@@ -77,8 +78,10 @@ class Active(ObjectWriter):
         flags = common.newFlags
 
         fade = common.fadeOut
-        if fade and fade.name == 'FADE':
+        if fade and fade.name in ('FADE', 'DOOR'):
             writer.putlnc('fade_duration = %s;', fade.duration / 1000.0)
+            if fade.name == 'DOOR':
+                self.use_door_fadeout = True
 
         if flags['AutomaticRotation']:
             writer.putlnc('active_flags |= AUTO_ROTATE;')
@@ -94,6 +97,18 @@ class Active(ObjectWriter):
             self.destruct = True
 
         writer.putlnc('initialize_active(%s);', flags['CollisionBox'])
+
+    def write_class(self, writer):
+        if not self.use_door_fadeout:
+            return
+        writer.putmeth('void draw')
+        writer.putlnc('if (flags & FADEOUT) {')
+        writer.indent()
+        writer.putlnc('draw_door_fadeout();')
+        writer.putlnc('return;')
+        writer.end_brace()
+        writer.putlnc('Active::draw();')
+        writer.end_brace()
 
     def has_updates(self):
         if not self.converter.config.use_update_filtering():
