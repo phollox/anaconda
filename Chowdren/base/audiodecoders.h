@@ -24,7 +24,7 @@ namespace ChowdrenAudio
 #define ftell ChowdrenAudio::tell_func
 #define fread ChowdrenAudio::read_func
 #define fseek ChowdrenAudio::seek_func
-#define fopen(name, mode) {}
+#define fopen(name, mode) NULL
 #define fclose(fp) {}
 #define fgetc ChowdrenAudio::getc_func
 #include "stb_vorbis.c"
