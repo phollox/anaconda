@@ -229,7 +229,7 @@ public:
             file.seek(length, SEEK_CUR);
         }
 
-        if(data_start > 0) {
+        if (data_start > 0) {
             samples = data_len / (sample_size / 8);
             file.seek(data_start);
         }
@@ -264,14 +264,13 @@ public:
     {
         unsigned int bytes = samples * (sample_size / 8);
         size_t rem;
-        if (rem_len >= bytes)
+        if (bytes <= rem_len)
             rem = bytes;
         else
             rem = rem_len;
-        rem /= block_align;
-        size_t got = file.read((char*)data, rem*block_align);
-        got -= got%block_align;
-        rem_len -= got;
+        rem = (rem / block_align) * block_align;
+        file.read((char*)data, rem);
+        rem_len -= rem;
 
 #ifdef IS_BIG_ENDIAN
         unsigned char * datac = (unsigned char *)data;
@@ -311,7 +310,7 @@ public:
     ArrayStream stream;
 
     WavDecoderMemory(unsigned char * data, size_t size)
-    : WavDecoderImpl(stream)
+    : WavDecoderImpl(stream), stream((char*)data, size)
     {
         init(size);
     }

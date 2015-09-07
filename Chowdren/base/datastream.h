@@ -150,7 +150,7 @@ public:
         ((T*)this)->write(data, len);
     }
 
-    bool read(char * data, size_t len)
+    unsigned int read(char * data, size_t len)
     {
         return ((T*)this)->read(data, len);
     }
@@ -186,9 +186,9 @@ public:
     {
     }
 
-    bool read(char * data, size_t len)
+    unsigned int read(char * data, size_t len)
     {
-        return fp.read(data, len) == len;
+        return fp.read(data, len);
     }
 
     void seek(size_t pos)
@@ -227,9 +227,10 @@ public:
     {
     }
 
-    bool read(char * data, size_t len)
+    unsigned int read(char * data, size_t len)
     {
-        return !stream.read(data, len).eof();
+        stream.read(data, len);
+        return stream.gcount();
     }
 
     void seek(size_t pos)
@@ -307,13 +308,13 @@ public:
     {
     }
 
-    bool read(char * data, size_t len)
+    unsigned int read(char * data, size_t len)
     {
         if (str.size() - pos < len)
-            return false;
+            return 0;
         memcpy(data, &str[pos], len);
         pos += len;
-        return true;
+        return len;
     }
 
     void seek(size_t p)
@@ -360,13 +361,13 @@ public:
         pos = 0;
     }
 
-    bool read(char * data, size_t len)
+    unsigned int read(char * data, size_t len)
     {
         if (size - pos < len)
-            return false;
+            return 0;
         memcpy(data, &array[pos], len);
         pos += len;
-        return true;
+        return len;
     }
 
     void seek(size_t p)
