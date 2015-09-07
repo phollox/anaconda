@@ -45,7 +45,7 @@ void init_assets(FSFile & fp)
     read_offsets(stream, FILE_COUNT, file_offsets);
 
     // read sizes
-    read_offsets(stream, ASSET_TYPE_MAX, type_sizes);
+    read_offsets(stream, AssetFile::ASSET_TYPE_MAX, type_sizes);
 }
 
 // AssetFile
