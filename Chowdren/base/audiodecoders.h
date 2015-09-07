@@ -269,8 +269,9 @@ public:
         else
             rem = rem_len;
         rem = (rem / block_align) * block_align;
-        file.read((char*)data, rem);
-        rem_len -= rem;
+        unsigned int got = file.read((char*)data, rem);
+        got -= got%block_align;
+        rem_len -= got;
 
 #ifdef IS_BIG_ENDIAN
         unsigned char * datac = (unsigned char *)data;
