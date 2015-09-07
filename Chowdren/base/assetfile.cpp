@@ -12,7 +12,7 @@ static unsigned int sound_offsets[SOUND_ARRAY_SIZE];
 static unsigned int font_offsets[FONT_ARRAY_SIZE];
 static unsigned int shader_offsets[SHADER_ARRAY_SIZE];
 static unsigned int file_offsets[FILE_ARRAY_SIZE];
-static unsigned int type_sizes[ASSET_TYPE_MAX];
+static unsigned int type_sizes[AssetFile::ASSET_TYPE_MAX];
 
 static unsigned int * asset_offsets[] = {
     image_offsets,
