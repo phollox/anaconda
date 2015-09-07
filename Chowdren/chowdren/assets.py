@@ -92,32 +92,46 @@ class Assets(object):
         data = ByteReader()
         header_size = ((len(self.images) + len(self.sounds) + len(self.fonts) +
                        len(self.shaders) + len(self.files)) * 4
-                      + len(self.images) * 2)
+                      + len(self.images) * 2 + 5 * 4)
 
         # image preload
         self.use_count_offset = header.tell()
         for _ in xrange(len(self.images)):
             header.writeShort(0, True)
 
+        start = data.tell()
         for image in self.images:
             header.writeInt(data.tell() + header_size, True)
             data.write(image)
+        image_size = data.tell() - start
 
+        start = data.tell()
         for sound in self.sounds:
             header.writeInt(data.tell() + header_size, True)
             data.write(sound)
+        sound_size = data.tell() - start
 
+        start = data.tell()
         for font in self.fonts:
             header.writeInt(data.tell() + header_size, True)
             data.write(font)
+        font_size = data.tell() - start
 
+        start = data.tell()
         for shader in self.shaders:
             header.writeInt(data.tell() + header_size, True)
             data.write(shader)
+        shader_size = data.tell() - start
 
+        start = data.tell()
         for packfile in self.files:
             header.writeInt(data.tell() + header_size, True)
             data.write(packfile)
+        packfile_size = data.tell() - start
+
+        for size in (image_size, sound_size, font_size, shader_size,
+                     packfile_size):
+            header.writeInt(size, True)
 
         self.fp.write(str(header))
         self.fp.write(str(data))

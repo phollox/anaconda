@@ -45,6 +45,7 @@ void platform_set_vsync(bool value);
 bool platform_get_vsync();
 void platform_set_fullscreen(bool value);
 void platform_unlock_achievement(const std::string & name);
+void platform_preload_file(FSFile & fp, size_t size);
 
 // fs
 

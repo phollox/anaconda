@@ -110,7 +110,6 @@ enum ObjectFlags
     REPEAT_BACK_COLLISION = (1 << 11),
     LAYER_VISIBLE = (1 << 12),
     DISABLE_COL = (1 << 13),
-    HAS_INACTIVE = (1 << 14),
 
     ALL_VISIBLE = VISIBLE | LAYER_VISIBLE
 };

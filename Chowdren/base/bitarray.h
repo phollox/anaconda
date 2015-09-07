@@ -32,19 +32,19 @@ public:
     {
     }
 
-    unsigned long get(int index)
+    unsigned long get(unsigned int index)
     {
-        return data[index / WORD_SIZE] & (1UL << (index % WORD_SIZE));
+        return data[index / WORD_SIZE] & (1U << (index % WORD_SIZE));
     }
 
-    void set(int index)
+    void set(unsigned int index)
     {
-        data[index / WORD_SIZE] |= 1UL << (index % WORD_SIZE);
+        data[index / WORD_SIZE] |= 1U << (index % WORD_SIZE);
     }
 
-    void unset(int index)
+    void unset(unsigned int index)
     {
-        data[index / WORD_SIZE] &= ~(1UL << (index % WORD_SIZE));
+        data[index / WORD_SIZE] &= ~(1U << (index % WORD_SIZE));
     }
 };
 

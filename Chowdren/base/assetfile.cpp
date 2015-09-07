@@ -12,6 +12,7 @@ static unsigned int sound_offsets[SOUND_ARRAY_SIZE];
 static unsigned int font_offsets[FONT_ARRAY_SIZE];
 static unsigned int shader_offsets[SHADER_ARRAY_SIZE];
 static unsigned int file_offsets[FILE_ARRAY_SIZE];
+static unsigned int type_sizes[ASSET_TYPE_MAX];
 
 static unsigned int * asset_offsets[] = {
     image_offsets,
@@ -42,6 +43,9 @@ void init_assets(FSFile & fp)
     read_offsets(stream, FONT_COUNT, font_offsets);
     read_offsets(stream, SHADER_COUNT, shader_offsets);
     read_offsets(stream, FILE_COUNT, file_offsets);
+
+    // read sizes
+    read_offsets(stream, ASSET_TYPE_MAX, type_sizes);
 }
 
 // AssetFile
@@ -63,6 +67,28 @@ void AssetFile::set_item(int index, AssetType type)
     }
 
     seek(asset_offsets[type][index]);
+}
+
+unsigned int AssetFile::get_offset(int index, AssetType type)
+{
+    if (!assets_initialized) {
+        AssetFile fp;
+        fp.open();
+        init_assets(fp);
+    }
+
+    return asset_offsets[type][index];
+}
+
+unsigned int AssetFile::get_size(AssetType type)
+{
+    if (!assets_initialized) {
+        AssetFile fp;
+        fp.open();
+        init_assets(fp);
+    }
+
+    return type_sizes[type];
 }
 
 // temp files

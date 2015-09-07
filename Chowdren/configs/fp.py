@@ -51,16 +51,25 @@ def init(converter):
 def fix_light_rays(converter, instances):
     new_instances = []
     rays = []
+    heads = []
+    heads_2 = []
+    heads_3 = []
     for item in instances:
         frameitem = item[1]
         obj = (frameitem.handle, frameitem.objectType)
         writer = converter.get_object_writer(obj)
         if writer.data.name.startswith('Light ray'):
             rays.append(item)
+        elif writer.data.name == 'Boss_MantalithHead':
+            heads.append(item)
+        elif writer.data.name == 'Boss_MantalithHead 2':
+            heads_2.append(item)
+        elif writer.data.name == 'Boss_MantalithHead 3':
+            heads_3.append(item)
         else:
             new_instances.append(item)
 
-    return new_instances + rays
+    return new_instances + rays + heads_2 + heads_3 + heads
 
 order_fixers = {
     'Relic Maze 5': fix_light_rays

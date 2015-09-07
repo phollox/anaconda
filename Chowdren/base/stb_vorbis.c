@@ -733,6 +733,9 @@ struct stb_vorbis
   // input config
 #ifndef STB_VORBIS_NO_STDIO
    FILE *f;
+#define GET8_CACHE_SIZE 32
+   unsigned char cache[GET8_CACHE_SIZE];
+   unsigned int cache_size;
    uint32 f_start;
    int close_on_free;
 #endif
@@ -1267,8 +1270,8 @@ static int STBV_CDECL point_compare(const void *p, const void *q)
 
 #if defined(STB_VORBIS_NO_STDIO)
    #define USE_MEMORY(z)    TRUE
-#elif defined(STB_VORBIS_NO_MEMORY)
-  #define USE_MEMORY(z)     FALSE
+// #elif defined(STB_VORBIS_NO_MEMORY)
+//    #define USE_MEMORY(z)    FALSE
 #else
    #define USE_MEMORY(z)    ((z)->stream)
 #endif
@@ -1282,9 +1285,18 @@ static uint8 get8(vorb *z)
 
    #ifndef STB_VORBIS_NO_STDIO
    {
-   int c = fgetc(z->f);
-   if (c == EOF) { z->eof = TRUE; return 0; }
-   return c;
+   if (z->cache_size != 0) {
+      int ret = z->cache[GET8_CACHE_SIZE - z->cache_size];
+      z->cache_size--;
+      return ret;
+   }
+   z->cache_size = fread(&z->cache[0], GET8_CACHE_SIZE, 1, z->f);
+   if (z->cache_size == 0) {
+      z->eof = TRUE;
+      return 0;
+   }
+   z->cache_size--;
+   return z->cache[0];
    }
    #endif
 }
@@ -1308,8 +1320,19 @@ static int getn(vorb *z, uint8 *data, int n)
       return 1;
    }
 
-   #ifndef STB_VORBIS_NO_STDIO   
-   if (fread(data, n, 1, z->f) == 1)
+   #ifndef STB_VORBIS_NO_STDIO
+   if (z->cache_size > 0) {
+      unsigned int copy = n;
+      if (copy > z->cache_size)
+         copy = z->cache_size;
+      memcpy(data, &z->cache[GET8_CACHE_SIZE - z->cache_size], copy);
+      data += copy;
+      z->cache_size -= copy;
+      n -= copy;
+      if (n == 0)
+         return 1;
+   }
+   if (fread(data, n, 1, z->f) == n)
       return 1;
    else {
       z->eof = 1;
@@ -1327,8 +1350,9 @@ static void skip(vorb *z, int n)
    }
    #ifndef STB_VORBIS_NO_STDIO
    {
-      long x = ftell(z->f);
+      long x = ftell(z->f) - z->cache_size;
       fseek(z->f, x+n, SEEK_SET);
+      z->cache_size = 0;
    }
    #endif
 }
@@ -1356,6 +1380,7 @@ static int set_file_offset(stb_vorbis *f, unsigned int loc)
    } else {
       loc += f->f_start;
    }
+   f->cache_size = 0;
    if (!fseek(f->f, loc, SEEK_SET))
       return 1;
    f->eof = 1;
@@ -4232,6 +4257,7 @@ static void vorbis_init(stb_vorbis *p, stb_vorbis_alloc *z)
    p->codebooks = NULL;
    p->page_crc_tests = -1;
    #ifndef STB_VORBIS_NO_STDIO
+   p->cache_size = 0;
    p->close_on_free = FALSE;
    p->f = NULL;
    #endif
@@ -4482,7 +4508,7 @@ unsigned int stb_vorbis_get_file_offset(stb_vorbis *f)
    #endif
    if (USE_MEMORY(f)) return f->stream - f->stream_start;
    #ifndef STB_VORBIS_NO_STDIO
-   return ftell(f->f) - f->f_start;
+   return ftell(f->f) - f->f_start - f->cache_size;
    #endif
 }
 

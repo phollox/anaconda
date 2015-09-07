@@ -4,7 +4,7 @@ import re
 def use_deferred_collisions(converter):
     return False
 
-FORCE_PS4 = True
+FORCE_PS4 = False
 
 def init(converter):
     converter.add_define('CHOWDREN_IS_NAH')
@@ -23,6 +23,7 @@ def init(converter):
     converter.add_define('CHOWDREN_PASTE_CACHE')
     converter.add_define('CHOWDREN_DEFAULT_SCALE', 2)
     converter.add_define('CHOWDREN_FORCE_16_9')
+    converter.add_define('CHOWDREN_STEAM_APPID', 274270)
     # converter.add_define('CHOWDREN_PASTE_BROADPHASE')
 
     strings = converter.game.globalStrings.items

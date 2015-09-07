@@ -261,7 +261,7 @@ inline FrameObject * pick_random(ObjectList & instances)
 {
     int size = 0;
     for (ObjectIterator it(instances); !it.end(); ++it) {
-        if ((*it)->flags & (FADEOUT | DESTROYING)) {
+        if ((*it)->flags & (DISABLE_COL | DESTROYING)) {
             it.deselect();
             continue;
         }
@@ -284,7 +284,7 @@ inline FrameObject * pick_random(QualifierList & instances)
 {
     int size = 0;
     for (QualifierIterator it(instances); !it.end(); ++it) {
-        if ((*it)->flags & (FADEOUT | DESTROYING)) {
+        if ((*it)->flags & (DISABLE_COL | DESTROYING)) {
             it.deselect();
             continue;
         }

@@ -160,6 +160,8 @@ public:
     VectorMovement(FrameObject * instance);
     void update();
     void look_at(int x, int y);
+    void start();
+    void stop(bool collision);
 };
 
 class ShootMovement : public Movement

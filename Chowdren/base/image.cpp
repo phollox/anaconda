@@ -39,6 +39,8 @@ inline unsigned char * load_image(FSFile & image_file, int size,
 typedef vector<Image*> ImageList;
 
 static AssetFile image_file;
+static unsigned char * startup_data;
+static unsigned int startup_size;
 
 void open_image_file()
 {
@@ -108,6 +110,21 @@ void Image::set_static()
     flags |= STATIC;
 }
 
+template <typename T>
+inline void load_image_info(Image & image, T & stream,
+                            unsigned int & size, unsigned int & out_size)
+{
+    image.width = stream.read_uint16();
+    image.height = stream.read_uint16();
+    image.hotspot_x = stream.read_int16();
+    image.hotspot_y = stream.read_int16();
+    image.action_x = stream.read_int16();
+    image.action_y = stream.read_int16();
+    size = stream.read_uint32();
+    out_size = image.width * image.height * 4;
+    image.image = (unsigned char*)STBI_MALLOC(out_size);
+}
+
 void Image::load()
 {
     flags |= USED;
@@ -120,31 +137,38 @@ void Image::load()
         return;
     }
 
-    open_image_file();
-    image_file.set_item(handle, AssetFile::IMAGE_DATA);
-    FileStream stream(image_file);
+    unsigned int size, out_size;
+    unsigned char * buf;
+    int ret;
+    if (startup_data) {
+        unsigned int start = AssetFile::get_offset(0, AssetFile::IMAGE_DATA);
+        unsigned int self = AssetFile::get_offset(handle,
+                                                  AssetFile::IMAGE_DATA);
+        unsigned int offset = self - start;
+        ArrayStream stream((char*)startup_data, startup_size);
+        stream.seek(offset);
+        load_image_info(*this, stream, size, out_size);
+        buf = &startup_data[stream.pos];
+        ret = stbi_zlib_decode_buffer((char*)image, out_size,
+                                      (const char*)buf, size);
+    } else {
+        open_image_file();
+        image_file.set_item(handle, AssetFile::IMAGE_DATA);
+        FileStream stream(image_file);
+        load_image_info(*this, stream, size, out_size);
+        buf = new unsigned char[size];
+        image_file.read(buf, size);
+        ret = stbi_zlib_decode_buffer((char*)image, out_size,
+                                      (const char*)buf, size);
+        delete[] buf;
+    }
 
-    width = stream.read_uint16();
-    height = stream.read_uint16();
-    hotspot_x = stream.read_int16();
-    hotspot_y = stream.read_int16();
-    action_x = stream.read_int16();
-    action_y = stream.read_int16();
-
-    int size = stream.read_uint32();
-    unsigned char * buf = new unsigned char[size];
-    image_file.read(buf, size);
-    int out_size = width*height*4;
-    image = (unsigned char*)STBI_MALLOC(out_size);
-    if (stbi_zlib_decode_buffer((char*)image, out_size, (const char*)buf,
-                                 size) < 0)
-    {
+    if (ret < 0) {
         std::cout << "Could not load image " << handle << std::endl;
         std::cout << stbi_failure_reason() << std::endl;
         stbi_image_free(image);
         image = NULL;
     }
-    delete[] buf;
 }
 
 void Image::unload()
@@ -569,8 +593,46 @@ void flush_image_cache()
 #endif
 }
 
+#ifdef CHOWDREN_IS_WIIU
+#define READ_ALL_IMAGE
+#endif
+
+#ifdef READ_ALL_IMAGE
 void preload_images()
 {
+    double start_time = platform_get_time();
+    double dt;
+
+    // slightly hardcoded
+    unsigned int start = AssetFile::get_offset(0, AssetFile::IMAGE_DATA);
+    unsigned int size = AssetFile::get_size(AssetFile::IMAGE_DATA);
+    AssetFile read_file;
+    read_file.open();
+    read_file.seek(start);
+    startup_data = new unsigned char[size];
+    startup_size = size;
+    read_file.read(startup_data, size);
+    read_file.close();
+
+    dt = platform_get_time() - start_time;
+    std::cout << "Image read took " << dt << std::endl;
+
+    for (int i = 0; i < IMAGE_COUNT; ++i) {
+        Image * image = get_internal_image(i);
+        image->upload_texture();
+        image->set_static();
+    }
+
+    delete[] startup_data;
+    startup_data = NULL;
+
+    dt = platform_get_time() - start_time;
+    std::cout << "Image preload took " << dt << std::endl;
+}
+#else
+void preload_images()
+{
+    double start_time = platform_get_time();
 #ifndef CHOWDREN_IS_DESKTOP
 #if defined(CHOWDREN_PRELOAD_IMAGES) || defined(CHOWDREN_PRELOAD_ALL)
     AssetFile fp;
@@ -580,7 +642,6 @@ void preload_images()
 #ifdef CHOWDREN_IS_3DS
     Render::set_storage(true);
 #endif
-
     for (int i = 0; i < IMAGE_COUNT; i++) {
         unsigned short handle = stream.read_uint16();
         Image * image = get_internal_image(handle);
@@ -598,7 +659,10 @@ void preload_images()
 
 #endif
 #endif
+    double dt = platform_get_time() - start_time;
+    std::cout << "Image preload took " << dt << std::endl;
 }
+#endif
 
 Image dummy_image;
 

@@ -1155,7 +1155,7 @@ void platform_hide_mouse()
 
 const std::string & platform_get_language()
 {
-    static std::string language("Italian");
+    static std::string language("English");
     return language;
 }
 

@@ -573,11 +573,12 @@ void BallMovement::set_deceleration(int value)
 VectorMovement::VectorMovement(FrameObject * instance)
 : Movement(instance), angle(0.0)
 {
+    flags |= MOVE_STOPPED;
 }
 
 void VectorMovement::update()
 {
-    if (speed <= 0)
+    if (speed <= 0 || flags & MOVE_STOPPED)
         return;
 
     float vel_x = speed * cos_deg(angle) * instance->frame->timer_mul;
@@ -589,6 +590,19 @@ void VectorMovement::update()
 
     move(vel_x * 0.01f, vel_y * 0.01f);
     instance->set_animation(WALKING);
+}
+
+void VectorMovement::stop(bool collision)
+{
+    flags |= MOVE_STOPPED;
+}
+
+void VectorMovement::start()
+{
+    if (!(flags & MOVE_STOPPED))
+        return;
+    flags &= ~MOVE_STOPPED;
+    Movement::start();
 }
 
 void VectorMovement::look_at(int x, int y)
