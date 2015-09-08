@@ -3,6 +3,7 @@
 #include "fileio.h"
 #include <iostream>
 #include "stringcommon.h"
+#include "datastream.h"
 
 #define ARRAY_MAGIC "ASSBF1.0"
 
@@ -224,7 +225,7 @@ inline void save_assarray(AssociateArray & array, T & stream, int method)
     stream.write(ARRAY_MAGIC, sizeof(ARRAY_MAGIC)-1);
 
     ArrayMap::iterator it;
-    for (it = array..map->begin(); it != array.map->end(); it++) {
+    for (it = array.map->begin(); it != array.map->end(); it++) {
         AssociateArrayItem & item = it->second;
         std::string key = it->first;
         encode_method(key, method);

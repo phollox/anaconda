@@ -54,6 +54,11 @@ void SteamGlobal::init()
         std::cout << "Could not initialize Steam API" << std::endl;
         return;
     }
+	std::cout << "Initialized Steam API" << std::endl;
+#if 0
+	if (!SteamUserStats()->ResetAllStats(true))
+		std::cout << "Could not reset stats" << std::endl;
+#endif
 	if (!SteamUserStats()->RequestCurrentStats())
 		std::cout << "Could not request Steam stats" << std::endl;
 
