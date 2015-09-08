@@ -23,6 +23,10 @@ def init_obj(converter, obj):
     if obj.data.name == 'Dialogue 2':
         # we could use use_iteration_index, but let's use a simple fix
         obj.common.text.items[0].value = ''
+    elif obj.data.name == 'String 3':
+        item = obj.common.text.items[0]
+        if item.value == 'DEBUG MODE ENABLED':
+            item.value = ''
     elif obj.data.name == 'LoS':
         # stupid F2.5 bug
         obj.common.newFlags['CollisionBox'] = False
