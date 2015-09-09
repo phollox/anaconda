@@ -2974,7 +2974,6 @@ extern "C"
 __attribute__((no_sanitize_address))
 const char *__asan_default_options()
 {
-    std::cout << "Retrieved asan options" << std::endl;
     return asan_default_options;
 }
 
