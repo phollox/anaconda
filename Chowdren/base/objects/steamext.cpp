@@ -61,7 +61,7 @@ static bool _steam_init()
 
 void SteamGlobal::init()
 {
-    initialized = SteamAPI_Init();
+    initialized = _steam_init();
     if (!initialized) {
         std::cout << "Could not initialize Steam API" << std::endl;
 #ifdef CHOWDREN_FORCE_STEAM_OPEN
