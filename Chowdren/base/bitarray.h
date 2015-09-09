@@ -20,7 +20,7 @@
 class BaseBitArray
 {
 public:
-    typedef unsigned long word_t;
+    typedef unsigned int word_t;
     enum {
         WORD_SIZE = sizeof(word_t) * 8
     };
@@ -32,7 +32,7 @@ public:
     {
     }
 
-    unsigned long get(unsigned int index)
+    unsigned int get(unsigned int index)
     {
         return data[index / WORD_SIZE] & (1U << (index % WORD_SIZE));
     }
