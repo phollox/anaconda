@@ -47,21 +47,9 @@ SteamGlobal::SteamGlobal()
 {
 }
 
-#if !defined(NDEBUG) && (defined(__clang__) || defined (__GNUC__))
-# define ATTRIBUTE_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
-#else
-# define ATTRIBUTE_NO_SANITIZE_ADDRESS
-#endif
-
-ATTRIBUTE_NO_SANITIZE_ADDRESS
-static bool _steam_init()
-{
-    return SteamAPI_Init();
-}
-
 void SteamGlobal::init()
 {
-    initialized = _steam_init();
+    initialized = SteamAPI_Init();
     if (!initialized) {
         std::cout << "Could not initialize Steam API" << std::endl;
 #ifdef CHOWDREN_FORCE_STEAM_OPEN

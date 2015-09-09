@@ -2964,3 +2964,18 @@ void start_joystick_rumble(int n, const std::string & name, int times)
     RumbleEffect & effect = rumble_effects[name];
     joystick_vibrate(n, effect.l, effect.r, effect.duration);
 }
+
+// asan
+
+#if !defined(NDEBUG) && (defined(__clang__) || defined (__GNUC__))
+const char * asan_default_options = "suppressions=asan.supp";
+
+extern "C"
+__attribute__((no_sanitize_address))
+const char *__asan_default_options()
+{
+    std::cout << "Retrieved asan options" << std::endl;
+    return asan_default_options;
+}
+
+#endif
