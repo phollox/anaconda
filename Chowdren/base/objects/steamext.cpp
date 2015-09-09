@@ -47,11 +47,31 @@ SteamGlobal::SteamGlobal()
 {
 }
 
+#if !defined(NDEBUG) && (defined(__clang__) || defined (__GNUC__))
+# define ATTRIBUTE_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
+#else
+# define ATTRIBUTE_NO_SANITIZE_ADDRESS
+#endif
+
+ATTRIBUTE_NO_SANITIZE_ADDRESS
+static bool _steam_init()
+{
+    return SteamAPI_Init();
+}
+
 void SteamGlobal::init()
 {
     initialized = SteamAPI_Init();
     if (!initialized) {
         std::cout << "Could not initialize Steam API" << std::endl;
+#ifdef CHOWDREN_FORCE_STEAM_OPEN
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Steam error",
+                                 "Could not initialize Steam API. "
+                                 "Please make sure you are logged in to Steam "
+                                 "before opening the game.",
+                                 NULL);
+        exit(0);
+#endif
         return;
     }
 	std::cout << "Initialized Steam API" << std::endl;

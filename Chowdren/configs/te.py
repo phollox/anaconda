@@ -18,6 +18,7 @@ def init(converter):
     converter.add_define('CHOWDREN_STEAM_APPID', 298630)
     converter.add_define('CHOWDREN_TEXT_USE_UTF8')
     converter.add_define('CHOWDREN_INI_USE_UTF8')
+    converter.add_define('CHOWDREN_FORCE_STEAM_OPEN')
 
 def init_obj(converter, obj):
     if obj.data.name == 'Dialogue 2':
