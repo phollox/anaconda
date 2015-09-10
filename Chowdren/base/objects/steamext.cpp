@@ -103,6 +103,8 @@ void SteamGlobal::init()
     }
 #endif
     steam_language = SteamApps()->GetCurrentGameLanguage();
+    if (steam_language.empty())
+        steam_language = "english";
     steam_language[0] = toupper(steam_language[0]);
     std::cout << "Detected Steam language: " << steam_language << std::endl;
 
