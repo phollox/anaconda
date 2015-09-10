@@ -241,8 +241,8 @@ public:
 
     SpriteCollision(FrameObject * instance = NULL)
     : InstanceCollision(instance, SPRITE_COLLISION, 0), image(NULL),
-      angle(0.0f), x_scale(1.0f), y_scale(1.0f), co(1.0f),
-      si(0.0f), hotspot_x(0), hotspot_y(0), width(0), height(0), x_t(0), y_t(0)
+      angle(0.0f), x_scale(1.0f), y_scale(1.0f), co(1.0f), si(0.0f),
+      hotspot_x(0), hotspot_y(0), width(0), height(0), x_t(0), y_t(0)
     {
     }
 
@@ -336,7 +336,7 @@ public:
         if (no_rotate) {
             co_divx = CONVERT_SCALER(x_scale_inv);
             co_divy = CONVERT_SCALER(y_scale_inv);
-            si_divx = si_divy = 0.0f;
+            si_divx = si_divy = 0;
             width = int(xx);
             height = int(yy);
             x_t = y_t = 0;

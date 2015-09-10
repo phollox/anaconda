@@ -19,6 +19,23 @@ def init(converter):
     converter.add_define('CHOWDREN_TEXT_USE_UTF8')
     converter.add_define('CHOWDREN_INI_USE_UTF8')
     converter.add_define('CHOWDREN_FORCE_STEAM_OPEN')
+    converter.add_define('CHOWDREN_USE_STEAM_LANGUAGE')
+
+def write_frame_post(converter, writer):
+    if converter.current_frame_index != 0:
+        return
+    writer.putlnc('std::string lang = platform_get_language();')
+    langs = {
+        'English': 'eng',
+        'Russian': 'rus',
+        'Spanish': 'spa',
+        'German': 'ger',
+        'French': 'fre',
+        'Polish': 'pol'
+    }
+    for k, v in langs.iteritems():
+        writer.putlnc('if (lang == %r) lang = %r;', k, v, cpp=False)
+    writer.putlnc('global_strings->set(6, lang);')
 
 def init_obj(converter, obj):
     if obj.data.name == 'Dialogue 2':

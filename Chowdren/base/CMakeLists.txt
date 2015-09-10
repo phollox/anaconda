@@ -90,6 +90,7 @@ set(SRCS
     ${CHOWDREN_BASE_DIR}/broadphase.cpp
     ${CHOWDREN_BASE_DIR}/profiler.cpp
     ${CHOWDREN_BASE_DIR}/stringcommon.cpp
+    ${CHOWDREN_BASE_DIR}/crossrand.cpp
     ${PLATFORM_SRCS}
     ${FRAMESRCS}
     ${EVENTSRCS}

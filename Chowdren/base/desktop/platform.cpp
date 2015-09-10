@@ -147,10 +147,21 @@ static bool check_opengl_extensions()
 }
 #endif
 
+#ifdef __APPLE__
+static bool has_ctrl = false;
+#endif
+
 static void on_key(SDL_KeyboardEvent & e)
 {
     if (e.repeat != 0)
         return;
+#ifdef __APPLE__
+    if (SDL_GetModState() & KMOD_CTRL)
+        has_ctrl = true;
+    else
+        has_ctrl = false;
+#endif
+
     bool state = e.state == SDL_PRESSED;
     int key = e.keysym.sym;
 
@@ -179,7 +190,12 @@ static void on_key(SDL_KeyboardEvent & e)
 
 static void on_mouse(SDL_MouseButtonEvent & e)
 {
-    manager.on_mouse(e.button, e.state == SDL_PRESSED);
+    int button = e.button;
+#ifdef __APPLE__
+    if (has_ctrl && button == SDL_BUTTON_LEFT)
+        button = SDL_BUTTON_RIGHT;
+#endif
+    manager.on_mouse(button, e.state == SDL_PRESSED);
 }
 
 void init_joystick();
@@ -1153,11 +1169,23 @@ void platform_hide_mouse()
     SDL_ShowCursor(0);
 }
 
+#ifdef CHOWDREN_USE_STEAM_LANGUAGE
+
+const std::string & get_steam_language();
+const std::string & platform_get_language()
+{
+    return get_steam_language();
+}
+
+#else
+
 const std::string & platform_get_language()
 {
     static std::string language("English");
     return language;
 }
+
+#endif
 
 // filesystem stuff
 

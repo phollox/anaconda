@@ -5,12 +5,15 @@
 #include "path.h"
 #include "platform.h"
 #include "manager.h"
+#include <ctype.h>
 
 #ifdef CHOWDREN_IS_DESKTOP
 #include <SDL.h>
 #endif
 
 // SteamGlobal
+
+static std::string steam_language("English");
 
 #ifdef CHOWDREN_ENABLE_STEAM
 #include "steam/steam_api.h"
@@ -37,6 +40,13 @@ public:
 
 static SteamGlobal global_steam_obj;
 
+// export for platform_get_language
+
+const std::string & get_steam_language()
+{
+    return steam_language;
+}
+
 #ifdef CHOWDREN_IS_FP
 #include "objects/steamfp/frontend.cpp"
 #endif
@@ -49,6 +59,13 @@ SteamGlobal::SteamGlobal()
 
 void SteamGlobal::init()
 {
+#if defined(CHOWDREN_FORCE_STEAM_OPEN) && defined(CHOWDREN_STEAM_APPID)
+    if (SteamAPI_RestartAppIfNecessary(CHOWDREN_STEAM_APPID)) {
+        exit(EXIT_FAILURE);
+        return;
+    }
+#endif
+
     initialized = SteamAPI_Init();
     if (!initialized) {
         std::cout << "Could not initialize Steam API" << std::endl;
@@ -58,11 +75,16 @@ void SteamGlobal::init()
                                  "Please make sure you are logged in to Steam "
                                  "before opening the game.",
                                  NULL);
-        exit(0);
+        exit(EXIT_FAILURE);
 #endif
         return;
     }
 	std::cout << "Initialized Steam API" << std::endl;
+
+#ifdef CHOWDREN_FORCE_STEAM_OPEN
+
+#endif
+
 #if 0
 	if (!SteamUserStats()->ResetAllStats(true))
 		std::cout << "Could not reset stats" << std::endl;
@@ -80,6 +102,8 @@ void SteamGlobal::init()
         exit(0);
     }
 #endif
+    steam_language = SteamApps()->GetCurrentGameLanguage();
+    steam_language[0] = toupper(steam_language[0]);
 
 #ifdef CHOWDREN_IS_FP
     initialize_fp();
@@ -455,7 +479,7 @@ bool SteamObject::is_activated()
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     if (!global_steam_obj.initialized)
-        return true;
+        return false;
     SteamUserStats()->RequestCurrentStats();
     ISteamApps * ownapp = SteamApps();
     return ownapp->BIsSubscribedApp(CHOWDREN_STEAM_APPID);
