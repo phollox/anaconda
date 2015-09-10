@@ -104,6 +104,7 @@ void SteamGlobal::init()
 #endif
     steam_language = SteamApps()->GetCurrentGameLanguage();
     steam_language[0] = toupper(steam_language[0]);
+    std::cout << "Detected Steam language: " << steam_language << std::endl;
 
 #ifdef CHOWDREN_IS_FP
     initialize_fp();
