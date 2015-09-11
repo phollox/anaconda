@@ -30,7 +30,7 @@ public:
     SteamGlobal();
     static void on_close();
     bool is_ready();
-    void init();
+    int init();
 
     STEAM_CALLBACK(SteamGlobal, receive_callback, UserStatsReceived_t,
                    receive_callback_data);
@@ -57,12 +57,16 @@ SteamGlobal::SteamGlobal()
 {
 }
 
-void SteamGlobal::init()
+int init_steam()
+{
+    return global_steam_obj.init();
+}
+
+int SteamGlobal::init()
 {
 #if defined(CHOWDREN_FORCE_STEAM_OPEN) && defined(CHOWDREN_STEAM_APPID)
     if (SteamAPI_RestartAppIfNecessary(CHOWDREN_STEAM_APPID)) {
-        exit(EXIT_FAILURE);
-        return;
+        return EXIT_FAILURE;
     }
 #endif
 
@@ -75,15 +79,11 @@ void SteamGlobal::init()
                                  "Please make sure you are logged in to Steam "
                                  "before opening the game.",
                                  NULL);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
 #endif
-        return;
+        return 0;
     }
 	std::cout << "Initialized Steam API" << std::endl;
-
-#ifdef CHOWDREN_FORCE_STEAM_OPEN
-
-#endif
 
 #if 0
 	if (!SteamUserStats()->ResetAllStats(true))
@@ -99,7 +99,7 @@ void SteamGlobal::init()
                                  "Please purchase the Steam version of the "
                                  "game if you want to play it on Steam.",
                                  NULL);
-        exit(0);
+        return EXIT_FAILURE;
     }
 #endif
     steam_language = SteamApps()->GetCurrentGameLanguage();
@@ -107,10 +107,7 @@ void SteamGlobal::init()
         steam_language = "english";
     steam_language[0] = toupper(steam_language[0]);
     std::cout << "Detected Steam language: " << steam_language << std::endl;
-
-#ifdef CHOWDREN_IS_FP
-    initialize_fp();
-#endif
+    return 0;
 }
 
 void SteamGlobal::on_close()
@@ -150,13 +147,6 @@ void SteamGlobal::download_callback(RemoteStorageDownloadUGCResult_t * res)
 SteamObject::SteamObject(int x, int y, int type_id)
 : FrameObject(x, y, type_id)
 {
-#ifdef CHOWDREN_ENABLE_STEAM
-    static bool initialized = false;
-    if (initialized)
-        return;
-    initialized = true;
-    global_steam_obj.init();
-#endif
 }
 
 bool SteamObject::is_ready()

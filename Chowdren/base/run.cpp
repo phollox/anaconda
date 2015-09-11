@@ -1137,6 +1137,13 @@ int main(int argc, char *argv[])
     open_console();
 #endif
 
+#ifdef CHOWDREN_ENABLE_STEAM
+    extern int init_steam();
+    int ret = init_steam();
+    if (ret != 0)
+        return ret;
+#endif
+
     manager.run();
     return 0;
 }
