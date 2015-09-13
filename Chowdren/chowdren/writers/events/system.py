@@ -2335,7 +2335,11 @@ actions = make_table(ActionMethodWriter, {
     'ExtractBinaryFile' : EmptyAction,
     'ReleaseBinaryFile' : EmptyAction,
     'Wrap' : 'wrap_pos',
-    'ChangeInputKey' : ChangeInputKey
+    'ChangeInputKey' : ChangeInputKey,
+
+    # menu actions. don't implement yet.
+    'UncheckMenu' : EmptyAction,
+    'CheckMenu' : EmptyAction
 })
 
 conditions = make_table(ConditionMethodWriter, {
@@ -2417,7 +2421,10 @@ conditions = make_table(ConditionMethodWriter, {
     'OnLoop' : FalseCondition, # if not a generated group, this is always false
     'VsyncEnabled' : 'platform_get_vsync',
     'AllDestroyed' : AllDestroyed,
-    'MouseInZone' : MouseInZone
+    'MouseInZone' : MouseInZone,
+
+    # menu conditions, don't implement yet
+    'MenuChecked' : FalseCondition
 })
 
 expressions = make_table(ExpressionMethodWriter, {

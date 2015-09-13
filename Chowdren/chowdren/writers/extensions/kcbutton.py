@@ -12,8 +12,8 @@ class ButtonObject(ObjectWriter):
         pass
 
 actions = make_table(ActionMethodWriter, {
-    4 : EmptyAction, # disable
-    3 : EmptyAction # enable
+    4 : 'disable', # disable
+    3 : 'enable' # enable
 })
 
 conditions = make_table(ConditionMethodWriter, {

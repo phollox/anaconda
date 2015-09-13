@@ -1,0 +1,1 @@
+g++ -static-libgcc -static -static-libstdc++ fuse.cpp -o fuse.exe
