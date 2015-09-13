@@ -9,6 +9,7 @@
 #include "input.h"
 #include "pool.h"
 #include "chowconfig.h"
+#include "transition.h"
 
 class Frame;
 
@@ -23,9 +24,13 @@ public:
     bool app_fullscreen, fullscreen;
     int off_x, off_y, x_size, y_size;
     int mouse_x, mouse_y;
+
+    // transition
     Color fade_color;
     float fade_dir;
     float fade_value;
+    Transition::Type fade_type;
+
     int score;
     int lives;
     bool player_died;
@@ -72,7 +77,7 @@ public:
     bool is_fullscreen();
     void run();
     void reset_globals();
-    void set_fade(const Color & color, float dir);
+    void set_fade(Transition::Type type, const Color & color, float dir);
     void draw_fade();
 
 #ifdef CHOWDREN_USE_JOYTOKEY

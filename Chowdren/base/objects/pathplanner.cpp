@@ -1,6 +1,7 @@
 #include "objects/pathplanner.h"
 #include "collision.h"
 #include "objects/pathfinding/jps.h"
+#include "movement.h"
 
 PathPlanner::PathPlanner(int x, int y, int type_id)
 : FrameObject(x, y, type_id)
@@ -10,6 +11,14 @@ PathPlanner::PathPlanner(int x, int y, int type_id)
 PathPlanner::~PathPlanner()
 {
     free(map.data);
+    FlatObjectList::iterator it;
+    for (it = agents.begin(); it != agents.end(); ++it) {
+        FrameObject * obj = *it;
+        obj->agent->planner = NULL;
+        delete obj->agent;
+        obj->agent = NULL;
+    }
+    agents.clear();
 }
 
 void PathPlanner::create_map()
@@ -27,13 +36,12 @@ void PathPlanner::update()
         PathAgent & agent = *obj->agent;
         agent.x = to_grid(obj->x);
         agent.y = to_grid(obj->y);
-
         if (agent.nodes.empty())
             continue;
         PathNode & node = agent.nodes.back();
-        if (node.x != agent.x || node.y != agent.y)
-            continue;
-        agent.nodes.pop_back();
+        if (agent.x == node.x && agent.y == node.y) {
+            agent.nodes.pop_back();
+        }
     }
 }
 
@@ -43,8 +51,8 @@ void PathPlanner::add_agent(FrameObject * obj)
         obj->agent = new PathAgent();
     obj->agent->planner = this;
     obj->agent->obj = obj;
-    obj->agent->x = to_grid(obj->x);
-    obj->agent->y = to_grid(obj->y);
+    obj->agent->x = obj->agent->dest_x = to_grid(obj->x);
+    obj->agent->y = obj->agent->dest_y = to_grid(obj->y);
     agents.push_back(obj);
 }
 
@@ -55,16 +63,18 @@ void PathPlanner::add_obstacle(FrameObject * obj)
         return;
 
     int aabb[4];
-    for (int i = 0; i < 4; ++i)
-        aabb[i] = to_grid(c->aabb[i]);
+    int big_tile_size = tile_size;
+    aabb[0] = std::max(0, (c->aabb[0] / big_tile_size));
+    aabb[1] = std::max(0, (c->aabb[1] / big_tile_size));
+    aabb[2] = std::min(map_width, ((c->aabb[2]-1) / big_tile_size));
+    aabb[3] = std::min(map_height, ((c->aabb[3]-1) / big_tile_size));
+    if (aabb[2] == aabb[0])
+        aabb[2]++;
+    if (aabb[3] == aabb[1])
+        aabb[3]++;
 
-    aabb[0] = std::max(0, c->aabb[0] / tile_size);
-    aabb[1] = std::max(0, c->aabb[1] / tile_size);
-    aabb[2] = std::min(map_width, (c->aabb[2]-1) / tile_size);
-    aabb[3] = std::min(map_height, (c->aabb[3]-1) / tile_size);
-
-    for (int y = aabb[1]; y <= aabb[3]; ++y)
-    for (int x = aabb[0]; x <= aabb[2]; ++x) {
+    for (int y = aabb[1]; y < aabb[3]; ++y)
+    for (int x = aabb[0]; x < aabb[2]; ++x) {
         map.set(to_index(x, y));
     }
 }
@@ -81,14 +91,17 @@ void PathPlanner::orient(FrameObject * obj)
 {
     PathAgent & agent = *obj->agent;
     if (agent.nodes.empty())
-        return;
-    PathPlanner * planner = (PathPlanner*)agent.planner;
+		return;
+	PathPlanner * planner = (PathPlanner*)agent.planner;
     PathNode & node = agent.nodes.back();
-    int dest_x = planner->to_pixels(node.x)
-                 + planner->tile_size / (2 * GRID_UPSCALE);
-    int dest_y = planner->to_pixels(node.y)
-                 + planner->tile_size / (2 * GRID_UPSCALE);
-    int dir = get_direction_int(obj->get_x(), obj->get_y(), dest_x, dest_y);
+    int node_x = node.x * planner->tile_size
+		         + planner->tile_size / 2;
+    int node_y = node.y * planner->tile_size
+		         + planner->tile_size / 2;
+    if (get_distance(obj->x, obj->y, node_x, node_y) < 1.0f)
+        return;
+    int dir = get_direction_int(obj->get_x(), obj->get_y(),
+                                node_x, node_y);
     obj->set_direction(dir);
 }
 
@@ -101,58 +114,59 @@ struct Grid
 
     Grid(PathPlanner & planner, FrameObject::PathAgent & agent)
     : planner(planner), agent(agent),
-      dest_x(agent.dest_x/PathPlanner::GRID_UPSCALE),
-      dest_y(agent.dest_y/PathPlanner::GRID_UPSCALE),
-      src_x(agent.x/PathPlanner::GRID_UPSCALE),
-      src_y(agent.y/PathPlanner::GRID_UPSCALE)
+      dest_x(agent.dest_x),
+      dest_y(agent.dest_y),
+      src_x(agent.x),
+      src_y(agent.y)
     {
     }
 
     inline bool operator()(unsigned x, unsigned y) const
     {
-        unsigned x_orig = x / PathPlanner::GRID_UPSCALE;
-        unsigned y_orig = y / PathPlanner::GRID_UPSCALE;
-        if (x_orig >= (unsigned)planner.map_width ||
-            y_orig >= (unsigned)planner.map_height)
-            return false;
-        if (x_orig == dest_x && y_orig == dest_y)
-            return true;
-        if (x_orig == src_x && y_orig == src_y)
-            return true;
-        for (int yy = -1; yy <= 1; ++yy)
-        for (int xx = -1; xx <= 1; ++xx) {
-            if (!check_pos(x + xx, y + yy))
-                return false;
-        }
-        return true;
-    }
-
-    inline bool check_pos(unsigned x, unsigned y) const
-    {
-        x /= PathPlanner::GRID_UPSCALE;
-        y /= PathPlanner::GRID_UPSCALE;
         if (x >= (unsigned)planner.map_width ||
             y >= (unsigned)planner.map_height)
+            return false;
+        if (x == dest_x && y == dest_y)
+            return true;
+        if (x == src_x && y == src_y)
             return true;
         int i = planner.to_index((int)x, (int)y);
         return planner.map.get(i) == 0;
     }
 };
 
+#include "collision.h"
+
+static void dump_map(int dest_x, int dest_y, PathPlanner * planner)
+{
+    // std::string v = number_to_string(dest_x) + "_" + number_to_string(dest_y)
+    //                 + ".dat";
+    save_bitarray("dump.dat", planner->map,
+                  planner->map_width, planner->map_height);
+}
+
 void PathPlanner::plan_path(FrameObject * obj)
 {
     // XXX this is stupid and slow, but should work well enough
     FrameObject::PathAgent & agent = *obj->agent;
-    PathPlanner * planner = (PathPlanner*)agent.planner;
     agent.nodes.clear();
-    int test = planner->to_index(agent.dest_x / GRID_UPSCALE,
-                                 agent.dest_y / GRID_UPSCALE);
+    PathPlanner * planner = (PathPlanner*)agent.planner;
+    if (agent.x == agent.dest_x && agent.y == agent.dest_y)
+        return;
+    int grid_x = clamp(agent.dest_x,
+                       0, planner->map_width - 1);
+    int grid_y = clamp(agent.dest_y,
+                       0, planner->map_height - 1);
+    int test = planner->to_index(grid_x, grid_y);
     if (planner->map.get(test)) {
+#ifndef NDEBUG
+        dump_map(grid_x, grid_y, planner);
+#endif
         std::cout << "Destination not possible" << std::endl;
         return;
     }
     Grid grid(*planner, agent);
-    unsigned step = 0;
+    unsigned step = 1;
     JPS::PathVector path;
     bool found = JPS::findPath(path, grid, agent.x, agent.y,
                                agent.dest_x, agent.dest_y, step);
@@ -161,32 +175,35 @@ void PathPlanner::plan_path(FrameObject * obj)
         return;
     }
     JPS::PathVector::iterator it;
-    for (it = path.begin(); it != path.end(); ++it) {
-        PathNode n = {it->x, it->y};
+    for (int i = 0; i < int(path.size()); ++i) {
+        JPS::Position & node = path[i];
+        PathNode n = {node.x, node.y};
         agent.nodes.push_back(n);
     }
 }
 
 FrameObject::PathAgent::PathAgent()
-: dest_x(0), dest_y(0)
+: dest_x(0), dest_y(0), flags(0), node_reached(0)
 {
 }
 
 FrameObject::PathAgent::~PathAgent()
 {
     PathPlanner * p = (PathPlanner*)planner;
+    if (p == NULL)
+        return;
     p->agents.erase(std::remove(p->agents.begin(), p->agents.end(), obj),
                     p->agents.end());
 }
 
 bool FrameObject::PathAgent::at_destination()
 {
-    return nodes.empty();
+    return x == dest_x && y == dest_y;
 }
 
 bool FrameObject::PathAgent::not_at_destination()
 {
-    return !nodes.empty();
+    return !at_destination();
 }
 
 bool FrameObject::PathAgent::is_stopping()

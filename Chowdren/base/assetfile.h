@@ -22,13 +22,16 @@ public:
         SOUND_DATA,
         FONT_DATA,
         SHADER_DATA,
-        FILE_DATA
+        FILE_DATA,
+        ASSET_TYPE_MAX
     };
 
     AssetFile();
     void open();
     using FSFile::open;
     void set_item(int index, AssetType type);
+    static unsigned int get_offset(int index, AssetType type);
+    static unsigned int get_size(AssetType type);
 };
 
 // for temporary files

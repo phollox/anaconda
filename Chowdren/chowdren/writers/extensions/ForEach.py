@@ -94,8 +94,11 @@ class ForEach(ObjectWriter):
             writer.add_member('FrameObject * %s' % instance_name)
             name = 'foreach_%s_%s' % (name, self.converter.current_frame_index)
             object_class = self.converter.get_object_class(obj[1])
-            self.converter.set_object(obj, '((%s)%s)' % (object_class,
-                                                         instance_name))
+            set_value = '((%s)%s)' % (object_class, instance_name)
+            self.converter.set_object(obj, set_value)
+            for qual_obj in self.converter.resolve_qualifier(obj):
+                self.converter.set_object(qual_obj, set_value)
+
             name = self.converter.write_generated(name, writer, groups)
             self.loop_names[real_name] = name
 

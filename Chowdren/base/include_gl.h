@@ -4,7 +4,6 @@
 #ifdef CHOWDREN_IS_DESKTOP
 
 #ifdef CHOWDREN_USE_D3D
-#define NOMINMAX
 
 #ifndef NDEBUG
 #define D3D_DEBUG_INFO

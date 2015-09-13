@@ -14,10 +14,6 @@ public:
     BitArray map;
     FlatObjectList agents;
 
-    enum {
-        GRID_UPSCALE = 3
-    };
-
     PathPlanner(int x, int y, int type_id);
     ~PathPlanner();
     void create_map();
@@ -27,12 +23,12 @@ public:
 
     inline int to_grid(int v)
     {
-        return (v * GRID_UPSCALE) / tile_size;
+        return v / tile_size;
     }
 
     inline int to_pixels(int v)
     {
-        return (v * tile_size) / GRID_UPSCALE;
+        return v * tile_size;
     }
 
     inline int to_index(int x, int y)

@@ -56,6 +56,7 @@ class Active(ObjectWriter):
     default_instance = 'default_active_instance'
     filename = 'active'
     destruct = False
+    use_door_fadeout = False
 
     def write_init(self, writer):
         common = self.common
@@ -77,8 +78,10 @@ class Active(ObjectWriter):
         flags = common.newFlags
 
         fade = common.fadeOut
-        if fade and fade.name == 'FADE':
+        if fade and fade.name in ('FADE', 'DOOR'):
             writer.putlnc('fade_duration = %s;', fade.duration / 1000.0)
+            if fade.name == 'DOOR':
+                self.use_door_fadeout = True
 
         if flags['AutomaticRotation']:
             writer.putlnc('active_flags |= AUTO_ROTATE;')
@@ -94,6 +97,18 @@ class Active(ObjectWriter):
             self.destruct = True
 
         writer.putlnc('initialize_active(%s);', flags['CollisionBox'])
+
+    def write_class(self, writer):
+        if not self.use_door_fadeout:
+            return
+        writer.putmeth('void draw')
+        writer.putlnc('if (flags & FADEOUT) {')
+        writer.indent()
+        writer.putlnc('draw_door_fadeout();')
+        writer.putlnc('return;')
+        writer.end_brace()
+        writer.putlnc('Active::draw();')
+        writer.end_brace()
 
     def has_updates(self):
         if not self.converter.config.use_update_filtering():
@@ -161,8 +176,8 @@ class Active(ObjectWriter):
                 writer.putlnc('static Direction %s = {%s, %s, %s, %s, %s, %s, '
                               '%s};', direction_name, direction_index,
                               direction.minSpeed, direction.maxSpeed,
-                              direction.backTo, loop_count, images_name,
-                              image_count)
+                              direction.backTo, loop_count, image_count,
+                              images_name)
                 direction_map[direction_index] = '&%s' % direction_name
 
             directions = []
@@ -338,15 +353,26 @@ class Text(ObjectWriter):
     def write_init(self, writer):
         text = self.common.text
         lines = [paragraph.value for paragraph in text.items]
-        # objects_file.putln('font = font%s' % text.items[0].font)
         writer.putln('width = %s;' % text.width)
         writer.putln('height = %s;' % text.height)
         writer.putln('blend_color = %s;' % make_color(text.items[0].color))
+
         font = text.items[0].font
-        writer.putln('bold = font%s.bold;' % font)
-        writer.putln('italic = font%s.italic;' % font)
-        writer.putln('font_name = font%s.name;' % font)
-        writer.putln('font = get_font(font%s.size);' % font)
+        font_info = self.converter.fonts[font]
+
+        writer.putlnc('bold = %s;', font_info.isBold())
+        writer.putlnc('italic = %s;', bool(font_info.italic))
+        writer.putlnc('font_name = %r;', font_info.faceName)
+
+        flags = []
+        if font_info.isBold():
+            flags.append('FTTextureFont::BOLD')
+        flags = ' | '.join(flags)
+        if not flags:
+            flags = '0'
+
+        writer.putlnc('font = get_font(%s, %s);', font_info.getSize(),
+                      flags)
 
         paragraph = text.items[0]
         if paragraph.flags['HorizontalCenter']:
@@ -378,7 +404,6 @@ class RTFText(ObjectWriter):
     def write_init(self, writer):
         text = self.common.rtf
         writer.putln(to_c('add_line("");',))
-        # objects_file.putln('font = font%s' % text.items[0].font)
         writer.putln('width = %s;' % text.width)
         writer.putln('height = %s;' % text.height)
         writer.putln('blend_color = Color(0, 0, 0);')

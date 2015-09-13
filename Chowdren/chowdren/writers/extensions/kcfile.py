@@ -31,6 +31,8 @@ conditions = make_table(StaticConditionWriter, {
 
 expressions = make_table(StaticExpressionWriter, {
     0 : 'get_size',
+    7 : 'get_ext',
+    6 : 'get_title',
     27 : 'get_appdata_directory()', # directories_my_documents_directory
     28 : 'get_appdata_directory()'
 })

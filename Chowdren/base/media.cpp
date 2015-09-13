@@ -91,6 +91,13 @@ public:
         buffer = new ChowdrenAudio::Sample(fp, type, size);
     }
 
+    SoundMemory(unsigned int id, unsigned char * data, Media::AudioType type,
+                size_t size)
+    : SoundData(id), buffer(NULL)
+    {
+        buffer = new ChowdrenAudio::Sample(data, type, size);
+    }
+
     void load(ChowdrenAudio::SoundBase ** source)
     {
         *source = new ChowdrenAudio::Sound(*buffer);
@@ -228,16 +235,41 @@ bool Channel::is_stopped()
 
 // Media
 
+static unsigned char * startup_data;
+static unsigned int startup_size;
+
 void Media::init()
 {
     ChowdrenAudio::open_audio();
 
+    double start_time = platform_get_time();
+
     AssetFile fp;
     fp.open();
+
+#ifdef CHOWDREN_IS_WIIU
+    // experimental code to load faster
+    unsigned int start = AssetFile::get_offset(0, AssetFile::SOUND_DATA);
+    unsigned int size = AssetFile::get_size(AssetFile::SOUND_DATA);
+    startup_data = new unsigned char[size];
+    startup_size = size;
+    fp.seek(start);
+	fp.read(startup_data, size);
+
+    for (int i = 0; i < SOUND_COUNT; i++) {
+        add_cache(i);
+    }
+
+	delete[] startup_data;
+#else
     for (int i = 0; i < SOUND_COUNT; i++) {
         fp.set_item(i, AssetFile::SOUND_DATA);
         add_cache(i, fp);
     }
+#endif
+
+    std::cout << "Sound bank took " << (platform_get_time() - start_time)
+        << std::endl;
 }
 
 void Media::stop()
@@ -546,9 +578,14 @@ void Media::add_file(unsigned int id, const std::string & fn)
     sounds[id] = data;
 }
 
-void Media::add_cache(unsigned int id, FSFile & fp)
+void Media::add_cache(unsigned int id)
 {
-    FileStream stream(fp);
+    ArrayStream stream((char*)startup_data, startup_size);
+    unsigned int start = AssetFile::get_offset(0, AssetFile::SOUND_DATA);
+    unsigned int offset = AssetFile::get_offset(id, AssetFile::SOUND_DATA);
+    unsigned int stream_offset = offset - start;
+    stream.seek(stream_offset);
+
     AudioType type = (AudioType)stream.read_uint32();
     if (type == NONE)
         return;
@@ -559,11 +596,34 @@ void Media::add_cache(unsigned int id, FSFile & fp)
     if ((is_wav && size <= WAV_STREAM_THRESHOLD) ||
         (!is_wav && size <= OGG_STREAM_THRESHOLD))
     {
+        data = new SoundMemory(id, &startup_data[stream.pos], type, size);
+    } else {
+        unsigned int data_offset = stream.pos - stream_offset;
+        data = new SoundCache(id, offset + data_offset, type, size);
+    }
+    media.sounds[id] = data;
+}
+
+void Media::add_cache(unsigned int id, FSFile & fp)
+{
+    FileStream stream(fp);
+    AudioType type = (AudioType)stream.read_uint32();
+    if (type == NONE)
+        return;
+    unsigned int size = stream.read_uint32();
+    size_t pos = fp.tell();
+
+    bool is_wav = type == WAV;
+    SoundData * data;
+    if ((is_wav && size <= WAV_STREAM_THRESHOLD) ||
+        (!is_wav && size <= OGG_STREAM_THRESHOLD))
+    {
         data = new SoundMemory(id, fp, type, size);
     } else {
         data = new SoundCache(id, fp.tell(), type, size);
     }
-    sounds[id] = data;
+    media.sounds[id] = data;
+    fp.seek(pos + size);
 }
 
 double Media::get_main_volume()

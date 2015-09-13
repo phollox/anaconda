@@ -4,6 +4,8 @@
 #include <string>
 #include <stdio.h>
 
+// #define CHOWDREN_FILE_BUFFERING
+
 class BaseFile
 {
 public:

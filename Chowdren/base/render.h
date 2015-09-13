@@ -17,6 +17,7 @@ public:
         MONOCHROME,
         ZOOMOFFSET,
         PIXELOUTLINE,
+        FONTOUTLINE,
         COLDIRBLUR,
         CHANNELBLUR,
         CHANNELBLURADD,
@@ -55,7 +56,8 @@ public:
         LAYERCOLOR,
         PERSPECTIVE,
         PIXELSCALE,
-        FONT
+        FONT,
+        PREMUL
     };
 
     static int offset[2];

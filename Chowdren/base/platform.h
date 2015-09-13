@@ -38,11 +38,14 @@ void platform_begin_draw();
 void platform_swap_buffers();
 void platform_prepare_frame_change();
 bool platform_remove_file(const std::string & path);
+bool platform_remove_directory(const std::string & path);
 const std::string & platform_get_appdata_dir();
 const std::string & platform_get_language();
 void platform_set_vsync(bool value);
 bool platform_get_vsync();
 void platform_set_fullscreen(bool value);
+void platform_unlock_achievement(const std::string & name);
+void platform_preload_file(FSFile & fp, size_t size);
 
 // fs
 
@@ -55,12 +58,54 @@ bool platform_path_exists(const std::string & path);
 
 struct FilesystemItem
 {
+    enum Flags
+    {
+        FILE = 1 << 0
+    };
+
     std::string name;
-    bool is_file;
+    int flags;
+
+    bool is_file()
+    {
+        return (flags & FILE) != 0;
+    }
+
+    bool is_folder()
+    {
+        return !is_file();
+    }
+};
+
+struct FolderCallback
+{
+    virtual void on_item(FilesystemItem & item) = 0;
 };
 
 void platform_walk_folder(const std::string & path,
-                          vector<FilesystemItem> & items);
+                          FolderCallback & callback);
+
+struct VectorFolderCallback : FolderCallback
+{
+    vector<FilesystemItem> & items;
+
+    VectorFolderCallback(vector<FilesystemItem> & items)
+    : items(items)
+    {
+    }
+
+    void on_item(FilesystemItem & item)
+    {
+        items.push_back(item);
+    }
+};
+
+inline void platform_walk_folder(const std::string & path,
+                          vector<FilesystemItem> & items)
+{
+    VectorFolderCallback callback(items);
+    platform_walk_folder(path, callback);
+}
 
 // debug
 void platform_print_stats();

@@ -24,7 +24,8 @@ enum CollisionType
 enum CollisionFlags
 {
     BOX_COLLISION = 1 << 0,
-    LADDER_OBSTACLE = 1 << 1
+    LADDER_OBSTACLE = 1 << 1,
+    DISABLED = 1 << 2
 };
 
 class CollisionBase
@@ -240,8 +241,8 @@ public:
 
     SpriteCollision(FrameObject * instance = NULL)
     : InstanceCollision(instance, SPRITE_COLLISION, 0), image(NULL),
-      angle(0.0f), x_scale(1.0f), y_scale(1.0f), co(1.0f),
-      si(0.0f), hotspot_x(0), hotspot_y(0), width(0), height(0), x_t(0), y_t(0)
+      angle(0.0f), x_scale(1.0f), y_scale(1.0f), co(1.0f), si(0.0f),
+      hotspot_x(0), hotspot_y(0), width(0), height(0), x_t(0), y_t(0)
     {
     }
 
@@ -317,20 +318,16 @@ public:
             height = image->height;
             new_hotspot_x = hotspot_x;
             new_hotspot_y = hotspot_y;
-            x_t = y_t = 0;
-            if (type != NONE_COLLISION) {            
-                if (flags & BOX_COLLISION)
-                    type = SPRITE_BOX;
-                else
-                    type = SPRITE_COLLISION;
-            }
+            x_t = y_t = 0;        
+            if (flags & BOX_COLLISION)
+                type = SPRITE_BOX;
+            else
+                type = SPRITE_COLLISION;
             update_aabb();
             return;
         }
 
-        if (type != NONE_COLLISION)
-            type = TRANSFORM_SPRITE_COLLISION;
-
+        type = TRANSFORM_SPRITE_COLLISION;
         float xx = image->width * x_scale;
         float yy = image->height * y_scale;
         float x_scale_inv = 1.0f / x_scale;
@@ -339,7 +336,7 @@ public:
         if (no_rotate) {
             co_divx = CONVERT_SCALER(x_scale_inv);
             co_divy = CONVERT_SCALER(y_scale_inv);
-            si_divx = si_divy = 0.0f;
+            si_divx = si_divy = 0;
             width = int(xx);
             height = int(yy);
             x_t = y_t = 0;
@@ -462,14 +459,21 @@ public:
                     color);
         Render::disable_effect();
     }
+
+    void draw(int a)
+    {
+        Render::set_effect(effect);
+        Color c = color;
+        c.a = a;
+        image->draw(dest_x, dest_y, src_x, src_y, src_width, src_height, c);
+        Render::disable_effect();
+    }
 };
 
-bool collide_direct(CollisionBase * a, CollisionBase * b, int * aabb_2);
-
-inline bool collide(CollisionBase * a, CollisionBase * b)
-{
-    return collide_direct(a, b, b->aabb);
-}
+bool collide(CollisionBase * a, CollisionBase * b, int * aabb_2);
+bool collide(CollisionBase * a, CollisionBase * b);
+void save_bitarray(const char * filename, BitArray & array,
+                   int width, int height);
 
 inline bool collide_box(FrameObject * a, int v[4])
 {

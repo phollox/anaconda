@@ -12,7 +12,7 @@ public:
     std::string name;
     std::stringstream data;
 
-    Workspace(BaseStream & stream);
+    Workspace(FileStream & stream);
     Workspace(const std::string & name);
 };
 

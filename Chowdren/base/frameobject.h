@@ -101,12 +101,17 @@ enum ObjectFlags
     SCROLL = (1 << 2),
     FADEOUT = (1 << 3),
     BACKGROUND = (1 << 4),
-    GLOBAL = (1 << 5),
-    INACTIVE = (1 << 6),
-    HAS_COLLISION_CACHE = (1 << 7),
-    HAS_COLLISION = (1 << 8),
-    DEFER_COLLISIONS = (1 << 9),
-    REPEAT_BACK_COLLISION = (1 << 10)
+    BACKGROUND_COL = (1 << 5),
+    GLOBAL = (1 << 6),
+    INACTIVE = (1 << 7),
+    HAS_COLLISION_CACHE = (1 << 8),
+    HAS_COLLISION = (1 << 9),
+    DEFER_COLLISIONS = (1 << 10),
+    REPEAT_BACK_COLLISION = (1 << 11),
+    LAYER_VISIBLE = (1 << 12),
+    DISABLE_COL = (1 << 13),
+
+    ALL_VISIBLE = VISIBLE | LAYER_VISIBLE
 };
 
 enum AnimationIndex
@@ -267,6 +272,7 @@ class FrameObject
 public:
 #ifndef NDEBUG
     std::string name;
+    
 #endif
     int x, y;
     Layer * layer;
@@ -306,8 +312,10 @@ public:
     {
         int x, y, dest_x, dest_y;
         vector<PathNode> nodes;
+        int flags;
         FrameObject * planner;
         FrameObject * obj;
+        int node_reached;
 
         PathAgent();
         ~PathAgent();
@@ -317,6 +325,21 @@ public:
     };
 
     PathAgent * agent;
+#endif
+
+#ifdef CHOWDREN_USE_MOVEIT
+    struct MoveData
+    {
+        int src_x, src_y;
+        int dst_x, dst_y;
+        int step;
+        int cycles;
+
+        MoveData(int src_x, int src_y, int dst_x, int dst_y, int cycles);
+        ~MoveData();
+    };
+
+    MoveData * move_data;
 #endif
 
     static ObjectPool<FrameObject> pool;
@@ -340,6 +363,10 @@ public:
     virtual void set_angle(float angle, int quality = 0);
     void create_alterables();
     void set_visible(bool value);
+    bool get_visible()
+    {
+        return (flags & ALL_VISIBLE) == ALL_VISIBLE;
+    }
     void set_blend_color(int color);
     virtual void draw();
     void draw_image(Image * img, int x, int y, Color c);
@@ -801,7 +828,7 @@ public:
     void select_single(FrameObject * obj)
     {
         int i;
-        for (i = 0; i < count; i++) {
+        for (i = 0; i < count; ++i) {
             ObjectList & list = *items[i];
             if (list.empty()) {
                 list.empty_selection();
@@ -812,6 +839,7 @@ public:
                 continue;
             }
             list.select_single(obj);
+            ++i;
             break;
         }
 

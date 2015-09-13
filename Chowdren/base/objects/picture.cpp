@@ -130,13 +130,6 @@ void ActivePicture::draw()
 void ActivePicture::paste(int dest_x, int dest_y, int src_x, int src_y,
                           int src_width, int src_height, int collision_type)
 {
-// #ifndef NDEBUG
-//     std::cout << "Paste: " << name << " "
-//         << int(transparent_color.r) << " "
-//         << int(transparent_color.g) << " "
-//         << int(transparent_color.b) << " "
-//         << int(transparent_color.a) << std::endl;
-// #endif
     if (image == NULL) {
         std::cout << "Invalid image paste: " << filename << std::endl;
         return;

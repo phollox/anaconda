@@ -85,6 +85,8 @@ void set_gl_state()
     glTexCoordPointer(2, GL_FLOAT, 0, (void*)&render_texcoords2[0]);
 
     glClientActiveTexture(GL_TEXTURE0);
+
+    BaseShader::current = NULL;
 }
 
 #endif
@@ -177,6 +179,14 @@ void Render::init()
 
     unsigned int white = 0xFFFFFFFF;
     render_data.white_tex = Render::create_tex(&white, RGBA, 1, 1);
+#ifdef CHOWDREN_USE_D3D
+#ifdef CHOWDREN_QUICK_SCALE
+    bool linear = false;
+#else
+    bool linear = true;
+#endif
+    Render::set_filter(render_data.white_tex, linear);
+#endif
     render_data.last_tex = 0;
 }
 

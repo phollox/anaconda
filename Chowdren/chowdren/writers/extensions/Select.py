@@ -18,17 +18,20 @@ class LowestValue(ConditionMethodWriter):
         obj = self.parameters[0].loader
         obj = (obj.objectInfo, obj.objectType)
         writer.start_brace()
-        writer.putlnc('FrameObject * selected; selected = NULL;')
+        writer.putln('FrameObject * selected; selected = NULL;')
         writer.putlnc('int alt_index = %s;', self.convert_index(1))
-        writer.putlnc('double lowest = 0.0;')
+        writer.putln('double lowest = 0.0;')
+        writer.putln('double test_val;')
         with self.converter.iterate_object(obj, writer, copy=False):
             writer.putlnc('FrameObject * obj = %s;',
                           self.converter.get_object(obj))
             check = 'obj->alterables->values.get(alt_index)'
-            writer.putlnc('if (selected == NULL || %s < lowest)', check)
+            writer.putlnc('test_val = %s;', check)
+            writer.putlnc('if (selected == NULL || test_val < lowest) {')
             writer.indent()
             writer.putlnc('selected = obj;')
-            writer.dedent()
+            writer.putlnc('lowest = test_val;')
+            writer.end_brace()
 
         obj_list = self.converter.create_list(obj, writer)
 

@@ -28,7 +28,8 @@ from chowdren.writers.events.system import SystemObject
 from chowdren.writers.objects.system import system_objects
 from chowdren.common import (get_method_name, get_class_name, check_digits,
     to_c, make_color, parse_direction, get_base_path, get_root_path, makedirs,
-    is_qualifier, get_qualifier, TEMPORARY_GROUP_ID)
+    is_qualifier, get_qualifier, TEMPORARY_GROUP_ID, TEMPORARY_GROUP_NAME,
+    get_color_tuple)
 from chowdren.writers.extensions import load_extension_module
 from chowdren.key import VK_TO_SDL, VK_TO_NAME, convert_key, KEY_TO_NAME
 from chowdren import extra
@@ -49,6 +50,8 @@ import hashlib
 import cPickle
 import multiprocessing
 from chowdren.local import write_locals
+from chowdren import transition
+from chowdren.runinfo import RunInfo
 
 WRITE_SOUNDS = True
 PROFILE = False
@@ -58,7 +61,10 @@ PROFILE_EVENTS = PROFILE and False
 PROFILE_OBJECTS = PROFILE and False
 
 # enabled for porting
-NATIVE_EXTENSIONS = True
+if getattr(sys, 'frozen', False):
+    NATIVE_EXTENSIONS = False
+else:
+    NATIVE_EXTENSIONS = True
 
 if NATIVE_EXTENSIONS and sys.platform == 'win32':
     from mmfparser.extension import loadLibrary, LoadedExtension
@@ -193,41 +199,6 @@ def load_native_extension(name):
     native_extension_cache[name] = extension
     return extension
 
-def get_color_number(value):
-    return (value & 0xFF, (value & 0xFF00) >> 8, (value & 0xFF0000) >> 16)
-
-def get_system_color(index):
-    if index == 0xFFFF:
-        return None
-    if index & (1 << 31) != 0:
-        return get_color_number(index)
-    try:
-        return ACTIVE_BOX_COLORS[index]
-    except KeyError:
-        return (0, 0, 0)
-
-def read_system_color(reader):
-    return get_system_color(reader.readInt(True))
-
-active_picture_flags = BitDict(
-    'Resize',
-    'HideOnStart',
-    'TransparentBlack',
-    'TransparentFirstPixel',
-    'FlippedHorizontally',
-    'FlippedVertically',
-    'Resample',
-    'WrapModeOff',
-)
-
-button_flags = BitDict(
-    'HideOnStart',
-    'DisableOnStart',
-    'TextOnLeft',
-    'Transparent',
-    'SystemColor'
-)
-
 key_flags = BitDict(
     'Up',
     'Down',
@@ -238,9 +209,6 @@ key_flags = BitDict(
     'Fire3',
     'Fire4'
 )
-
-def get_color_tuple(value):
-    return value & 0xFF, (value & 0xFF00) >> 8, (value & 0xFF0000) >> 16
 
 DEFAULT_CHARMAP = ''.join([chr(item) for item in xrange(32, 256)])
 
@@ -292,6 +260,12 @@ def fix_conditions(conditions):
     if names == ['Never', 'OnCollision']:
         conditions.pop(0)
     return conditions
+
+class CustomGroup(object):
+    global_id = 0
+    def __init__(self, name, precedence):
+        self.event_name = name
+        self.precedence = precedence
 
 class EventGroup(object):
     global_id = None
@@ -416,6 +390,10 @@ class EventGroup(object):
             raise NotImplementedError()
         new_id = '%s_%s' % (self.global_id, self.converter.current_frame_index)
         data = data.replace(TEMPORARY_GROUP_ID, new_id)
+        container_name = 'None'
+        if self.container:
+            container_name = self.container.name
+        data = data.replace(TEMPORARY_GROUP_NAME, container_name)
         return data
 
     def fire_write_callbacks(self):
@@ -507,6 +485,12 @@ class MultiFileWriter(CodeWriter):
         self.write_includes()
         self.putln('')
         self.index += 1
+
+    def ensure(self, count):
+        if self.function_count + count < self.max_count:
+            return
+        self.open_next()
+        self.function_count = 0
 
     def putmeth(self, name, *arg, **kw):
         self.function_count += 1
@@ -605,6 +589,7 @@ class Converter(object):
 
         # DLL architecture
         self.use_dlls = args.dlls
+        self.use_zlib = args.zlib
         self.event_hash_id = 0
 
         self.clear_selection()
@@ -710,6 +695,7 @@ class Converter(object):
         fonts_file = self.open_code('fonts.cpp')
         fonts_file.putln('#include "fonts.h"')
         font_cache = set()
+        self.fonts = {}
         for game in self.games:
             if not game.fonts:
                 continue
@@ -721,6 +707,7 @@ class Converter(object):
                                   logfont.getSize(),
                                   logfont.isBold(), bool(logfont.italic),
                                   bool(logfont.underline), cpp=False)
+                self.fonts[font.handle] = logfont
                 if font_line in font_cache:
                     continue
                 font_cache.add(font_line)
@@ -778,6 +765,8 @@ class Converter(object):
         self.object_cache = {}
         self.global_object_data = {}
         self.back_ids = {}
+        self.name_to_writer = defaultdict(list)
+        self.qualifier_objects = defaultdict(set)
 
         self.extension_includes = set()
         self.extension_sources = set()
@@ -785,6 +774,9 @@ class Converter(object):
         self.application_writers = set()
 
         self.type_ids = itertools.count(2)
+
+        # runinfo
+        self.runinfo = RunInfo(self, self.get_filename('runinfo.dat'))
 
         for game_index, game in enumerate(self.games):
             self.game_index = game_index
@@ -823,13 +815,20 @@ class Converter(object):
             frame_dict = dict(enumerate(game.frames))
             frame_dict = self.config.get_frames(game, frame_dict)
             for frame in frame_dict.itervalues():
+                print 'Write frame:', frame.offset_index
                 self.write_frame(frame.offset_index, frame, event_file,
                                  lists_file, lists_header)
 
         # write object updates
+        event_file.ensure(1)
         update_calls = defaultdict(list)
         updated_objs = set()
         updaters = {}
+        obj_keys = {}
+        list_to_writers = defaultdict(set)
+        special_objs = set()
+
+        # assimilate objects that share their list
         for handle, writer in self.all_objects.iteritems():
             self.game_index = handle[2]
             self.game = self.games[self.game_index]
@@ -842,15 +841,21 @@ class Converter(object):
             has_kill = writer.has_kill()
             if not has_updates and not has_movements:
                 continue
+            key = (writer.class_name, has_updates, has_movements, has_sleep,
+                   has_kill)
             list_name = self.get_object_list(handle)
-            if list_name in updated_objs:
-                continue
+            list_to_writers[list_name].add(writer)
+            if list_name not in special_objs and list_name in updated_objs:
+                if list_name in obj_keys and obj_keys[list_name] != key:
+                    print 'Using custom update for %s' % list_name
+                    special_objs.add(list_name)
+                else:
+                    continue
+            obj_keys[list_name] = key
             updated_objs.add(list_name)
 
             func_name = 'update_%s_%s' % (writer.class_name.lower(),
                                           len(updaters))
-            key = (writer.class_name, has_updates, has_movements, has_sleep,
-                   has_kill)
             func_name = updaters.get(key, None)
             has_func = func_name is not None
             if not has_func:
@@ -902,12 +907,58 @@ class Converter(object):
 
             event_file.end_brace()
 
+        for k, v in update_calls.iteritems():
+            v[:] = [obj for obj in v if obj not in special_objs]
+
         event_file.putmeth('void update_objects')
         for func_name, lists in update_calls.iteritems():
+            if not lists:
+                continue
+            if 'pathplanner' not in func_name:
+                continue
             event_file.add_member('ObjectList * %s_list[%s]' % (func_name,
                                                                 len(lists)))
             event_file.putlnc('%s(%s_list, %s);', func_name, func_name,
                               len(lists))
+
+        for func_name, lists in update_calls.iteritems():
+            if not lists:
+                continue
+            if 'pathplanner' in func_name:
+                continue
+            event_file.add_member('ObjectList * %s_list[%s]' % (func_name,
+                                                                len(lists)))
+            event_file.putlnc('%s(%s_list, %s);', func_name, func_name,
+                              len(lists))
+        frame_objs = defaultdict(list)
+        for obj in special_objs:
+            writers = list_to_writers[obj]
+            for writer in list_to_writers[obj]:
+                for frame_index in writer.get_used_frames():
+                    frame_objs[frame_index].append((writer, obj))
+
+        if frame_objs:
+            event_file.putln('ObjectList * special_list[1];')
+            event_file.putlnc('switch (index) {')
+            event_file.indent()
+            for frame_index, objs in frame_objs.iteritems():
+                event_file.putlnc('case %s:', frame_index)
+                event_file.indent()
+                for (writer, list_name) in objs:
+                    has_updates = writer.has_updates()
+                    has_movements = writer.has_movements()
+                    has_sleep = writer.has_sleep()
+                    has_kill = writer.has_kill()
+                    key = (writer.class_name, has_updates, has_movements,
+                           has_sleep, has_kill)
+                    updater = updaters[key]
+                    event_file.putlnc('special_list[0] = &%s;', list_name)
+                    event_file.putlnc('%s(special_list, 1);', updater)
+
+                event_file.putln('break;')
+                event_file.dedent()
+            event_file.end_brace()
+
         event_file.end_brace()
 
         event_file.putmeth('Frames', init_list=['Frame()'])
@@ -1110,6 +1161,9 @@ class Converter(object):
         with open(self.get_filename('strings.py'), 'wb') as fp:
             fp.write(repr(self.strings.keys()))
 
+        with open(self.get_filename('qualifiers.py'), 'wb') as fp:
+            fp.write(repr(dict(self.qualifier_objects)))
+
         if not self.assets.skip:
             self.write_config(self.info_dict, 'config.py')
             self.assets.write_code()
@@ -1183,8 +1237,15 @@ class Converter(object):
         in_queue = multiprocessing.Queue()
         worker_count = 8
         workers = []
+        use_zopfli = not self.use_zlib
+        if use_zopfli:
+            print 'Using zopfli for compression'
+        else:
+            print 'Using zlib for compression'
+
         for _ in xrange(worker_count):
-            p = multiprocessing.Process(target=worker, args=(in_queue,))
+            p = multiprocessing.Process(target=worker,
+                                        args=(in_queue, use_zopfli))
             p.start()
             workers.append(p)
 
@@ -1278,6 +1339,10 @@ class Converter(object):
         cache['count'] = self.image_count
         self.assets.write_cache(cache)
 
+    def add_custom_group(self, func, precedence):
+        group = CustomGroup(func, precedence)
+        self.custom_pre_groups.append(group)
+
     def write_frame(self, frame_index, frame, event_file, lists_file,
                     lists_header):
         events_ref = '((Frames*)frame)->'
@@ -1299,6 +1364,7 @@ class Converter(object):
         self.static_instances = {}
         object_writers = []
 
+        self.custom_pre_groups = []
         self.system_object = SystemObject(self)
         object_writers.append(self.system_object)
 
@@ -1308,6 +1374,7 @@ class Converter(object):
             all_startup_infos.add(obj)
             try:
                 object_writer = self.get_object_writer(obj)
+                object_writer.set_used_frame(self.current_frame_index)
                 if object_writer not in object_writers:
                     object_writers.append(object_writer)
                 if object_writer.static:
@@ -1339,10 +1406,14 @@ class Converter(object):
         self.qualifier_names = {}
         self.qualifiers = {}
         self.qualifier_types = {}
+        self.qualifier_runinfo = {}
         qualifier_setup = {}
         for qualifier in events.qualifier_list:
             qual_obj = (qualifier.objectInfo, qualifier.type)
             object_infos = qualifier.resolve_objects(self.game.frameItems)
+
+            runinfo = self.runinfo.get_qualifier(qualifier.getQualifier())
+            self.qualifier_runinfo[qual_obj] = runinfo
             object_infos = tuple(
                 [self.filter_object_type((info, qualifier.type))
                 for info in object_infos])
@@ -1527,6 +1598,7 @@ class Converter(object):
         for obj in all_startup_infos:
             if obj in self.multiple_instances:
                 continue
+            # XXX this is a hack
             self.get_object_writer(obj).disable_kill = True
 
         for k, v in containers.iteritems():
@@ -1769,14 +1841,20 @@ class Converter(object):
                 return v
             return cmp(a.global_id, b.global_id)
 
+        # add custom groups
+        pre_groups.extend(self.custom_pre_groups)
+
         for group_list in (first_groups, last_groups, pre_groups):
             group_list.sort(cmp=cmp_group)
-        call_groups = first_groups + call_groups + last_groups
+        call_groups = first_groups + ['check'] + call_groups + last_groups
 
         if PROFILE_GROUPS:
             prof_ids = defaultdict(int)
 
         for group in call_groups:
+            if group == 'check':
+                event_file.putlnc('if (next_frame != -1) return;')
+                continue
             if group.is_container_mark:
                 container = group.container
                 if container.is_static:
@@ -1847,8 +1925,7 @@ class Converter(object):
             if fade.duration == 0:
                 print 'invalid fade duration:', fade.duration
             else:
-                start_writer.putlnc('manager.set_fade(%s, %s);',
-                    make_color(fade.color), -1.0 / (fade.duration / 1000.0))
+                transition.write(start_writer, fade, False)
 
         event_file.putmeth('void %s' % start_name)
         event_file.putcode(start_writer)
@@ -1879,11 +1956,11 @@ class Converter(object):
             name = frameitem.name
             self.name_to_item[(name, self.game_index)] = frameitem
             handle = (frameitem.handle, frameitem.objectType, self.game_index)
+            source_id = self.object_class_index
             if name is None:
                 class_name = 'Object%s' % handle[0]
             else:
-                class_name = (get_class_name(name) + '_' +
-                              str(self.object_class_index))
+                class_name = (get_class_name(name) + '_' + str(source_id))
             self.object_class_index += 1
             object_type = frameitem.properties.objectType
             try:
@@ -1893,6 +1970,7 @@ class Converter(object):
                 print 'not implemented:', repr(frameitem.name), object_type,
                 print handle
                 continue
+            self.name_to_writer[name].append(object_writer)
             object_writer.new_class_name = class_name
             object_writer.object_type = object_type
             object_writer.handle = handle
@@ -2002,6 +2080,9 @@ class Converter(object):
         # write qualifiers in comments so the object aliases properly
         try:
             qualifiers = common.qualifiers[:]
+            name = object_writer.data.name
+            for qualifier in qualifiers:
+                self.qualifier_objects[(qualifier, self.game_index)].add(name)
             qualifiers.sort()
             qualifiers = [str(item) for item in qualifiers]
             qualifiers = ', '.join(qualifiers)
@@ -2015,6 +2096,8 @@ class Converter(object):
 
         if object_writer.is_background():
             objects_file.putln('flags |= BACKGROUND;')
+            if object_writer.is_background_collider():
+                objects_file.putln('flags |= BACKGROUND_COL;')
 
         if not object_writer.is_visible():
             objects_file.putln('set_visible(false);')
@@ -2252,11 +2335,11 @@ class Converter(object):
         if is_qual:
             writer.putlnc('for (int i = 0; i < %s.count; i++)', list_name)
             list_name = '(*%s.items[i])' % list_name
-        writer.putlnc('for (ObjectList::iterator %s = %s.begin(); '
-                      '%s != %s.end(); ++%s) {',
-                      name, list_name, name, list_name, name)
-        self.set_iterator(object_info, list_name, '%s->obj' % name)
+        writer.putlnc('for (int ii = 0; ii < %s.size(); ++ii) {',
+                      list_name)
         writer.indent()
+        writer.putlnc('FrameObject * %s = %s[ii];', name, list_name)
+        self.set_iterator(object_info, list_name, name)
 
     def end_flat_iteration(self, object_info, writer, name='it'):
         writer.end_brace()
@@ -2578,8 +2661,8 @@ class Converter(object):
             if has_container_check:
                 condition = self.get_container_check(container)
                 writer.putln('if (!(%s)) %s' % (condition, event_break))
-            elif container:
-                writer.putln('// group: %s' % container.name)
+            else:
+                writer.putlnc('// group: %s', TEMPORARY_GROUP_NAME)
 
             condition_index = -1
             while condition_index < len(conditions) - 1:
@@ -2600,6 +2683,7 @@ class Converter(object):
                     except KeyError:
                         pass
                 write_conditions = [condition_writer]
+                global_select_obj = condition_writer.use_select()
                 if obj in self.has_single_selection:
                     object_name = self.has_single_selection[obj]
                     self.set_iterator(obj, None, object_name)
@@ -2617,6 +2701,8 @@ class Converter(object):
                                 break
                             if next_cond.iterate_objects is False:
                                 break
+                            global_select_obj = (global_select_obj or
+                                                 next_cond.use_select())
                             condition_index += 1
 
                         write_conditions = conditions[start_index:
@@ -2632,6 +2718,7 @@ class Converter(object):
                         object_name = '(*it)'
 
                 for write_condition in write_conditions:
+                    select_obj = write_condition.use_select()
                     negated = not write_condition.is_negated()
                     writer.putindent()
                     if negated:
@@ -2656,13 +2743,17 @@ class Converter(object):
                     if negated:
                         writer.put(')')
                     if has_multiple:
-                        writer.put(') { it.deselect(); continue; }\n')
+                        if select_obj:
+                            writer.put(') { it.deselect(); continue; }\n')
+                        else:
+                            writer.putc(') %s\n', event_break)
 
                 if has_multiple:
                     writer.end_brace()
                     writer.indented = False
-                    writer.putlnc('if (!%s.has_selection()) %s',
-                                  selected_name, event_break)
+                    if global_select_obj:
+                        writer.putlnc('if (!%s.has_selection()) %s',
+                                      selected_name, event_break)
                 else:
                     writer.put(') %s\n' % event_break)
                 self.set_iterator(None)
@@ -3133,6 +3224,13 @@ class Converter(object):
         elif obj == self.iterated_object:
             return True
         return False
+
+    def get_runinfo(self, obj):
+        if len(obj) == 2:
+            obj = obj + (self.game_index,)
+        if is_qualifier(obj[0]):
+            return self.qualifier_runinfo.get(obj, None)
+        return self.runinfo.objects.get(obj, None)
 
     def get_object(self, obj, as_list=False, use_default=False, index=None):
         handle = obj[0]

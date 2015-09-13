@@ -1,24 +1,52 @@
 from chowdren.writers.objects import ObjectWriter
 from chowdren.common import (get_animation_name, to_c,
-    make_color)
+    make_color, get_color_tuple)
 from chowdren.writers.events import (ComparisonWriter, ActionMethodWriter,
     ConditionMethodWriter, ExpressionMethodWriter, make_table, EmptyAction)
 from mmfparser.data.font import LogFont
 from mmfparser.bitdict import BitDict
 
+COLORS = {
+    0 : (0xC8, 0xC8, 0xC8),
+    1 : (0x00,0x00,0x00),
+    2 : (0x99,0xb4,0xd1),
+    3 : (0xbf,0xcd,0xdb), #SystemColor.activeCaptionBorder,
+    4 : (0xf0,0xf0,0xf0),
+    5 : (0xff,0xff,0xff),
+    6 : (0x64,0x64,0x64), #SystemColor.inactiveCaptionBorder,
+    7 : (0x00,0x00,0x00),
+    8 : (0x00,0x00,0x00),
+    9 : (0x00,0x00,0x00),
+    10 : (0xb4,0xb4,0xb4), #new
+    11 : (0xf4,0xf7,0xfc), #new
+    12 : (0xab,0xab,0xab), #mdi one, doesn't quite match. There is no java mdi background colour./ AppWorksapce
+    13 : (0x33,0x99,0xff), #SystemColor.textText,
+    14 : (0xff,0xff,0xff),  #new  #SystemColor.textHighlight,
+    15 : (0xf0,0xf0,0xf0), #SystemColor.textHighlightText,
+    16 : (0xa0,0xa0,0xa0), #SystemColor.textInactiveText,
+    17 : (0x80,0x80,0x80),
+    18 : (0x00,0x00,0x00),
+    19 : (0x43,0x4e,0x54),
+    20 : (0xff,0xff,0xff),
+    21 : (0x69,0x69,0x69),
+    22 : (0xe3,0xe3,0xe3),
+    23 : (0x00,0x00,0x00),
+    24 : (0xff,0xff,0xe1),
+}
+
 def get_system_color(index):
-    return None
-    # if index == 0xFFFF:
-    #     return None
-    # if index & (1 << 31) != 0:
-    #     return get_color_number(index)
-    # try:
-    #     return COLORS[index]
-    # except KeyError:
-    #     return (0, 0, 0)
+    if index == 0xFFFF:
+        return None
+    if index & (1 << 31) != 0:
+        return get_color_tuple(index)
+    try:
+        return COLORS[index]
+    except KeyError:
+        return (0, 0, 0)
 
 def read_system_color(reader):
-    return get_system_color(reader.readInt(True))
+    value = reader.readInt(True)
+    return get_system_color(value)
 
 FLAGS = BitDict(
     'AlignTop',
@@ -92,18 +120,6 @@ class SystemBox(ObjectWriter):
         border2 = read_system_color(data)
         self.image = data.readShort()
 
-        if self.image == -1:
-            writer.putln('image = NULL;')
-        else:
-            writer.putln('image = %s;' % self.converter.get_image(self.image))
-            if pattern:
-                writer.putln('type = PATTERN_IMAGE;')
-            elif align_center:
-                writer.putln('type = CENTER_IMAGE;')
-            elif align_top_left:
-                writer.putln('type = TOPLEFT_IMAGE;')
-            else:
-                raise NotImplementedError()
 
         data.skipBytes(2) # rData_wFree
         text_color = read_system_color(data)
@@ -125,21 +141,49 @@ class SystemBox(ObjectWriter):
         new_width = width - margin_left - margin_right
         new_height = height - margin_top - margin_bottom
 
-        writer.putlnc('text = std::string(%r, %s);', text, len(text))
-
+        alignment = []
         if flags['AlignTop']:
-            y_align = 'top'
+            alignment.append('ALIGN_TOP')
         elif flags['AlignVerticalCenter']:
-            y_align = 'center'
+            alignment.append('ALIGN_VCENTER')
         elif flags['AlignBottom']:
-            y_align = 'bottom'
+            alignment.append('ALIGN_BOTTOM')
 
         if flags['AlignLeft']:
-            x_align = 'left'
+            alignment.append('ALIGN_LEFT')
         elif flags['AlignHorizontalCenter']:
-            x_align = 'center'
+            alignment.append('ALIGN_HCENTER')
         elif flags['AlignRight']:
-            x_align = 'right'
+            alignment.append('ALIGN_RIGHT')
+
+        if alignment:
+            alignment = ' | '.join(alignment)
+        else:
+            alignment = '0'
+
+        if self.image == -1:
+            writer.putln('image = NULL;')
+            if border1 is None or fill is None:
+                color = (0, 0, 0, 0)
+            else:
+                color = fill + (255,)
+            writer.putlnc('box_color = %s;', make_color(color))
+            writer.putlnc('blend_color = %s;', make_color(text_color))
+            writer.putlnc('alignment = %s;', alignment)
+        else:
+            writer.putln('image = %s;' % self.converter.get_image(self.image))
+            if pattern:
+                writer.putln('type = PATTERN_IMAGE;')
+            elif align_center:
+                writer.putln('type = CENTER_IMAGE;')
+            elif align_top_left:
+                writer.putln('type = TOPLEFT_IMAGE;')
+            else:
+                raise NotImplementedError()
+
+        if text:
+            writer.putlnc('text = %r;', text)
+
 
         version = data.readInt()
         hyperlink_color = read_system_color(data)

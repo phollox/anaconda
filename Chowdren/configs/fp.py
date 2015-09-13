@@ -10,6 +10,7 @@ def init(converter):
     # converter.add_define('CHOWDREN_JOYSTICK2_CONTROLLER')
     converter.add_define('CHOWDREN_TEXTURE_GC')
     converter.add_define('CHOWDREN_FORCE_REMOTE')
+    converter.add_define('CHOWDREN_DISABLE_DPAD_BUTTONS')
 
     frameitems = converter.game.frameItems
     for item in frameitems.itemDict.itervalues():
@@ -34,6 +35,7 @@ def init(converter):
     basename = os.path.basename(converter.games[0].filename)
     if 'e3' in basename or 'expo' in basename:
         converter.add_define('CHOWDREN_DISABLE_WRITE')
+        converter.add_define('CHOWDREN_IS_DEMO')
     # values[0] = 1
     # values[1] = 4
     # values[4] = 1
@@ -49,16 +51,25 @@ def init(converter):
 def fix_light_rays(converter, instances):
     new_instances = []
     rays = []
+    heads = []
+    heads_2 = []
+    heads_3 = []
     for item in instances:
         frameitem = item[1]
         obj = (frameitem.handle, frameitem.objectType)
         writer = converter.get_object_writer(obj)
         if writer.data.name.startswith('Light ray'):
             rays.append(item)
+        elif writer.data.name == 'Boss_MantalithHead':
+            heads.append(item)
+        elif writer.data.name == 'Boss_MantalithHead 2':
+            heads_2.append(item)
+        elif writer.data.name == 'Boss_MantalithHead 3':
+            heads_3.append(item)
         else:
             new_instances.append(item)
 
-    return new_instances + rays
+    return new_instances + rays + heads_2 + heads_3 + heads
 
 order_fixers = {
     'Relic Maze 5': fix_light_rays
@@ -234,6 +245,10 @@ def get_string(converter, value):
     if converter.platform_name != 'generic':
         value = value.replace('./records.dat',
                               '%s/records.dat' % converter.platform.save_dir)
+        value = value.replace('./file',
+                              '%s/file' % converter.platform.save_dir)
+        value = value.replace('./save',
+                              '%s/save' % converter.platform.save_dir)
     return value
 
 def get_missing_image(converter, image):

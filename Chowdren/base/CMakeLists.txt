@@ -28,8 +28,7 @@ set(CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include" ${CMAKE_INCLUDE_PATH})
 
 option(USE_BOX2D "Use Box2D" OFF)
 option(USE_PYTHON "Use Python" OFF)
-option(USE_STEAM "Use Steam (otherwise emulate)" OFF)
-option(ENABLE_STEAM "Enable Steam" ON)
+option(USE_STEAM "Use Steam" OFF)
 option(EMULATE_WIIU "Emulate Wii U features" OFF)
 
 if (CMAKE_CROSSCOMPILING)
@@ -91,6 +90,7 @@ set(SRCS
     ${CHOWDREN_BASE_DIR}/broadphase.cpp
     ${CHOWDREN_BASE_DIR}/profiler.cpp
     ${CHOWDREN_BASE_DIR}/stringcommon.cpp
+    ${CHOWDREN_BASE_DIR}/crossrand.cpp
     ${PLATFORM_SRCS}
     ${FRAMESRCS}
     ${EVENTSRCS}
@@ -98,23 +98,20 @@ set(SRCS
 )
 
 if (USE_STEAM)
-    add_definitions(-DCHOWDREN_USE_STEAM)
-    if (ENABLE_STEAM)
-        add_definitions(-DCHOWDREN_ENABLE_STEAM)
-        include_directories("${CHOWDREN_BASE_DIR}/steam/sdk/public")
-        if (WIN32)
-            set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
-                "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/steam_api.lib")
-        elseif (APPLE)
-            set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
-                "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/osx32/libsteam_api.dylib")
-        elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
-            set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
-                "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/linux64/libsteam_api.so")
-        else()
-            set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
-                "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/linux32/libsteam_api.so")
-        endif()
+    add_definitions(-DCHOWDREN_ENABLE_STEAM)
+    include_directories("${CHOWDREN_BASE_DIR}/steam/sdk/public")
+    if (WIN32)
+        set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
+            "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/steam_api.lib")
+    elseif (APPLE)
+        set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
+            "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/osx32/libsteam_api.dylib")
+    elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
+            "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/linux64/libsteam_api.so")
+    else()
+        set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
+            "${CHOWDREN_BASE_DIR}/steam/sdk/redistributable_bin/linux32/libsteam_api.so")
     endif()
 endif()
 
@@ -238,6 +235,9 @@ if (EMULATE_WIIU)
 endif()
 
 if(WIN32)
+    add_definitions(-D_WINSOCKAPI_)
+    add_definitions(-DWIN32_LEAN_AND_MEAN)
+    add_definitions(-DNOMINMAX)
     if (MINGW)
         set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES} imm32 version)
         set(CMAKE_LIBRARY_PATH "${CHOWDREN_BASE_DIR}/lib/mingw"
@@ -302,11 +302,7 @@ if(APPLE)
     set(MACOSX_BUNDLE_BUNDLE_VERSION "${APP_VERSION}")
     set(MACOSX_BUNDLE_COPYRIGHT "${APP_COPYRIGHT}")
     set(DATA_SRCS ${DATA_SRCS} "${CMAKE_SOURCE_DIR}/${MACOSX_BUNDLE_ICON_FILE}")
-    # set(DATA_SRCS ${DATA_SRCS} "${CHOWDREN_BASE_DIR}/alsoft.conf")
 endif()
-
-# include alsoft.conf
-# set(DATA_SRCS ${DATA_SRCS} "${CHOWDREN_BASE_DIR}/alsoft.conf")
 
 if(LINUX)
     set(DATA_SRCS ${DATA_SRCS} "${CHOWDREN_BASE_DIR}/run.sh")
@@ -335,17 +331,17 @@ add_definitions(-DBOOST_ALL_NO_LIB)
 add_definitions(-DBOOST_NO_EXCEPTIONS)
 add_definitions(-DBOOST_EXCEPTION_DISABLE)
 
-include_directories(${CHOWDREN_BASE_DIR}/include/staticlibs)
-if (NOT NO_STATIC_OGG)
-    # libogg
-    file(GLOB LIBOGG_C
-         "${CHOWDREN_BASE_DIR}/staticlibs/libogg/src/*.c")
-    file(GLOB LIBVORBIS_C
-         "${CHOWDREN_BASE_DIR}/staticlibs/libvorbis/lib/*.c")
-    set(VORBIS_INCLUDE_DIR
-        "${CHOWDREN_BASE_DIR}/staticlibs/libvorbis/lib")
-    set(SRCS ${LIBOGG_C} ${LIBVORBIS_C} ${SRCS})
-endif()
+# include_directories(${CHOWDREN_BASE_DIR}/include/staticlibs)
+# if (NOT NO_STATIC_OGG)
+#     # libogg
+#     file(GLOB LIBOGG_C
+#          "${CHOWDREN_BASE_DIR}/staticlibs/libogg/src/*.c")
+#     file(GLOB LIBVORBIS_C
+#          "${CHOWDREN_BASE_DIR}/staticlibs/libvorbis/lib/*.c")
+#     set(VORBIS_INCLUDE_DIR
+#         "${CHOWDREN_BASE_DIR}/staticlibs/libvorbis/lib")
+#     set(SRCS ${LIBOGG_C} ${LIBVORBIS_C} ${SRCS})
+# endif()
 
 if (USE_WEBP)
     file(GLOB WEBP_C

@@ -5,7 +5,7 @@
 
 // Workspace
 
-Workspace::Workspace(BaseStream & stream)
+Workspace::Workspace(FileStream & stream)
 {
     stream.read_c_string(name);
     stream.read(data, stream.read_uint32());

@@ -191,6 +191,9 @@ shader_display.add_uniform('fAmplitude', 'float')
 shader_blur = Shader('Blur', 'blur', has_tex_size=True)
 shader_blur.add_uniform('radius', 'float')
 
+shader_fontoutline = Shader('FontOutline', 'fontoutline', has_tex_size=True)
+shader_fontoutline.add_uniform('color', 'vec4')
+
 shader_texture = Shader('Texture', 'texture')
 shader_font = Shader('Font', 'font')
 
@@ -230,5 +233,6 @@ SHADERS = [
     shader_font,
     shader_linearburn,
     shader_lineardodge,
-    shader_display
+    shader_display,
+    shader_fontoutline
 ]

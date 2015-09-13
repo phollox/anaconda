@@ -55,6 +55,7 @@ class ActionWriter(ACBase):
 class ConditionWriter(ACBase):
     is_always = None
     in_place = False
+    negate_select = True
     pre_event = None
     post_event = None
     precedence = 0
@@ -67,6 +68,9 @@ class ConditionWriter(ACBase):
 
     def get_comparison(self):
         return COMPARISONS[self.parameters[-1].loader.comparison]
+
+    def use_select(self):
+        return not self.is_negated() or self.negate_select
 
 class ExpressionWriter(EventWriter):
     use_default = True

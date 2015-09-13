@@ -26,7 +26,6 @@ class KcList(ObjectWriter):
         )
         width = data.readShort()
         height = data.readShort()
-        # XXX support unicode
         is_unicode = self.data.settings.get('unicode', False)
         font = self.data.new(LogFont, data, old=not is_unicode)
         font_color = data.readColor()
@@ -38,7 +37,6 @@ class KcList(ObjectWriter):
         line_count = data.readShort(True)
         index_offset = -1 if data.readInt() == 1 else 0
         data.skipBytes(4 * 3)
-        lines = []
         for _ in xrange(line_count):
             line = self.data.readString(data)
             writer.putln(to_c('add_line(%r);', line))
@@ -48,15 +46,19 @@ class KcList(ObjectWriter):
 
         if flags['Sort']:
             writer.putln('list_flags |= SORT_LIST;')
+            if line_count:
+                writer.putln('sort();')
+
+        writer.putlnc('index_offset = current_line = %s;', index_offset)
 
 actions = make_table(ActionMethodWriter, {
     0 : 'load_file',
     5 : 'clear',
     6 : 'add_line',
-    8 : 'delete_line(%s - 1)',
-    9 : '.current_line = %s',
+    8 : 'delete_line',
+    9 : 'set_current_line',
     21 : 'disable_focus',
-    30 : 'set_line(%s - 1, %s)'
+    30 : 'set_line(%s, %s)'
 })
 
 conditions = make_table(ConditionMethodWriter, {

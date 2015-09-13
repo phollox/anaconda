@@ -1,6 +1,7 @@
 #include "objects/active.h"
 #include "manager.h"
 #include "render.h"
+#include "transition.h"
 
 // Active
 
@@ -92,7 +93,7 @@ void Active::force_speed(int value)
     int delta = direction_data->max_speed - direction_data->min_speed;
     if (delta != 0) {
         value = (value * delta) / 100 + direction_data->min_speed;
-        value = std::min(direction_data->max_speed, value);
+        value = std::min<int>(direction_data->max_speed, value);
     }
     forced_speed = value;
 
@@ -337,7 +338,7 @@ void Active::load(const std::string & filename, int anim, int dir, int frame,
 void Active::draw()
 {
     bool blend = (active_flags & TRANSPARENT) || blend_color.a < 255 ||
-                 effect != Render::NONE;
+                  effect != Render::NONE;
     if (blend) {
         draw_image(image, x, y, blend_color, angle, x_scale, y_scale);
         return;
@@ -345,6 +346,15 @@ void Active::draw()
     Render::disable_blend();
     draw_image(image, x, y, blend_color, angle, x_scale, y_scale);
     Render::enable_blend();
+}
+
+void Active::draw_door_fadeout()
+{
+    int old_offset[2] = {Render::offset[0], Render::offset[1]};
+    Render::set_offset(0, 0);
+    float p = fade_time / fade_duration;
+    Transition::draw(Transition::DOOR, p, Color(0, 0, 0, 255));
+    Render::set_offset(old_offset[0], old_offset[1]);
 }
 
 int Active::get_action_x()
@@ -423,9 +433,10 @@ static int animation_alias[] = {
 
 int Active::get_animation(int value)
 {
+    value = std::min(value, animations->count - 1);
     if (has_animation(value))
         return value;
-    value = std::max(0, std::min(value, animations->count - 1));
+    value = std::max(0, value);
     for (int i = 0; i < 3; i++) {
         int alias = animation_alias[i + value * 3];
         if (alias == -1 || !has_animation(alias))
@@ -488,6 +499,11 @@ void Active::set_y_scale(float value)
 
 void Active::paste(int collision_type)
 {
+#ifdef CHOWDREN_IS_TE
+    // XXX hack, actually fix negated overlap check
+    if (flags & DESTROYING)
+        return;
+#endif
     layer->paste(image, x-image->hotspot_x, y-image->hotspot_y, 0, 0,
                  image->width, image->height, collision_type, effect,
                  blend_color);
@@ -495,6 +511,11 @@ void Active::paste(int collision_type)
 
 bool Active::test_animation(int value)
 {
+#ifdef CHOWDREN_IS_NAH
+    // XXX this is necessary since an animation is forced beyond bounds,
+    // and we use real animation index for current_animation
+    value = std::min(value, animations->count - 1);
+#endif
     if (value != current_animation)
         return false;
     if (loop_count == 0)
@@ -520,6 +541,7 @@ void Active::flash(float value)
 
 bool Active::is_animation_finished(int anim)
 {
+    anim = std::min(anim, animations->count - 1);
     return current_animation == anim && loop_count == 0;
 }
 
@@ -538,15 +560,14 @@ void Active::destroy()
         if (forced_animation != DISAPPEARING) {
             restore_animation();
             force_animation(DISAPPEARING);
-            if (loop_count == -1)
-                loop_count = 1;
         }
+        if (loop_count == -1)
+            loop_count = 1;
     } else {
         fade_time = fade_duration;
     }
 
-    flags |= FADEOUT;
-    collision->type = NONE_COLLISION;
+    flags |= FADEOUT | DISABLE_COL;
 }
 
 bool Active::has_animation(int anim)

@@ -8,6 +8,7 @@ BaseFile::BaseFile()
 }
 
 BaseFile::BaseFile(const char * filename, const char * mode)
+: handle(NULL), flags(CLOSED)
 {
     open(filename, mode);
 }

@@ -108,6 +108,14 @@ inline int get_angle_int(int x1, int y1, int x2, int y2)
     return int(get_angle(x1, y1, x2, y2));
 }
 
+inline float get_angle_rad(float x1, float y1, float x2, float y2)
+{
+    float v = atan2(y1 - y2, x2 - x1);
+    if (v < 0.0f)
+        v += rad(360.0f);
+    return v;
+}
+
 inline int get_angle_int(int x, int y)
 {
     return get_angle_int(0, 0, x, y);
@@ -261,6 +269,12 @@ inline bool collides(int a_x1, int a_y1, int a_x2, int a_y2,
 inline bool collides(int a[4], int b[4])
 {
     return a[2] > b[0] && a[3] > b[1] && a[0] < b[2] && a[1] < b[3];
+}
+
+inline bool contains(int b[4], int s[4])
+{
+    return s[0] >= b[0] && s[1] >= b[1] &&
+           s[2] <= b[2] && s[3] <= b[3];
 }
 
 inline void rect_union(int a_x1, int a_y1, int a_x2, int a_y2,

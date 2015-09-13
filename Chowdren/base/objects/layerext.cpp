@@ -20,12 +20,12 @@ void LayerObject::set_layer(int value)
 
 void LayerObject::hide_layer(int index)
 {
-    frame->layers[index].visible = false;
+    frame->layers[index].hide();
 }
 
 void LayerObject::show_layer(int index)
 {
-    frame->layers[index].visible = true;
+    frame->layers[index].show();
 }
 
 void LayerObject::set_position(int index, int x, int y)
@@ -64,6 +64,7 @@ void LayerObject::set_alpha_coefficient(int index, int alpha)
         FrameObject * obj = *it;
         obj->blend_color.set_alpha_coefficient(alpha);
     }
+    layer->blend_color.set_alpha_coefficient(alpha);
 }
 
 double LayerObject::get_alterable(const FrameObject & instance)

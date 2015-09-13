@@ -36,7 +36,10 @@
 	#include <errno.h>
 	#include <unistd.h>
 #else
-	#include <winsock2.h>
+ 	#include <windows.h>
+    // winsock2.h defines _WINSOCKAPI_
+    #undef _WINSOCKAPI_
+	// #include <winsock2.h>
 	#include <ws2tcpip.h>
  	#pragma comment(lib, "Ws2_32.lib")
 #endif
@@ -337,7 +340,15 @@ void Connection::request( const char* method,
 			putheader( name, value );
 		}
 	}
-	endheaders();
+	if (!endheaders()) {
+		// discard any incomplete responses
+		while( !m_Outstanding.empty() )
+		{
+			delete m_Outstanding.front();
+			m_Outstanding.pop_front();
+		}
+		return;
+	}
 
 	if( body )
 		send( body, bodysize );
@@ -387,11 +398,11 @@ void Connection::putheader( const char* header, int numericvalue )
 	putheader( header, buf );
 }
 
-void Connection::endheaders()
+bool Connection::endheaders()
 {
 	if( m_State != REQ_STARTED ) {
 		printf( "Cannot send header" );
-		return;
+		return false;
 	}
 	m_State = IDLE;
 
@@ -405,17 +416,19 @@ void Connection::endheaders()
 	m_Buffer.clear();
 
 //	printf( "%s", msg.c_str() );
-	send( (const unsigned char*)msg.c_str(), msg.size() );
+	return send( (const unsigned char*)msg.c_str(), msg.size() );
 }
 
 
 
-void Connection::send( const unsigned char* buf, int numbytes )
+bool Connection::send( const unsigned char* buf, int numbytes )
 {
 //	fwrite( buf, 1,numbytes, stdout );
 	if( m_Sock < 0 ) {
-		if (!connect())
+		if (!connect()) {
 			BailOnSocketError("connect conn()");
+			return false;
+		}
 	}
 
 	while( numbytes > 0 )
@@ -425,11 +438,15 @@ void Connection::send( const unsigned char* buf, int numbytes )
 #else
 		int n = ::send( m_Sock, buf, numbytes, 0 );
 #endif
-		if( n<0 )
-			BailOnSocketError( "send()" );
+		if (n < 0) {
+			BailOnSocketError("send()");
+			return false;
+		}
 		numbytes -= n;
 		buf += n;
 	}
+
+	return true;
 }
 
 

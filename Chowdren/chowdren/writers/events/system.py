@@ -5,13 +5,14 @@ from chowdren.writers.events import (ActionWriter, ConditionWriter,
     make_expression, make_comparison, EmptyAction, FalseCondition)
 from chowdren.common import (get_method_name, to_c, make_color,
                              parse_direction, get_flag_direction,
-                             TEMPORARY_GROUP_ID, is_qualifier)
+                             TEMPORARY_GROUP_ID, is_qualifier, get_qualifier)
 from chowdren.writers.objects import ObjectWriter
 from chowdren import shader
 from collections import defaultdict
 from chowdren.key import convert_key
 from mmfparser.bitdict import BitDict
 from chowdren.idpool import get_id
+from chowdren import transition
 from chowdren.shader import INK_EFFECTS, NATIVE_SHADERS
 
 def get_loop_running_name(name):
@@ -29,6 +30,9 @@ def get_repeat_name(group):
 def get_restrict_name(group):
     return 'restrict_%s' % group.unique_id
 
+def get_foreach_name(name, converter):
+    return 'foreach_%s_%s' % (name, converter.current_frame_index)
+
 PROFILE_LOOPS = set([])
 
 class SystemObject(ObjectWriter):
@@ -38,12 +42,14 @@ class SystemObject(ObjectWriter):
         self.converter = converter
         self.data = None
         self.foreach_names = {}
+        self.foreach_force_write = set()
 
     def write_frame(self, writer):
         self.write_group_activated(writer)
         self.write_loops(writer)
         self.write_foreach(writer)
         self.write_collisions(writer)
+        self.write_clicked(writer)
 
     def write_start(self, writer):
         for name in self.loops.keys():
@@ -286,6 +292,69 @@ class SystemObject(ObjectWriter):
 
         writer.end_brace()
 
+    def write_clicked(self, writer):
+        converter = self.converter
+        objs = defaultdict(list)
+        clicks = set()
+        objs_to_qual = defaultdict(set)
+        for group in self.get_conditions('ObjectClicked'):
+            cond = group.conditions[0].data
+            mouse_key = converter.convert_parameter(cond.items[0])
+            clicks.add(mouse_key)
+            data = cond.items[1].loader
+            obj = (data.objectInfo, data.objectType)
+            for new_obj in converter.resolve_qualifier(obj):
+                objs[(new_obj, mouse_key)].append(group)
+                objs_to_qual[new_obj].add(obj)
+
+        if not objs:
+            return
+
+        objs = objs.items()
+        objs.sort(key=lambda x: x[0][0])
+
+        writer.add_member('FrameObject * clicked_obj')
+
+        obj_funcs = []
+        for (obj, mouse_key), groups in objs:
+            object_class = converter.get_object_class(obj[1])
+            for qual_obj in objs_to_qual[obj]:
+                converter.set_object(qual_obj,
+                                     '((%s)clicked_obj)' % object_class)
+            key_name = mouse_key.split('_')[-1].lower()
+            name = 'on_click_%s_%s_%s_%s' % (obj[0], obj[1], key_name,
+                                             converter.current_frame_index)
+            name = converter.write_generated(name, writer, groups)
+            obj_funcs.append((obj, mouse_key, name))
+
+        event_name = 'test_clicked_%s' % converter.current_frame_index
+        writer.putmeth('void %s' % event_name)
+
+        test_click = []
+        for click in clicks:
+            test_click.append('is_mouse_pressed_once(%s)' % click)
+        test_click = '!(%s)' % ' || '.join(test_click)
+        writer.putlnc('if (%s) return;', test_click)
+
+        for (obj, mouse_key, func) in obj_funcs:
+            writer.putlnc('if (is_mouse_pressed_once(%s)) {', mouse_key)
+            writer.indent()
+
+            converter.start_flat_iteration(obj, writer)
+            obj = converter.get_object(obj)
+            writer.putlnc('if (%s->mouse_over()) {', obj)
+            writer.indent()
+            writer.putlnc('clicked_obj = %s;', obj)
+            writer.putlnc('%s();', func)
+            writer.end_brace()
+            converter.end_flat_iteration(obj, writer)
+
+            writer.end_brace()
+        writer.end_brace()
+
+        # pregroup, precedence 1
+        converter.add_custom_group(event_name, 1)
+
     def write_foreach(self, writer):
         loops = defaultdict(list)
         loop_objects = {}
@@ -299,16 +368,33 @@ class SystemObject(ObjectWriter):
         self.foreach_names = {}
         self.converter.begin_events()
         for real_name, groups in loops.iteritems():
+            force_write = real_name in self.foreach_force_write
             obj = loop_objects[real_name]
             name = get_method_name(real_name)
             instance_name = 'foreach_instance_' + name
             writer.add_member('FrameObject * %s' % instance_name)
             object_class = self.converter.get_object_class(obj[1])
-            self.converter.set_object(obj, '((%s)%s)' % (object_class,
-                                                         instance_name))
-            name = 'foreach_%s_%s' % (name, self.converter.current_frame_index)
-            name = self.converter.write_generated(name, writer, groups)
-            self.foreach_names[real_name] = name
+            set_value = '((%s)%s)' % (object_class, instance_name)
+            self.converter.set_object(obj, set_value)
+            for qual_obj in self.converter.resolve_qualifier(obj):
+                self.converter.set_object(qual_obj, set_value)
+
+            name = get_foreach_name(name, self.converter)
+            new_name = self.converter.write_generated(name, writer, groups)
+            self.foreach_names[real_name] = new_name
+            if force_write and new_name != name:
+                print 'creating wrapper for', real_name
+                # XXX add call rewrite feature
+                writer.putmeth('void %s' % new_name)
+                writer.putlnc('%s();', new_name)
+                writer.end_brace()
+            self.foreach_force_write.discard(real_name)
+
+        for name in self.foreach_force_write:
+            print 'creating dummy wrapper for', name
+            name = get_foreach_name(get_method_name(name), self.converter)
+            writer.putmeth('void %s' % name)
+            writer.end_brace()
 
     def write_loops(self, writer):
         self.loop_names = set()
@@ -526,14 +612,15 @@ class OnBackgroundCollision(CollisionCondition):
             func_name = 'overlaps_background'
         writer.put('%s()' % func_name)
 
-class ObjectInvisible(ConditionWriter):
-    def write(self, writer):
-        writer.put('flags & VISIBLE')
+class ObjectInvisible(ConditionMethodWriter):
+    method = 'get_visible'
 
     def is_negated(self):
         return True
 
 class MouseOnObject(ConditionWriter):
+    negate_select = False
+
     def get_object(self):
         data = self.data.items[0].loader
         return data.objectInfo, data.objectType
@@ -549,13 +636,15 @@ class Always(ConditionWriter):
 
 class MouseClicked(ConditionWriter):
     is_always = True
+    pre_event = True
 
     def write(self, writer):
         writer.put('is_mouse_pressed_once(%s)' % self.convert_index(0))
 
 class ObjectClicked(ConditionWriter):
-    is_always = True
-    precedence = 1
+    # is_always = True
+    # pre_event = True
+    # precedence = 1
 
     def get_object(self):
         data = self.data.items[1].loader
@@ -1015,6 +1104,45 @@ class LeavingPlayfield(CollisionCondition):
 
 # actions
 
+class AlterableAction(ActionMethodWriter):
+    def __init__(self, *arg, **kw):
+        ActionMethodWriter.__init__(self, *arg, **kw)
+        return
+        obj = self.get_object()
+        runinfo = self.converter.get_runinfo(obj)
+        if runinfo is None:
+            self.method += '_int'
+            return
+        index_param = self.parameters[0].loader
+        if index_param.isExpression:
+            items = index_param.items
+            if len(items) != 2 or items[0].getName() != 'Long':
+                index = None
+            else:
+                index = items[0].loader.value
+        else:
+            index = index_param.value
+        if index is None:
+            pass
+
+    def write(self, writer):
+        ActionMethodWriter.write(self, writer)
+        obj = self.get_object()
+        if is_qualifier(obj[0]):
+            name = (get_qualifier(obj[0]), self.converter.game_index)
+        else:
+            name = self.converter.get_object_writer(obj).data.name
+        writer.put(' // %s' % repr(name))
+
+class SetAlterableValue(AlterableAction):
+    method = 'alterables->values.set'
+
+class AddToAlterable(AlterableAction):
+    method = 'alterables->values.add'
+
+class SubtractFromAlterable(AlterableAction):
+    method = 'alterables->values.sub'
+
 class CollisionAction(ActionWriter):
     def write(self, writer):
         obj = self.get_object()
@@ -1446,12 +1574,13 @@ class Foreach(ActionWriter):
             raise NotImplementedError()
         name = get_method_name(real_name)
         if real_name not in self.converter.system_object.foreach_names:
-            writer.putlnc('// nested foreach not implemented: %s',
-                          real_name)
-            writer.end_brace()
-            print 'foreach error! nested foreach not implemented yet'
-            return
-        func_call = self.converter.system_object.foreach_names[real_name]
+            self.converter.system_object.foreach_force_write.add(real_name)
+            func_call = get_foreach_name(name, self.converter)
+            # writer.end_brace()
+            # print 'foreach error! nested foreach not implemented yet'
+            # return
+        else:
+            func_call = self.converter.system_object.foreach_names[real_name]
         with self.converter.iterate_object(obj, writer):
             selected = self.converter.get_object(obj)
             writer.putlnc('foreach_instance_%s = %s;', name, selected)
@@ -1497,6 +1626,8 @@ class StartLoop(ActionWriter):
                 if real_name not in self.loop_warnings:
                     print 'Could not find loop %r' % real_name
                     print '(ignoring all future instances)'
+                    writer.putlnc('// could not find loop %s',
+                                  real_name)
                     self.loop_warnings.add(real_name)
                 return
             loop_funcs = self.converter.system_object.loop_funcs
@@ -1605,10 +1736,10 @@ class StartLoop(ActionWriter):
             self.converter.clear_selection()
             self.group.force_multiple = set()
         else:
-            writer.putln('// %r' % selection_after)
+            # writer.putln('// %r' % selection_after)
             self.converter.has_selection.update(selection_after)
             self.converter.saved_selections.update(selection_after.iterkeys())
-            writer.putln('// %r' % self.converter.has_selection)
+            # writer.putln('// %r' % self.converter.has_selection)
 
 
 class DeactivateGroup(ActionWriter):
@@ -1713,11 +1844,9 @@ class SetFrameAction(ActionWriter):
             return
         if fade.duration == 0:
             return
-        color = fade.color
         writer.putln('if (loop_count != 0)')
         writer.indent()
-        writer.putln(to_c('manager.set_fade(%s, %s);', make_color(
-            color), 1.0 / (fade.duration / 1000.0)))
+        transition.write(writer, fade, True)
         writer.dedent()
 
 class JumpToFrame(SetFrameAction):
@@ -1929,6 +2058,9 @@ class GlobalValueExpression(ExpressionWriter):
             func = 'global_values->get'
         return '%s(%s)' % (func, self.data.loader.value)
 
+class GlobalValueDynamic(ExpressionMethodWriter):
+    method = '.global_values->get(-1 + '
+
 class GlobalStringExpression(ExpressionWriter):
     def get_string(self):
         return 'global_strings->get(%s)' % self.data.loader.value
@@ -2059,10 +2191,10 @@ actions = make_table(ActionMethodWriter, {
     'SwapPosition' : SwapPosition,
     'SetX' : 'set_x',
     'SetY' : 'set_y',
-    'SetAlterableValue' : 'alterables->values.set',
-    'AddToAlterable' : 'alterables->values.add',
+    'SetAlterableValue' : SetAlterableValue,
+    'AddToAlterable' : AddToAlterable,
     'SpreadValue' : SpreadValue,
-    'SubtractFromAlterable' : 'alterables->values.sub',
+    'SubtractFromAlterable' : SubtractFromAlterable,
     'SetAlterableString' : 'alterables->strings.set',
     'AddCounterValue' : 'add',
     'SubtractCounterValue' : 'subtract',
@@ -2203,7 +2335,11 @@ actions = make_table(ActionMethodWriter, {
     'ExtractBinaryFile' : EmptyAction,
     'ReleaseBinaryFile' : EmptyAction,
     'Wrap' : 'wrap_pos',
-    'ChangeInputKey' : ChangeInputKey
+    'ChangeInputKey' : ChangeInputKey,
+
+    # menu actions. don't implement yet.
+    'UncheckMenu' : EmptyAction,
+    'CheckMenu' : EmptyAction
 })
 
 conditions = make_table(ConditionMethodWriter, {
@@ -2219,7 +2355,7 @@ conditions = make_table(ConditionMethodWriter, {
     'Compare' : make_comparison('%s'),
     'IsOverlapping' : IsOverlapping,
     'OnCollision' : OnCollision,
-    'ObjectVisible' : '.flags & VISIBLE',
+    'ObjectVisible' : 'get_visible',
     'ObjectInvisible' : ObjectInvisible,
     'WhileMousePressed' : 'is_mouse_pressed',
     'MouseOnObject' : MouseOnObject,
@@ -2285,7 +2421,10 @@ conditions = make_table(ConditionMethodWriter, {
     'OnLoop' : FalseCondition, # if not a generated group, this is always false
     'VsyncEnabled' : 'platform_get_vsync',
     'AllDestroyed' : AllDestroyed,
-    'MouseInZone' : MouseInZone
+    'MouseInZone' : MouseInZone,
+
+    # menu conditions, don't implement yet
+    'MenuChecked' : FalseCondition
 })
 
 expressions = make_table(ExpressionMethodWriter, {
@@ -2317,7 +2456,7 @@ expressions = make_table(ExpressionMethodWriter, {
     'AlterableString' : AlterableStringExpression,
     'GlobalString' : GlobalStringExpression,
     'GlobalValue' : GlobalValueExpression,
-    'GlobalValueExpression' : '.global_values->get(-1 + ',
+    'GlobalValueExpression' : GlobalValueDynamic,
     'YPosition' : 'get_y()',
     'XPosition' : 'get_x()',
     'ActionX' : 'get_action_x()',

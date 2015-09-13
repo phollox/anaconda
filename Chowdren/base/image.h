@@ -10,8 +10,8 @@
 #include "bitarray.h"
 #include "render.h"
 
-extern const float normal_texcoords[8];
-extern const float back_texcoords[8];
+extern const float back_texcoords[4];
+extern const float fbo_texcoords[4];
 
 class Image
 {
@@ -48,6 +48,7 @@ public:
     void destroy();
     Image * copy();
     void replace(const Color & from, const Color & to);
+    void replace(const std::string & path);
     void load();
     void set_static();
     void upload_texture();
@@ -96,7 +97,7 @@ public:
 Image * get_internal_image(unsigned int i);
 Image * get_image_cache(const std::string & filename, int hot_x, int hot_y,
                         int act_x, int act_y, TransparentColor color);
-bool has_image_cache(const std::string & filename);
+bool has_image_cache(const std::string & filename); 
 void set_image_cache(const std::string & filename, FileImage * image);
 
 void reset_image_cache();

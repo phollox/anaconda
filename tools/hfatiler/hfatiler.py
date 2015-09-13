@@ -2,12 +2,13 @@ import sys
 sys.path.append('../../')
 
 from mmfparser.data.mfa import (MFA, Backdrop, FrameItem, ChunkList,
-                                ItemFolder, FrameInstance)
+                                ItemFolder, FrameInstance, QuickBackdrop)
 from mmfparser.bytereader import ByteReader
 from mmfparser.data.chunkloaders.imagebank import ImageItem
-from mmfparser.data.chunkloaders.objectinfo import BACKDROP
+from mmfparser.data.chunkloaders.objectinfo import BACKDROP, QUICKBACKDROP
 from mmfparser.data.chunkloaders.frame import NONE_PARENT
 from mmfparser.player.dialog import open_file_selector
+from mmfparser.data.chunkloaders import objects
 from PIL import Image
 
 import sys
@@ -196,7 +197,7 @@ class Tiler(object):
         bank.itemDict[item.handle] = item
         return item
 
-    def create_object(self, name, key, image):
+    def create_object(self, name, key, image, size=None):
         item = self.create_image(image, False)
         icon = self.create_image(image, True)
 
@@ -205,7 +206,10 @@ class Tiler(object):
         frame.items.append(frameitem)
 
         frameitem.name = name
-        frameitem.objectType = BACKDROP
+        if size is not None:
+            frameitem.objectType = QUICKBACKDROP
+        else:
+            frameitem.objectType = BACKDROP
         frameitem.handle = self.object_id
         self.object_id += 1
         frameitem.transparent = True
@@ -214,10 +218,22 @@ class Tiler(object):
         frameitem.iconHandle = icon.handle
         frameitem.chunks = frameitem.new(ChunkList)
 
-        obj = frameitem.new(Backdrop)
+        if size is not None:
+            obj = frameitem.new(QuickBackdrop)
+            obj.width = size[0]
+            obj.height = size[1]
+            obj.shape = objects.RECTANGLE_SHAPE
+            obj.borderSize = 0
+            obj.borderColor = (0, 0, 0)
+            obj.fillType = objects.MOTIF_FILL
+            obj.color1 = (0, 0, 0)
+            obj.color2 = (0, 0, 0)
+            obj.image = item.handle
+        else:
+            obj = frameitem.new(Backdrop)
+            obj.handle = item.handle
         obj.obstacleType = 0
         obj.collisionType = 0
-        obj.handle = item.handle
 
         frameitem.loader = obj
 

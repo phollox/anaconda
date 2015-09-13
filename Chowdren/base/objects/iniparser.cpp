@@ -71,18 +71,11 @@ static bool at_end(std::istream & input)
 
 #define MAX_INI_STRING 50
 
-int ini_parse_string(const std::string & s,
-                     int (*handler)(void*, const char*, const char*,
-                                    const char*),
-                     void* user)
+int ini_parse_string_impl(const std::string & s,
+                          int (*handler)(void*, const char*, const char*,
+                                         const char*),
+                          void* user)
 {
-    if (s.size() >= 2 && (unsigned char)s[0] == 0xFF
-        && (unsigned char)s[1] == 0xFE)
-    {
-        std::string out;
-        convert_utf16_to_utf8(s, out);
-        return ini_parse_string(out, handler, user);
-    }
     std::istringstream input(s);
 
     /* Uses a fair bit of stack (use heap instead if you need to) */
@@ -152,4 +145,26 @@ int ini_parse_string(const std::string & s,
     }
 
     return error;
+}
+
+int ini_parse_string(const std::string & s,
+                     int (*handler)(void*, const char*, const char*,
+                                    const char*),
+                     void* user)
+{
+    if (s.size() >= 2 && (unsigned char)s[0] == 0xFF
+        && (unsigned char)s[1] == 0xFE)
+    {
+        std::string out;
+        convert_utf16_to_utf8(s, out);
+        return ini_parse_string_impl(out, handler, user);
+    }
+
+#ifdef CHOWDREN_INI_USE_UTF8
+    std::string out;
+    convert_windows1252_to_utf8(s, out);
+    return ini_parse_string_impl(out, handler, user);
+#else
+    return ini_parse_string_impl(s, handler, user);
+#endif
 }

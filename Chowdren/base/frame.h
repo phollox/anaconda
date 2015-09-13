@@ -12,46 +12,17 @@
 #include "frameobject.h"
 #include "color.h"
 #include "instancemap.h"
+#include "bitarray.h"
 
 #ifdef CHOWDREN_PASTE_CACHE
 #include "fbo.h"
 #endif
 
+class Background;
 class BackgroundItem;
 class CollisionBase;
 
 typedef vector<BackgroundItem*> BackgroundItems;
-
-class Background
-{
-public:
-#ifdef CHOWDREN_PASTE_BROADPHASE
-    Broadphase items;
-    Broadphase col_items;
-#else
-    BackgroundItems items;
-    BackgroundItems col_items;
-#endif
-
-#ifdef CHOWDREN_PASTE_CACHE
-    bool dirty;
-    BackgroundItems new_paste;
-    int cache_pos[4];
-    Framebuffer fbo;
-#endif
-
-    Background();
-    ~Background();
-    void reset(bool clear_items = true);
-    void destroy_at(int x, int y);
-    void paste(Image * img, int dest_x, int dest_y,
-               int src_x, int src_y, int src_width, int src_height,
-               int collision_type, int effect, const Color & color);
-    void draw(int v[4]);
-    CollisionBase * collide(CollisionBase * a);
-    CollisionBase * overlaps(CollisionBase * a);
-};
-
 typedef boost::intrusive::member_hook<FrameObject, LayerPos,
                                       &FrameObject::layer_pos> LayerHook;
 typedef boost::intrusive::list<FrameObject, LayerHook> LayerInstances;
@@ -107,12 +78,58 @@ public:
                int src_x, int src_y, int src_width, int src_height,
                int collision_type, int effect, const Color & color);
     void draw(int off_x, int off_y);
+    void set_visible(bool value);
+    void show();
+    void hide();
 
 #ifdef CHOWDREN_HAS_MRT
     int remote;
     void set_remote(int value);
 #endif
 };
+
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+#include "image.h"
+#include "collision.h"
+#endif
+
+class Background
+{
+public:
+#ifdef CHOWDREN_PASTE_BROADPHASE
+    Broadphase items;
+    Broadphase col_items;
+#else
+    BackgroundItems items;
+    BackgroundItems col_items;
+#endif
+
+#ifdef CHOWDREN_PASTE_CACHE
+    bool dirty;
+    BackgroundItems new_paste;
+    int cache_pos[4];
+    Framebuffer fbo;
+#endif
+
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+    BitArray col;
+    int col_w, col_h;
+    Image col_img;
+    SpriteCollision back_col;
+#endif
+
+    Background(Layer * layer);
+    ~Background();
+    void reset(bool clear_items = true);
+    void destroy_at(int x, int y);
+    void paste(Image * img, int dest_x, int dest_y,
+               int src_x, int src_y, int src_width, int src_height,
+               int collision_type, int effect, const Color & color);
+    void draw(Layer * layer, int v[4]);
+    CollisionBase * collide(CollisionBase * a);
+    CollisionBase * overlaps(CollisionBase * a);
+};
+
 
 typedef void (*LoopCallback)(void*);
 

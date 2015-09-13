@@ -4,6 +4,8 @@ import re
 def use_deferred_collisions(converter):
     return False
 
+FORCE_PS4 = False
+
 def init(converter):
     converter.add_define('CHOWDREN_IS_NAH')
     converter.add_define('CHOWDREN_QUICK_SCALE')
@@ -20,10 +22,20 @@ def init(converter):
     converter.add_define('CHOWDREN_FORCE_X360')
     converter.add_define('CHOWDREN_PASTE_CACHE')
     converter.add_define('CHOWDREN_DEFAULT_SCALE', 2)
+    converter.add_define('CHOWDREN_FORCE_16_9')
+    converter.add_define('CHOWDREN_STEAM_APPID', 274270)
     # converter.add_define('CHOWDREN_PASTE_BROADPHASE')
+
+    strings = converter.game.globalStrings.items
     if converter.platform_name == 'ps4':
         converter.add_define('CHOWDREN_PRELOAD_ALL')
         converter.add_define('CHOWDREN_IGNORE_ASPECT')
+        strings[8] = 'PS4'
+    elif converter.platform_name in ('generic', 'd3d'):
+        strings[8] = 'Desktop'
+
+    if FORCE_PS4:
+        strings[8] = 'PS4'
 
     converter.add_define('CHOWDREN_SAVE_PATH', 'save')
     
@@ -115,8 +127,8 @@ def write_pre(converter, writer, group):
         group.conditions.insert(0, condition)
 
 save_paths = set([
-    'Profile.INI',
-    '.\\Bin\\Profile.INI',
+    'Profile.ini',
+    '.\\Bin\\Profile.ini',
     '.\\Bin\\Profile.ini'
 ])
 
@@ -124,11 +136,53 @@ audio_re = re.compile(re.escape('\\audio\\'), re.IGNORECASE)
 src_re = re.compile(re.escape('\\src\\'), re.IGNORECASE)
 bad_start = 'C:\\MMF2\\Python\\Chowdren\\nah\\'
 
+ps4_achievements = {
+    'MAYOR': 'KEY TO THE CITY',
+    'PRIMINISTER': 'HEAD OF STATE',
+    'KING_OF_ENGLAND': "I'M THE KING",
+    'MEGALORD': 'MEGALORD',
+    'MYSTERY_DOOR': 'MYSTERY DOOR',
+    'YIPPEE_KAI_AY': 'YIPPEE KAI YAY',
+    'EASTERN_PROMISE': 'EASTERN PROMISE',
+    'EXECUTIONER': 'EXECUTIONER',
+    'MEGALORD': 'MEGALORD',
+    'DEAD_EYE': 'DEAD EYE',
+    'KILL_BOGDAN': 'OVERKILL',
+    'KILL_UPGRAYDD': 'BARE CARDIO',
+    'GET_THE_CHOPPA': 'GET THE CHOPPA!'
+}
+
+ps4_list = [
+    'MEGALORD',
+    "I'M THE KING",
+    'HEAD OF STATE',
+    'KEY TO THE CITY',
+    'GET THE CHOPPA!',
+    'EXECUTIONER',
+    'DEAD EYE',
+    'BARE CARDIO',
+    'OVERKILL',
+    'EASTERN PROMISE',
+    'YIPPEE KAI YAY',
+    'MYSTERY DOOR'
+]
+
+ps4_replacements = {}
+
+for k, v in ps4_achievements.iteritems():
+    ps4_replacements[k] = str(ps4_list.index(v))
+
 def get_string(converter, value):
     if value == 'XBOX':
         return 'X360'
     elif value == 'Bin\\Charactertypes.ini':
         return '.\\Bin\\Charactertypes.ini'
+    value = value.replace('.INI', '.ini')
+    if value == 'BLANK.ini':
+        return './Bin/BLANK.ini'
+    value = value.replace('.PNG', '.png')
+    value = value.replace('.OGG', '.ogg')
+    value = value.replace('.WAV', '.wav')
     if value.startswith('Audio\\'):
         value = '.\\' + value
     value = audio_re.sub(re.escape('\\Audio\\'), value)
@@ -137,11 +191,20 @@ def get_string(converter, value):
     if converter.platform_name == 'ps4':
         if value in save_paths:
             return './save/Profile.INI'
-        if value == 'BLANK.INI':
-            return './Bin/BLANK.ini'
+        ps4_value = ps4_replacements.get(value, None)
+        if ps4_value is not None:
+            return ps4_value
+    else:
+        if value in save_paths:
+            return './Bin/Profile.ini'
     return value
 
-from configs.local import nah 
+try:
+    from configs.local import nah
+except ImportError:
+    pass
 
 def get_locals(converter):
+    if not FORCE_PS4 and converter.platform_name in ('generic', 'd3d'):
+        return None
     return nah.local_dict

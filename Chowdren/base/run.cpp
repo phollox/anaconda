@@ -1,7 +1,6 @@
 #include <stdlib.h>
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
@@ -25,6 +24,7 @@ GameManager manager;
 #include "crossrand.h"
 #include "media.h"
 #include "crashdump.cpp"
+#include "transition.cpp"
 
 #if defined(CHOWDREN_IS_DESKTOP)
 #include "SDL.h"
@@ -115,10 +115,15 @@ void GameManager::init()
     player_died = false;
     lives = 3;
     start_frame = 0;
-    // values->set(1, 4);
+    // values->set(1, 2);
     // values->set(12, 2);
 #elif defined(CHOWDREN_IS_NAH)
     platform_set_scale_type(2);
+    // start_frame = 3;
+    // set_local("fre");
+    // values->set(13, 25);
+    // strings->set(23, "OBJETS");
+    // strings->set(9, "-fre");
 #else
     start_frame = 0;
 #endif
@@ -385,9 +390,7 @@ void GameManager::draw_fade()
     if (fade_dir == 0.0f)
         return;
     Render::set_offset(0, 0);
-    Color c = fade_color;
-    c.set_alpha(int(fade_value * 255));
-    Render::draw_quad(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, c);
+    Transition::draw(manager.fade_type, fade_value, fade_color);
 }
 
 void GameManager::set_frame(int index)
@@ -431,10 +434,12 @@ void GameManager::set_frame(int index)
     std::cout << "Frame set" << std::endl;
 }
 
-void GameManager::set_fade(const Color & color, float fade_dir)
+void GameManager::set_fade(Transition::Type type, const Color & color,
+                           float dir)
 {
+    fade_type = type;
     fade_color = color;
-    this->fade_dir = fade_dir;
+    fade_dir = dir;
     if (fade_dir < 0.0f)
         fade_value = 1.0f;
     else
@@ -597,6 +602,15 @@ void GameManager::reset_map()
 
 bool GameManager::update()
 {
+#ifdef CHOWDREN_USE_DYNAMIC_NUMBER
+    static int save_time = 0;
+    save_time--;
+    if (save_time <= 0) {
+        save_alterable_debug();
+        save_time += 60;
+    }
+#endif
+
 #ifdef SHOW_STATS
     bool show_stats = false;
     static int measure_time = 0;
@@ -1087,11 +1101,13 @@ bool is_player_pressed_once(int player, int flags)
 
 // main function
 
-int main(int argc, char *argv[])
+#ifdef _WIN32
+static void open_console()
 {
-    install_crash_handler();
-
-#if defined(_WIN32) && defined(CHOWDREN_SHOW_DEBUGGER)
+#ifndef CHOWDREN_SHOW_DEBUGGER
+    if (getenv("CHOWDREN_SHOW_DEBUGGER") == NULL)
+        return;
+#endif
     int outHandle, errHandle, inHandle;
     FILE *outFile, *errFile, *inFile;
     AllocConsole();
@@ -1118,7 +1134,24 @@ int main(int argc, char *argv[])
     setvbuf(stdin, NULL, _IONBF, 0);
 
     std::ios::sync_with_stdio();
+}
 #endif
+
+int main(int argc, char *argv[])
+{
+    install_crash_handler();
+
+#ifdef _WIN32
+    open_console();
+#endif
+
+#ifdef CHOWDREN_ENABLE_STEAM
+    extern int init_steam();
+    int ret = init_steam();
+    if (ret != 0)
+        return ret;
+#endif
+
     manager.run();
     return 0;
 }

@@ -1,5 +1,6 @@
 #ifdef _WIN32
 #include <windows.h>
+#include <mmsystem.h>
 #include <io.h>
 #include <fcntl.h>
 #else
@@ -15,11 +16,31 @@
 #include <iostream>
 #include "platform.h"
 #include <SDL.h>
+// SDL_syswm.h defines WIN32_LEAN_AND_MEAN
+#undef WIN32_LEAN_AND_MEAN
 #include <SDL_syswm.h>
 #include <time.h>
 #include <boost/cstdint.hpp>
 #include "path.h"
 #include "render.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#include "shlobj.h"
+#include <shellapi.h>
+#elif __APPLE__
+#include <CoreServices/CoreServices.h>
+#include <limits.h>
+#include <unistd.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <sys/param.h> // For MAXPATHLEN
+#include <dirent.h>
+#elif __linux
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <dirent.h>
+#endif
 
 enum ScaleType
 {
@@ -34,15 +55,23 @@ static int global_window_id;
 
 #ifdef CHOWDREN_USE_D3D
 static D3DPRESENT_PARAMETERS pparams;
+static int device_display_index = -1;
+static bool d3d_do_reset = false;
 #else
 static SDL_GLContext global_context = NULL;
 #endif
 
-static int clear_backbuffer = 0;
-static bool in_reset = false;
 static bool is_fullscreen = false;
 static int fullscreen_width = -1;
 static int fullscreen_height = -1;
+
+#ifdef CHOWDREN_DEFAULT_SCALE
+static int windowed_width = WINDOW_WIDTH * CHOWDREN_DEFAULT_SCALE;
+static int windowed_height = WINDOW_HEIGHT * CHOWDREN_DEFAULT_SCALE;
+#else
+static int windowed_width = WINDOW_WIDTH;
+static int windowed_height = WINDOW_HEIGHT;
+#endif
 static bool hide_cursor = false;
 static bool has_closed = false;
 static Uint64 start_time;
@@ -52,8 +81,6 @@ static int draw_x_size = 0;
 static int draw_y_size = 0;
 static int draw_x_off = 0;
 static int draw_y_off = 0;
-
-#define CHOWDREN_DESKTOP_FULLSCREEN
 
 #ifdef CHOWDREN_USE_GL
 // opengl function pointers
@@ -120,10 +147,21 @@ static bool check_opengl_extensions()
 }
 #endif
 
+#ifdef __APPLE__
+static bool has_ctrl = false;
+#endif
+
 static void on_key(SDL_KeyboardEvent & e)
 {
     if (e.repeat != 0)
         return;
+#ifdef __APPLE__
+    if (SDL_GetModState() & KMOD_CTRL)
+        has_ctrl = true;
+    else
+        has_ctrl = false;
+#endif
+
     bool state = e.state == SDL_PRESSED;
     int key = e.keysym.sym;
 
@@ -152,7 +190,12 @@ static void on_key(SDL_KeyboardEvent & e)
 
 static void on_mouse(SDL_MouseButtonEvent & e)
 {
-    manager.on_mouse(e.button, e.state == SDL_PRESSED);
+    int button = e.button;
+#ifdef __APPLE__
+    if (has_ctrl && button == SDL_BUTTON_LEFT)
+        button = SDL_BUTTON_RIGHT;
+#endif
+    manager.on_mouse(button, e.state == SDL_PRESSED);
 }
 
 void init_joystick();
@@ -166,8 +209,6 @@ void d3d_reset_state();
 void d3d_set_backtex_size(int w, int h);
 
 #ifdef __APPLE__
-#include <CoreFoundation/CoreFoundation.h>
-#include <sys/param.h> // For MAXPATHLEN
 
 static void set_resources_dir()
 {
@@ -325,19 +366,30 @@ void platform_poll_events()
             case SDL_QUIT:
                 has_closed = true;
                 break;
+#ifdef CHOWDREN_USE_D3D
             case SDL_WINDOWEVENT: {
                 if (e.window.windowID != global_window_id)
                     break;
                 if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-#ifdef CHOWDREN_USE_D3D
                     int w = e.window.data1;
                     int h = e.window.data2;
-                    d3d_reset(w, h);
-#endif
-                    clear_backbuffer = 5;
+                    std::cout << "Size changed: " << w << " " << h << std::endl;
+                    if (!is_fullscreen) {
+                        windowed_width = e.window.data1;
+                        windowed_height = e.window.data2;
+                    }
+                    if (is_fullscreen && (w != fullscreen_width ||
+                                          h != fullscreen_height))
+                        break;
+                    d3d_do_reset = true;
                     break;
+                } else if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
+                    int w = e.window.data1;
+                    int h = e.window.data2;
+                    std::cout << "Resized: " << w << " " << h << std::endl;
                 }
             }
+#endif
             default:
                 break;
         }
@@ -424,8 +476,12 @@ static void APIENTRY on_debug_message_amd(GLuint id, GLenum category,
 #ifdef CHOWDREN_USE_D3D
 static void create_d3d_device()
 {
-    int display_index = SDL_GetWindowDisplayIndex(global_window);
-    int adapter_index = SDL_Direct3D9GetAdapterIndex(display_index);
+    device_display_index = SDL_GetWindowDisplayIndex(global_window);
+    SDL_Rect rect;
+    SDL_GetDisplayBounds(device_display_index, &rect);
+    fullscreen_width = rect.w;
+    fullscreen_height = rect.h;
+    int adapter_index = SDL_Direct3D9GetAdapterIndex(device_display_index);
 
     HRESULT hr;
     D3DDEVTYPE device_type = D3DDEVTYPE_HAL;
@@ -499,7 +555,6 @@ PixelFormatToD3DFMT(Uint32 format)
 static bool last_fullscreen = false;
 static int last_w = 0;
 static int last_h = 0;
-static bool last_failed = false;
 
 void d3d_set_window(int w, int h)
 {
@@ -511,25 +566,34 @@ void d3d_set_window(int w, int h)
     pparams.BackBufferFormat = D3DFMT_UNKNOWN;
 }
 
-void d3d_reset(int w, int h)
+void d3d_reset(bool last_failed)
 {
-	if (is_fullscreen && (w != fullscreen_width || h != fullscreen_height))
-		return;
+    int w, h;
+    if (is_fullscreen) {
+        w = fullscreen_width;
+        h = fullscreen_height;
+        std::cout << "Is fullscreen, size: " << w << " " << h << std::endl;
+    } else {
+        w = windowed_width;
+        h = windowed_height;
+        std::cout << "Window, size: " << w << " " << h << std::endl;
+    }
 
+    // no need for reset
     if (!last_failed && last_fullscreen == is_fullscreen
         && last_w == w && last_h == h)
         return;
 
-    in_reset = true;
     std::cout << "Reset D3D device: " << w << " " << h << " " << is_fullscreen
         << std::endl;
 
     pparams.BackBufferWidth = w;
     pparams.BackBufferHeight = h;
 
-    if (is_fullscreen) {
+    int display = SDL_GetWindowDisplayIndex(global_window);
+
+    if (is_fullscreen && display == device_display_index) {
         SDL_DisplayMode mode;
-        int display = SDL_GetWindowDisplayIndex(global_window);
         SDL_GetDesktopDisplayMode(display, &mode);
         pparams.Windowed = FALSE;
         pparams.FullScreen_RefreshRateInHz = mode.refresh_rate;
@@ -564,16 +628,31 @@ void d3d_reset(int w, int h)
         d3d_set_window(w, h);
     }
 
-    bool show = false;
+    if (is_fullscreen) {
+        SDL_SetWindowFullscreen(global_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    } else {
+        SDL_SetWindowFullscreen(global_window, 0);
+    }
+
     HRESULT hr = render_data.device->Reset(&pparams);
-    if (hr == D3DERR_DEVICELOST || hr == D3DERR_INVALIDCALL) {
+    if (FAILED(hr)) {
+#ifndef NDEBUG
+        std::cout << "Failed reset: " << hr << std::endl;
+#endif
         if (is_fullscreen) {
             std::cout << "Failing fullscreen due to device lost" << std::endl;
             d3d_set_window(w, h);
+            hr = render_data.device->Reset(&pparams);
         }
 
-        while (hr == D3DERR_DEVICELOST || hr == D3DERR_DEVICENOTRESET) {
+        while (FAILED(hr)) {
+            while (FAILED(render_data.device->TestCooperativeLevel())) {
+                platform_sleep(0.2);
+            }
             hr = render_data.device->Reset(&pparams);
+#ifndef NDEBUG
+            std::cout << "Trying new reset: " << hr << std::endl;
+#endif
         }
     }
 
@@ -590,11 +669,6 @@ void d3d_reset(int w, int h)
 
     render_data.backtex_width = render_data.backtex_height = 0;
     d3d_set_backtex_size(1, 1);
-
-    last_failed = false;
-    in_reset = false;
-
-    clear_backbuffer = 5;
 
 #ifdef CHOWDREN_PASTE_CACHE
     vector<Layer>::iterator it;
@@ -667,7 +741,9 @@ void platform_create_display(bool fullscreen)
 
 #ifdef __linux
     SDL_Surface * icon = SDL_LoadBMP("icon.bmp");
-    if (icon != NULL) {
+    if (icon == NULL) {
+        std::cout << "Could not load icon.bmp" << std::endl;
+    } else {
         SDL_SetWindowIcon(global_window, icon);
         SDL_FreeSurface(icon);
     }
@@ -862,7 +938,7 @@ void platform_set_vsync(bool value)
         pparams.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
     else
         pparams.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-    d3d_reset(pparams.BackBufferWidth, pparams.BackBufferHeight);
+    d3d_do_reset = true;
 #else
     int ret = SDL_GL_SetSwapInterval(vsync);
     if (ret == 0)
@@ -895,43 +971,33 @@ void platform_set_fullscreen(bool value)
     if (value == is_fullscreen)
         return;
     is_fullscreen = value;
-#ifdef CHOWDREN_DESKTOP_FULLSCREEN
     int flags;
     if (value)
         flags = SDL_WINDOW_FULLSCREEN_DESKTOP;
     else
         flags = 0;
-#else
-    int flags;
-    if (value) {
-        flags = SDL_WINDOW_FULLSCREEN;
-        int display = SDL_GetWindowDisplayIndex(global_window);
-        SDL_DisplayMode mode;
-        SDL_GetDesktopDisplayMode(display, &mode);
-        // SDL_GetWindowDisplayMode(global_window, &mode);
-        SDL_SetWindowDisplayMode(global_window, &mode);
-    } else
-        flags = 0;
-#endif
-    SDL_SetWindowFullscreen(global_window, flags);
 
 #ifdef CHOWDREN_USE_D3D
-    if (in_reset)
-        return;
-    SDL_GetWindowSize(global_window, &fullscreen_width, &fullscreen_height);
-    d3d_reset(fullscreen_width, fullscreen_height);
-#endif
-
+    d3d_do_reset = true;
+#else
+    SDL_SetWindowFullscreen(global_window, flags);
     if (value)
         return;
     SDL_SetWindowPosition(global_window,
                           SDL_WINDOWPOS_CENTERED,
                           SDL_WINDOWPOS_CENTERED);
+#endif
+
 }
 
 void platform_begin_draw()
 {
 #ifdef CHOWDREN_USE_D3D
+    if (d3d_do_reset) {
+        d3d_reset(false);
+        d3d_do_reset = false;
+    }
+
     render_data.device->BeginScene();
 #else
     set_gl_state();
@@ -983,8 +1049,7 @@ void platform_swap_buffers()
     // resize the window contents if necessary (fullscreen mode)
     Render::set_view(0, 0, window_width, window_height);
     Render::set_offset(0, 0);
-    if (clear_backbuffer > 0) {
-        clear_backbuffer--;
+    if (draw_x_size != window_width || draw_y_size != window_height) {
         Render::clear(0, 0, 0, 255);
     }
 
@@ -1025,8 +1090,7 @@ void platform_swap_buffers()
     render_data.device->EndScene();
     if (FAILED(render_data.device->Present(NULL, NULL, NULL, NULL))) {
         std::cout << "Failed present: " << is_fullscreen << std::endl;
-        last_failed = true;
-        d3d_reset(window_width, window_height);
+        d3d_reset(true);
     }
 #else
     SDL_GL_SwapWindow(global_window);
@@ -1105,19 +1169,80 @@ void platform_hide_mouse()
     SDL_ShowCursor(0);
 }
 
+#ifdef CHOWDREN_USE_STEAM_LANGUAGE
+
+const std::string & get_steam_language();
+const std::string & platform_get_language()
+{
+    return get_steam_language();
+}
+
+#else
+
 const std::string & platform_get_language()
 {
     static std::string language("English");
     return language;
 }
 
+#endif
+
 // filesystem stuff
 
 #include <sys/stat.h>
 
-void platform_walk_folder(const std::string & path,
-                          vector<FilesystemItem> items)
+void platform_walk_folder(const std::string & in_path,
+                          FolderCallback & callback)
 {
+    if (in_path.empty())
+        return;
+    std::string path = convert_path(in_path);
+#ifdef _WIN32
+    HANDLE hFind = INVALID_HANDLE_VALUE;
+    WIN32_FIND_DATA ffd;
+
+    std::string spec;
+    char c = path[path.size()-1];
+    if (c == '\\')
+        spec = path + "*";
+    else
+        spec = path + "\\*";
+
+    hFind = FindFirstFileA(spec.c_str(), &ffd);
+    if (hFind == INVALID_HANDLE_VALUE)
+        return;
+
+    FilesystemItem item;
+    do {
+        if (ffd.cFileName[0] == '.')
+            continue;
+        item.name = ffd.cFileName;
+        item.flags = 0;
+        if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+            item.flags |= FilesystemItem::FILE;
+        callback.on_item(item);
+    } while (FindNextFileA(hFind, &ffd) != 0);
+
+    FindClose(hFind);
+#else
+    class dirent *ent;
+    class stat st;
+
+    DIR * dir = opendir(path.c_str());
+    if (dir == NULL)
+        return;
+    FilesystemItem item;
+    while ((ent = readdir(dir)) != NULL) {
+        if (ent->d_name[0] == '.')
+            continue;
+        item.name = ent->d_name;
+        item.flags = 0;
+        if (ent->d_type != DT_DIR)
+            item.flags |= FilesystemItem::FILE;
+        callback.on_item(item);
+    }
+    closedir(dir);
+#endif
 }
 
 size_t platform_get_file_size(const char * filename)
@@ -1218,18 +1343,6 @@ void platform_create_directories(const std::string & value)
 {
     create_dirs(value);
 }
-
-#ifdef _WIN32
-#include "windows.h"
-#include "shlobj.h"
-#elif __APPLE__
-#include <CoreServices/CoreServices.h>
-#include <limits.h>
-#elif __linux
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
-#endif
 
 const std::string & platform_get_appdata_dir()
 {
@@ -1630,9 +1743,6 @@ float get_joystick_axis_raw(int n, int axis)
 
 #ifdef _WIN32
 
-#include <windows.h>
-#include <shellapi.h>
-
 void open_url(const std::string & name)
 {
     ShellExecute(NULL, "open", name.c_str(), NULL, NULL, SW_SHOWNORMAL);
@@ -1650,9 +1760,6 @@ void open_url(const std::string & name)
 }
 
 #elif __linux
-
-#include <sys/types.h>
-#include <dirent.h>
 
 void open_url(const std::string & name)
 {
@@ -1683,6 +1790,55 @@ bool platform_remove_file(const std::string & file)
     }
 #endif
     return remove(convert_path(file).c_str()) == 0;
+}
+
+static bool remove_directory_recurse(const std::string & path);
+
+static bool remove_directory(const char * filename)
+{
+#ifdef _WIN32
+    return RemoveDirectory(filename) != 0;
+#else
+    return rmdir(filename) == 0;
+#endif
+}
+
+struct RemoveDirectoryCallback : FolderCallback
+{
+    const std::string & path;
+
+	RemoveDirectoryCallback(const std::string & path)
+    : path(path)
+    {
+    }
+
+    void on_item(FilesystemItem & item)
+    {
+        if (item.is_file()) {
+            remove(join_path(path, item.name).c_str());
+        } else if (item.is_folder()) {
+            std::string new_path = join_path(path, item.name);
+            remove_directory_recurse(new_path);
+        }
+    }
+};
+
+static bool remove_directory_recurse(const std::string & dir)
+{
+    if (remove_directory(dir.c_str()))
+        return true;
+    RemoveDirectoryCallback callback(dir);
+    platform_walk_folder(dir, callback);
+	if (remove_directory(dir.c_str()))
+        return true;
+    std::cout << "Could not remove directory: " << dir << std::endl;
+    return false;
+}
+
+bool platform_remove_directory(const std::string & dir)
+{
+    std::string path = convert_path(dir);
+    return remove_directory_recurse(path);
 }
 
 #include "fileio.cpp"
@@ -1726,6 +1882,17 @@ void platform_set_remote_setting(const std::string & v)
 void platform_set_remote_value(int v)
 {
 
+}
+
+void platform_set_lightbar(int r, int g, int b, int ms, int type)
+{
+    // std::cout << "Set lightbar: " << r << " " << g << " " << b << " "
+    //     << ms << " " << type << std::endl;
+}
+
+void platform_reset_lightbar()
+{
+    // std::cout << "Reset lightbar" << std::endl;
 }
 
 int platform_get_remote_value()

@@ -4,8 +4,8 @@
 #define CROSS_RAND_MAX 0x7FFF
 
 // portable rand functions
+extern unsigned int cross_seed;
 
-static unsigned int cross_seed = 0;
 inline void cross_srand(unsigned int value)
 {
     cross_seed = value;

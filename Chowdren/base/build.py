@@ -7,6 +7,7 @@ import os
 import urllib2
 import tarfile
 import stat
+import argparse
 
 chroot_prefix = 'steamrt_scout_'
 chroots = '/var/chroots'
@@ -14,8 +15,11 @@ chroots = '/var/chroots'
 steamrt_archive = ('https://codeload.github.com/ValveSoftware/steam-runtime/'
                    'tar.gz/master')
 
+base_dir = os.path.abspath(os.path.dirname(__file__))
+
 class Builder(object):
-    def __init__(self):
+    def __init__(self, args):
+        self.args = args
         self.root_dir = os.getcwd()
 
     def create_project(self):
@@ -26,7 +30,13 @@ class Builder(object):
             pass
 
         os.chdir(self.build_dir)
-        self.system('cmake .. -DCMAKE_BUILD_TYPE=Release')
+
+        defs = ['-DCMAKE_BUILD_TYPE=Release']
+        if self.args.steam:
+            defs += ['-DUSE_STEAM=ON']
+        cmd = 'cmake .. ' + ' '.join(defs)
+
+        self.system(cmd)
         os.chdir(cwd)
 
     def system(self, command):
@@ -63,27 +73,56 @@ class LinuxBuilder(Builder):
     def build_arch(self, arch):
         chroot = self.install_chroot(arch)
         self.build_dir = os.path.join(self.root_dir, 'build_%s' % arch)
-        self.install_dir = os.path.join(self.build_dir, 'install')
         self.dist_dir = os.path.join(self.root_dir, 'dist')
-        self.chroot = chroot
-        self.create_project()
-        self.build_project()
-        self.copy_dependencies(arch)
-        self.chroot = None
+        if self.args.steam:
+            self.build_dir += '_steamworks'
+            self.dist_dir += '_steamworks'
 
-    def copy_dependencies(self, arch):
-        try:
-            os.makedirs(self.dist_dir)
-        except OSError:
-            pass
+        self.install_dir = os.path.join(self.build_dir, 'install')
 
         if arch == 'amd64':
             bin_dir = 'bin64'
         else:
             bin_dir = 'bin32'
 
-        src_bin_dir = os.path.join(self.install_dir, bin_dir)
-        dst_bin_dir = os.path.join(self.dist_dir, bin_dir)
+        self.src_bin_dir = os.path.join(self.install_dir, bin_dir)
+        self.dst_bin_dir = os.path.join(self.dist_dir, bin_dir)
+
+        self.chroot = chroot
+        self.create_project()
+        self.copy_dependencies(arch)
+        self.build_project()
+        self.create_dist(arch)
+        self.chroot = None
+
+    def copy_dependencies(self, arch):
+        try:
+            os.makedirs(self.src_bin_dir)
+        except OSError:
+            pass
+
+        if not self.args.steam:
+            return
+
+        arch_dirs = {
+            'amd64': 'linux64',
+            'i386': 'linux32'
+        }
+        arch_dir = arch_dirs[arch]
+        steam_bin = os.path.join(base_dir, 'steam', 'sdk',
+                                 'redistributable_bin', arch_dir,
+                                 'libsteam_api.so')
+        shutil.copy(steam_bin,
+                    os.path.join(self.src_bin_dir, 'libsteam_api.so'))
+
+    def create_dist(self, arch):
+        try:
+            os.makedirs(self.dist_dir)
+        except OSError:
+            pass
+
+        src_bin_dir = self.src_bin_dir
+        dst_bin_dir = self.dst_bin_dir
 
         shutil.rmtree(dst_bin_dir, ignore_errors=True)
         shutil.copytree(src_bin_dir, dst_bin_dir)
@@ -129,13 +168,19 @@ class MacBuilder(Builder):
     pass
 
 def main():
+    parser = argparse.ArgumentParser(description='Chowdren builder')
+    parser.add_argument('--steam', action='store_true',
+                        help='Performs a build with Steamworks')
+    args = parser.parse_args()
+
     import platform
     if platform.system() == 'Linux':
-        builder = LinuxBuilder()
-        builder.build()
+        build_class = LinuxBuilder
     else:
-        builder = MacBuilder()
-        builder.build()
+        build_class = MacBuilder
+
+    builder = build_class(args)
+    builder.build()
 
     builder.finish()
 

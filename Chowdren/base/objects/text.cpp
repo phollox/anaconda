@@ -1,8 +1,9 @@
 #include "objects/text.h"
 #include "collision.h"
 #include "common.h"
+#include "utf16to8.h"
 
-// Active
+// Text
 
 Text::Text(int x, int y, int type_id)
 : FrameObject(x, y, type_id), initialized(false), current_paragraph(0),
@@ -49,18 +50,32 @@ void Text::draw()
 
     update_draw_text();
 
-    double off_y = y + font->Ascender();
-    if (alignment & ALIGN_VCENTER) {
-        off_y += height * 0.5 - font->LineHeight() * 0.5;
-    } else if (alignment & ALIGN_BOTTOM) {
-        off_y += font->LineHeight();
+    if (effect == Render::PIXELOUTLINE) {
+        Render::set_effect(Render::FONTOUTLINE, this,
+                           font->textureWidth, font->textureHeight);
+        FTTextureFont::custom_shader = true;
     }
+
+    double off_y = y + font->Ascender();
 
     FTTextureFont::color = blend_color;
     if (layout != NULL) {
-        FTBBox bb = layout->BBox(draw_text.c_str(), -1);
-        layout->Render(draw_text.c_str(), -1, FTPoint(x, int(off_y)));
+        int lines = layout->get_lines(draw_text.c_str(), -1);
+        double box_h = lines * font->LineHeight();
+        if (alignment & ALIGN_VCENTER) {
+            off_y += (height - box_h) * 0.5;
+        } else if (alignment & ALIGN_BOTTOM) {
+            off_y += box_h;
+        }
+        int off_yy = int(off_y);
+        layout->Render(draw_text.c_str(), -1, FTPoint(x, off_yy));
     } else {
+        if (alignment & ALIGN_VCENTER) {
+            off_y += height * 0.5 - font->LineHeight() * 0.5;
+        } else if (alignment & ALIGN_BOTTOM) {
+            off_y += font->LineHeight();
+        }
+
         FTBBox box = font->BBox(draw_text.c_str(), -1, FTPoint());
         double box_w = box.Upper().X() - box.Lower().X();
         // double box_h = box.Upper().Y() - box.Lower().Y();
@@ -78,10 +93,17 @@ void Text::draw()
         font->Render(draw_text.c_str(), -1, FTPoint(int(off_x), int(off_y)),
                      FTPoint());
     }
+
+    if (effect == Render::PIXELOUTLINE) {
+        Render::disable_effect();
+        FTTextureFont::custom_shader = false;
+    }
 }
 
 void Text::set_string(const std::string & value)
 {
+    if (text == value)
+        return;
     text = value;
     draw_text_set = false;
 }
@@ -140,19 +162,7 @@ void Text::update_draw_text()
 #ifdef CHOWDREN_TEXT_USE_UTF8
     draw_text = text;
 #else
-    // convert from windows-1252 to utf-8
-    std::string::const_iterator it;
-    draw_text.clear();
-    for (it = text.begin(); it != text.end(); ++it) {
-        char c = *it;
-        unsigned char cc = (unsigned char)c;
-        if (cc < 128) {
-            draw_text.push_back(c);
-        } else {
-            draw_text.push_back(char(0xC2 + (cc > 0xBF)));
-            draw_text.push_back(char(cc & 0x3F + 0x80));
-        }
-    }
+    convert_windows1252_to_utf8(text, draw_text);
 #endif
     if (layout != NULL)
         return;

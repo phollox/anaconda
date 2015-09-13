@@ -11,6 +11,10 @@
 #include "collision.cpp"
 #include "objects/active.h"
 
+#ifndef CHOWDREN_IS_WIIU
+#include "fbo.h"
+#endif
+
 // XXX move this?
 #include "staticlibs/utf16to8.cpp"
 
@@ -91,8 +95,35 @@ Font::Font(const std::string & name, int size, bool bold, bool italic,
 
 // Background
 
-Background::Background()
+Background::Background(Layer * layer)
 {
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+    col_w = manager.frame->width;
+    col_h = manager.frame->height;
+    int size = col_w * col_h;
+    size = GET_BITARRAY_SIZE(size);
+    col.data = (BaseBitArray::word_t*)malloc(size);
+    int fill = 0;
+#ifdef CHOWDREN_IS_TE
+    if (layer->index == 0)
+        fill = 0xFF;
+#endif
+    memset(col.data, fill, size);
+    col_img.width = col_w;
+    col_img.height = col_h;
+    col_img.alpha.data = col.data;
+    back_col.image = &col_img;
+    back_col.aabb[0] = 0;
+    back_col.aabb[1] = 0;
+    back_col.aabb[2] = col_w;
+    back_col.aabb[3] = col_h;
+#endif
+
+#ifdef CHOWDREN_PASTE_CACHE
+    dirty = true;
+    for (int i = 0; i < 4; ++i)
+        cache_pos[i] = 0;
+#endif
 }
 
 #ifdef CHOWDREN_PASTE_BROADPHASE
@@ -121,6 +152,12 @@ Background::~Background()
 {
     clear_back_vec(col_items);
     clear_back_vec(items);
+
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+	col_img.alpha.data = NULL;
+    free(col.data);
+    col.data = NULL;
+#endif
 }
 
 void Background::reset(bool clear_items)
@@ -255,7 +292,26 @@ inline void remove_paste_item(BackgroundItem * item, BackgroundItems & items,
         it = items.erase(it);
     }
 }
+
+inline void remove_contained_item(BackgroundItem * item,
+                                  BackgroundItems & items)
+{
+    BackgroundItems::iterator it = items.begin();
+    while (it != items.end()) {
+        BackgroundItem * other = *it;
+        if (other == item) {
+            ++it;
+            continue;
+        }
+        if (!contains(item->aabb, other->aabb)) {
+            ++it;
+            continue;
+        }
+        it = items.erase(it);
+    }
+}
 #endif
+
 
 void Background::paste(Image * img, int dest_x, int dest_y,
                        int src_x, int src_y, int src_width, int src_height,
@@ -266,8 +322,17 @@ void Background::paste(Image * img, int dest_x, int dest_y,
     // 1: obstacle
     // 3: ladder
     // 4: no effect on collisions
-    src_width = std::min<int>(img->width, src_x + src_width) - src_x;
-    src_height = std::min<int>(img->height, src_y + src_height) - src_y;
+
+    {    
+        int x1 = std::max<int>(0, src_x);
+        int y1 = std::max<int>(0, src_y);
+        int x2 = std::min<int>(img->width, src_x + src_width);
+        int y2 = std::min<int>(img->height, src_y + src_height);
+        src_width = x2 - x1;
+        src_height = y2 - y1;
+        src_x = x1;
+        src_y = y1;
+    }
 
     if (src_width <= 0 || src_height <= 0)
         return;
@@ -312,6 +377,32 @@ void Background::paste(Image * img, int dest_x, int dest_y,
     items.push_back(item);
 #endif
 
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+    int x1 = std::max(0, dest_x);
+    int y1 = std::max(0, dest_y);
+    int x2 = std::min(col_w, dest_x + src_width);
+    int y2 = std::min(col_h, dest_y + src_height);
+    if (collision_type == 0 && color.a == 255) {
+        for (int y = y1; y < y2; ++y)
+        for (int x = x1; x < x2; ++x) {
+            col.unset(y * col_w + x);
+        }
+    } else if (collision_type == 1) {
+        img->upload_texture(); // can't be bothered to handle both cases
+        BitArray & alpha = img->alpha;
+        for (int y = y1; y < y2; ++y) {
+            int img_y = (src_y + y - y1) * img->width;
+            int col_y = y * col_w;
+            for (int x = x1; x < x2; ++x) {
+                if (alpha.get(img_y + (src_x + x - x1)))
+                    col.set(col_y + x);
+                else
+                    col.unset(col_y + x);
+            }
+        }
+    }
+#endif
+
 #ifdef CHOWDREN_PASTE_REMOVE
     if (collision_type == 0 || collision_type == 4) {
         remove_paste_item(item, col_items, false);
@@ -320,13 +411,7 @@ void Background::paste(Image * img, int dest_x, int dest_y,
 #endif
 }
 
-inline bool contains(int b1[4], int b2[4])
-{
-    return b2[0] >= b1[0] && b2[1] >= b1[1] &&
-           b2[2] <= b1[2] && b2[3] <= b1[3];
-}
-
-void Background::draw(int v[4])
+void Background::draw(Layer * layer, int v[4])
 {
 #ifdef CHOWDREN_PASTE_CACHE
     if (dirty || !contains(cache_pos, v)) {
@@ -349,7 +434,7 @@ void Background::draw(int v[4])
                          cache_pos[3] - cache_pos[1]);
 		int old_offset[2] = {Render::offset[0], Render::offset[1]};
         Render::set_offset(-cache_pos[0], -cache_pos[1]);
-        Render::clear(255, 255, 255, 0);
+        Render::clear(0, 0, 0, 0);
 
         BackgroundItems::const_iterator it;
         for (it = items.begin(); it != items.end(); ++it) {
@@ -385,21 +470,13 @@ void Background::draw(int v[4])
 
     Texture t = fbo.get_tex();
 
-    float ty1;
-    float ty2;
-#ifdef CHOWDREN_FBO_FLIP
-    ty1 = back_texcoords[5];
-    ty2 = back_texcoords[1];
-#else
-    ty1 = back_texcoords[1];
-    ty2 = back_texcoords[5];
-#endif
-
+    Render::set_effect(Render::PREMUL);
     Render::draw_tex(cache_pos[0], cache_pos[1],
                      cache_pos[2], cache_pos[3],
                      Color(), t,
-                     back_texcoords[0], ty1,
-                     back_texcoords[4], ty2);
+                     fbo_texcoords[0], fbo_texcoords[1],
+                     fbo_texcoords[2], fbo_texcoords[3]);
+    Render::disable_effect();
 #else
 
 #ifdef CHOWDREN_PASTE_BROADPHASE
@@ -412,7 +489,6 @@ void Background::draw(int v[4])
         item->draw();
     }
 #endif
-
 #endif
 }
 
@@ -655,6 +731,11 @@ void Layer::update_position()
 
 void Layer::add_background_object(FrameObject * instance)
 {
+    if (visible)
+        instance->flags |= LAYER_VISIBLE;
+    else
+        instance->flags &= ~LAYER_VISIBLE;
+
     if (background_instances.empty())
         instance->depth = 0;
     else
@@ -700,6 +781,11 @@ inline unsigned int sub_depth(unsigned int start, unsigned int sub,
 
 void Layer::add_object(FrameObject * instance)
 {
+    if (visible)
+        instance->flags |= LAYER_VISIBLE;
+    else
+        instance->flags &= ~LAYER_VISIBLE;
+
     bool reset = false;
     if (instances.empty())
         instance->depth = LAYER_DEPTH_START;
@@ -720,8 +806,12 @@ void Layer::add_object(FrameObject * instance)
 
 void Layer::insert_object(FrameObject * instance, int index)
 {
-    bool reset = false;
+    if (visible)
+        instance->flags |= LAYER_VISIBLE;
+    else
+        instance->flags &= ~LAYER_VISIBLE;
 
+    bool reset = false;
     if (index == 0) {
         if (instances.empty())
             instance->depth = LAYER_DEPTH_START;
@@ -796,6 +886,42 @@ int Layer::get_level(FrameObject * instance)
     return -1;
 }
 
+void Layer::show()
+{
+    if (visible)
+        return;
+    visible = true;
+    LayerInstances::iterator it;
+    FlatObjectList::iterator it2;
+    for (it = instances.begin(); it != instances.end(); ++it) {
+        it->flags |= LAYER_VISIBLE;
+    }
+
+    for (it2 = background_instances.begin();
+         it2 != background_instances.end(); ++it2)
+    {
+        (*it2)->flags |= LAYER_VISIBLE;
+    }
+}
+
+void Layer::hide()
+{
+    if (!visible)
+        return;
+    visible = false;
+    LayerInstances::iterator it;
+    FlatObjectList::iterator it2;
+    for (it = instances.begin(); it != instances.end(); ++it) {
+        it->flags &= ~LAYER_VISIBLE;
+    }
+
+    for (it2 = background_instances.begin();
+         it2 != background_instances.end(); ++it2)
+    {
+        (*it2)->flags &= ~LAYER_VISIBLE;
+    }
+}
+
 void Layer::destroy_backgrounds()
 {
     if (back == NULL)
@@ -824,7 +950,7 @@ struct BackgroundCallback
     bool on_callback(void * data)
     {
         FrameObject * obj = (FrameObject*)data;
-        if (obj->id != BACKGROUND_TYPE)
+        if (!(obj->flags & BACKGROUND_COL))
             return true;
         if (obj->collision == NULL)
             return true;
@@ -865,7 +991,7 @@ void Layer::paste(Image * img, int dest_x, int dest_y,
             << std::endl;
     }
     if (back == NULL)
-        back = new Background;
+        back = new Background(this);
     back->paste(img, dest_x, dest_y, src_x, src_y,
                 src_width, src_height, collision_type, effect, color);
 }
@@ -967,8 +1093,9 @@ void Layer::draw(int display_x, int display_y)
     PROFILE_BEGIN(Layer_draw_pasted);
 
     // draw pasted items
-    if (back != NULL)
-        back->draw(v);
+    if (back != NULL) {
+        back->draw(this, v);
+    }
 
     PROFILE_END();
 
@@ -1321,7 +1448,30 @@ void Frame::draw(int remote)
                 continue;
         }
 #endif
+
+#ifdef CHOWDREN_IS_TE
+        static Framebuffer layer_fbo;
+        if (layer.blend_color.a < 255) {
+            if (layer_fbo.tex == 0)
+                layer_fbo.init(WINDOW_WIDTH, WINDOW_HEIGHT);
+            layer_fbo.bind();
+            Render::clear(255, 255, 255, 0);
+        }
+#endif
+
         layer.draw(off_x, off_y);
+
+#ifdef CHOWDREN_IS_TE
+        if (layer.blend_color.a < 255) {
+            Render::set_offset(0, 0);
+            layer_fbo.unbind();
+
+            Render::draw_tex(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
+                             layer.blend_color, layer_fbo.get_tex(),
+                             fbo_texcoords[0], fbo_texcoords[1],
+                             fbo_texcoords[2], fbo_texcoords[3]);
+        }
+#endif
     }
 
 #ifdef CHOWDREN_USE_CAPTURE
@@ -1457,6 +1607,10 @@ FrameObject::FrameObject(int x, int y, int type_id)
 #ifdef CHOWDREN_USE_PATHPLANNER
     agent = NULL;
 #endif
+
+#ifdef CHOWDREN_USE_MOVEIT
+    move_data = NULL;
+#endif
 }
 
 FrameObject::~FrameObject()
@@ -1480,6 +1634,10 @@ FrameObject::~FrameObject()
 
 #ifdef CHOWDREN_USE_PATHPLANNER
     delete agent;
+#endif
+
+#ifdef CHOWDREN_USE_MOVEIT
+    delete move_data;
 #endif
 }
 
@@ -1607,9 +1765,57 @@ void FrameObject::set_y(int new_y)
     collision->update_proxy();
 }
 
+#ifdef CHOWDREN_USE_DYNAMIC_NUMBER
+static bool alterable_debug_loaded = false;
+static hash_map<std::string, AlterableValues::AlterableDebug> alterable_debug;
+
+static void load_alterable_debug()
+{
+    if (alterable_debug_loaded)
+        return;
+	alterable_debug_loaded = true;
+    FSFile fp("runinfo.dat", "r");
+    if (!fp.is_open())
+        return;
+    FileStream stream(fp);
+    int count = stream.read_uint32();
+    std::string name;
+    for (int i = 0; i < count; ++i) {
+        stream.read_string(name, stream.read_uint32());
+        AlterableValues::AlterableDebug & debug = alterable_debug[name];
+        for (int i = 0; i < ALT_VALUES; ++i) {
+            debug.is_fp[i] = stream.read_uint8();
+        }
+    }
+}
+
+void save_alterable_debug()
+{
+    if (!alterable_debug_loaded)
+        return;
+    FSFile fp("runinfo.dat", "w");
+    WriteStream stream;
+    stream.write_uint32(alterable_debug.size());
+    hash_map<std::string, AlterableValues::AlterableDebug>::iterator it;
+    for (it = alterable_debug.begin(); it != alterable_debug.end(); ++it) {
+        stream.write_uint32(it->first.size());
+        stream.write_string(it->first);
+        AlterableValues::AlterableDebug & debug = it->second;
+        for (int i = 0; i < ALT_VALUES; ++i) {
+            stream.write_uint8(debug.is_fp[i]);
+        }
+    }
+    stream.save(fp);
+}
+#endif
+
 void FrameObject::create_alterables()
 {
     alterables = Alterables::create();
+#ifdef CHOWDREN_USE_DYNAMIC_NUMBER
+    load_alterable_debug();
+    alterables->values.debug = &alterable_debug[name];
+#endif
 }
 
 void FrameObject::set_visible(bool value)
@@ -1650,7 +1856,7 @@ int FrameObject::get_direction()
 
 bool FrameObject::mouse_over()
 {
-    if (flags & DESTROYING)
+    if (flags & (DESTROYING | DISABLE_COL))
         return false;
     int x, y;
     frame->get_mouse_pos(&x, &y);
@@ -1662,24 +1868,24 @@ bool FrameObject::mouse_over()
 
 bool FrameObject::overlaps(FrameObject * other)
 {
-    if (flags & INACTIVE || other->flags & INACTIVE)
-        return false;
     if (other == this)
         return false;
-    if (collision->type == NONE_COLLISION)
+    // this is intentional. we actually allow destroying objects to overlap,
+    // but only on lhs and unless they are fading out.
+    if (flags & (INACTIVE | DISABLE_COL))
         return false;
-    CollisionBase * other_col = other->collision;
-    if (other_col->type == NONE_COLLISION)
+    if (other->flags & (INACTIVE | DESTROYING | DISABLE_COL))
         return false;
     if (other->layer != layer)
         return false;
+    CollisionBase * other_col = other->collision;
 #ifdef CHOWDREN_DEFER_COLLISIONS
     int * other_aabb;
     if (other->flags & DEFER_COLLISIONS)
         other_aabb = ((Active*)other)->old_aabb;
     else
         other_aabb = other_col->aabb;
-    return collide_direct(collision, other_col, other_aabb);
+    return collide(collision, other_col, other_aabb);
 #else
     return collide(collision, other_col);
 #endif
@@ -1694,10 +1900,10 @@ struct BackgroundOverlapCallback
     {
     }
 
-    bool on_callback(void * data)
+    inline bool on_callback(void * data)
     {
         FrameObject * obj = (FrameObject*)data;
-        if (obj->id != BACKGROUND_TYPE)
+        if (!(obj->flags & BACKGROUND_COL))
             return true;
         CollisionBase * other = (CollisionBase*)obj->collision;
         if (other == NULL)
@@ -1712,14 +1918,34 @@ struct BackgroundOverlapCallback
 
 bool FrameObject::overlaps_background()
 {
-    if (flags & DESTROYING || collision == NULL)
+#ifndef CHOWDREN_IS_TE
+    // XXX this actually seems to be wrong, but just safeguarding
+    if (flags & DESTROYING)
+        return false;
+#endif
+    if (collision == NULL)
         return false;
     if (flags & HAS_COLLISION_CACHE)
         return (flags & HAS_COLLISION) != 0;
     // XXX also cache pasted collisions? will need ID to see if
     // pasted items were changed
-    if (layer->back != NULL && layer->back->overlaps(collision))
-        return true;
+    Background * b = layer->back;
+    int * aabb = collision->aabb;
+    if (b != NULL) {
+        BackgroundItems::iterator it;
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+		if (collide(&b->back_col, collision))
+			return true;
+#else
+        for (it = b->col_items.begin(); it != b->col_items.end(); ++it) {
+            BackgroundItem * item = *it;
+            if (item->flags & LADDER_OBSTACLE)
+                continue;
+            if (::collide(collision, item))
+                return true;
+        }
+#endif
+    }
     flags |= HAS_COLLISION_CACHE;
     BackgroundOverlapCallback callback(collision);
     if (!layer->broadphase.query_static(collision->proxy, callback)) {
@@ -1863,8 +2089,6 @@ void FrameObject::destroy()
     if (flags & DESTROYING)
         return;
     flags |= DESTROYING;
-    if (collision != NULL)
-        collision->type = NONE_COLLISION;
     frame->destroyed_instances.push_back(this);
 }
 
@@ -2298,7 +2522,7 @@ bool init_font()
     return has_fonts;
 }
 
-FTTextureFont * get_font(int size)
+FTTextureFont * get_font(int size, int flags)
 {
     init_font();
 
@@ -2309,6 +2533,8 @@ FTTextureFont * get_font(int size)
     for (it = fonts.begin(); it != fonts.end(); ++it) {
         FTTextureFont * font = *it;
         int new_diff = get_abs(font->size - size);
+        if ((font->flags ^ flags) != 0)
+            new_diff += 200;
 
         if (picked == NULL || new_diff < diff) {
             picked = font;
@@ -2352,6 +2578,7 @@ const std::string & File::get_appdata_directory()
 #ifdef _WIN32
 #include <direct.h>
 #define chdir _chdir
+
 #else
 #include <unistd.h>
 #endif
@@ -2360,19 +2587,27 @@ const std::string & File::get_appdata_directory()
 
 void File::change_directory(const std::string & path)
 {
-#ifdef CHOWDREN_IS_DESKTOP
-    chdir(path.c_str());
-#endif
+// #ifdef CHOWDREN_IS_DESKTOP
+//     chdir(convert_path(path).c_str());
+// #endif
 }
 
 void File::create_directory(const std::string & path)
 {
+#ifdef _WIN32
     platform_create_directories(path);
+#else
+    platform_create_directories(convert_path(path));
+#endif
 }
 
 bool File::file_exists(const std::string & path)
 {
+#ifdef _WIN32
     return platform_is_file(path);
+#else
+    return platform_is_file(convert_path(path));
+#endif
 }
 
 bool File::file_readable(const std::string & path)
@@ -2383,12 +2618,20 @@ bool File::file_readable(const std::string & path)
 
 bool File::name_exists(const std::string & path)
 {
+#ifdef _WIN32
     return platform_path_exists(path);
+#else
+    return platform_path_exists(convert_path(path));
+#endif
 }
 
 bool File::directory_exists(const std::string & path)
 {
+#ifdef _WIN32
     return platform_is_directory(path);
+#else
+    return platform_is_directory(convert_path(path));
+#endif
 }
 
 void File::delete_file(const std::string & path)
@@ -2399,15 +2642,23 @@ void File::delete_file(const std::string & path)
 
 void File::delete_folder(const std::string & path)
 {
-    std::cout << "Delete folder not implemented: " << path << std::endl;
+    platform_remove_directory(path);
 }
 
 bool File::copy_file(const std::string & src, const std::string & dst)
 {
+#ifdef _WIN32
+    std::string new_src = src;
+    std::string new_dst = dst;
+#else
+    std::string new_src = convert_path(src);
+    std::string new_dst = convert_path(dst);
+#endif
+
     std::string data;
-    if (!read_file(src.c_str(), data))
+    if (!read_file(new_src.c_str(), data))
         return false;
-    FSFile fp(dst.c_str(), "w");
+    FSFile fp(new_dst.c_str(), "w");
     if (!fp.is_open())
         return false;
     fp.write(&data[0], data.size());
@@ -2421,7 +2672,11 @@ bool File::copy_file(const std::string & src, const std::string & dst)
 
 int File::get_size(const std::string & path)
 {
+#ifdef _WIN32
     return platform_get_file_size(path.c_str());
+#else
+    return platform_get_file_size(convert_path(path).c_str());
+#endif
 }
 
 void File::rename_file(const std::string & src, const std::string & dst)
@@ -2432,15 +2687,34 @@ void File::rename_file(const std::string & src, const std::string & dst)
 
 void File::append_text(const std::string & text, const std::string & path)
 {
+#ifdef _WIN32
+    std::string new_path = path;
+#else
+    std::string new_path = convert_path(path);
+#endif
+
     std::string data;
-    if (!read_file(path.c_str(), data))
+    if (!read_file(new_path.c_str(), data))
         return;
     data += text;
-    FSFile fp(path.c_str(), "w");
+    FSFile fp(new_path.c_str(), "w");
     if (!fp.is_open())
         return;
     fp.write(&data[0], data.size());
     fp.close();
+}
+
+std::string File::get_ext(const std::string & path)
+{
+    std::string ext = get_path_ext(path);
+    if (ext.empty())
+        return ext;
+    return "." + ext;
+}
+
+std::string File::get_title(const std::string & path)
+{
+    return get_path_basename(path);
 }
 
 // joystick
@@ -2598,16 +2872,18 @@ int get_joystick_degrees(int n)
 
 #define DEADZONE 0.15f
 #define DEADZONE_MUL (1.0f / (1.0f - 0.15f))
+#define DEADZONE_BIAS 0.01f
 
 float get_joystick_axis(int n, int axis)
 {
     float v = get_joystick_axis_raw(n, axis);
     if (v > DEADZONE)
-        return (v - DEADZONE) * DEADZONE_MUL;
+        v = (v - DEADZONE) * DEADZONE_MUL + DEADZONE_BIAS;
     else if (v < -DEADZONE)
-        return (v + DEADZONE) * DEADZONE_MUL;
+        v = (v + DEADZONE) * DEADZONE_MUL - DEADZONE_BIAS;
     else
-        return 0.0f;
+        v = 0.0f;
+    return clamp(v, -1.0f, 1.0f);
 }
 
 int get_joystick_z(int n)
@@ -2688,3 +2964,17 @@ void start_joystick_rumble(int n, const std::string & name, int times)
     RumbleEffect & effect = rumble_effects[name];
     joystick_vibrate(n, effect.l, effect.r, effect.duration);
 }
+
+// asan
+
+#if !defined(NDEBUG) && (defined(__clang__) || defined (__GNUC__))
+const char * asan_default_options = "suppressions=asan.supp";
+
+extern "C"
+__attribute__((no_sanitize_address))
+const char *__asan_default_options()
+{
+    return asan_default_options;
+}
+
+#endif

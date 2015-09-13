@@ -573,11 +573,12 @@ void BallMovement::set_deceleration(int value)
 VectorMovement::VectorMovement(FrameObject * instance)
 : Movement(instance), angle(0.0)
 {
+    flags |= MOVE_STOPPED;
 }
 
 void VectorMovement::update()
 {
-    if (speed <= 0)
+    if (speed <= 0 || flags & MOVE_STOPPED)
         return;
 
     float vel_x = speed * cos_deg(angle) * instance->frame->timer_mul;
@@ -589,6 +590,19 @@ void VectorMovement::update()
 
     move(vel_x * 0.01f, vel_y * 0.01f);
     instance->set_animation(WALKING);
+}
+
+void VectorMovement::stop(bool collision)
+{
+    flags |= MOVE_STOPPED;
+}
+
+void VectorMovement::start()
+{
+    if (!(flags & MOVE_STOPPED))
+        return;
+    flags &= ~MOVE_STOPPED;
+    Movement::start();
 }
 
 void VectorMovement::look_at(int x, int y)
@@ -777,13 +791,7 @@ void PinballMovement::set_direction(int value)
 
 float get_pinball_angle(float x, float y)
 {
-    float d = get_length(x, y);
-    if (d == 0.0f)
-        return 0.0f;
-    float angle = acos(x / d);
-    if (y > 0.0f)
-        angle = 2.0 * CHOW_PI - angle;
-    return angle;
+    return get_angle_rad(0.0f, 0.0f, x, y);
 }
 
 void PinballMovement::update()
@@ -1015,25 +1023,4 @@ void EightDirections::update()
     double m = get_pixels(speed) * mul;
     move(add_x * m, add_y * m);
     last_move = m;
-}
-
-// MoveItMovement
-
-MoveItMovement::MoveItMovement(FrameObject * instance, int x, int y,
-                               int cycles, Movement * old_movement)
-: Movement(instance), src_x(instance->x), src_y(instance->y),
-  dst_x(x), dst_y(y), step(0), old_movement(old_movement)
-{
-    flags |= IS_MOVE_IT;
-    this->cycles = std::max(1, cycles);
-}
-
-void MoveItMovement::update()
-{
-    if (step >= cycles)
-        return;
-    step++;
-    int x = ((dst_x - src_x) * step) / cycles + src_x;
-    int y = ((dst_y - src_y) * step) / cycles + src_y;
-    instance->set_position(x, y);
 }

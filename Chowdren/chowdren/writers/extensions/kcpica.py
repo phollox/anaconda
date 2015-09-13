@@ -31,6 +31,8 @@ class ActivePicture(ObjectWriter):
             writer.putln('set_transparent_color(%s);' %
                          make_color(transparent_color))
         image = data.readString(260) or None
+        writer.putlnc('sprite_col.width = width = %s;', width)
+        writer.putlnc('sprite_col.height = height = %s;', height)
         # objects_file.putdef('filename', image)
 
 actions = make_table(ActionMethodWriter, {

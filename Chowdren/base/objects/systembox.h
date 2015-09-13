@@ -3,6 +3,7 @@
 
 #include "frameobject.h"
 #include "color.h"
+#include "font.h"
 #include <string>
 
 class SystemBox : public FrameObject
@@ -20,6 +21,9 @@ public:
     Image * image;
     int type;
     std::string text;
+    FTSimpleLayout * layout;
+    Color box_color;
+    int alignment;
 
     SystemBox(int x, int y, int type_id);
     ~SystemBox();

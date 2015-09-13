@@ -31,7 +31,7 @@ inline int string_to_int(const std::string & in)
     return fast_atoi(in);
 }
 
-inline DynamicNumber string_to_number(const std::string & in)
+inline double string_to_number(const std::string & in)
 {
 #ifdef CHOWDREN_USE_DYNAMIC_NUMBER
     double ret = string_to_double(in);
@@ -59,12 +59,17 @@ inline std::string number_to_string(int value)
     return fast_itoa(value);
 }
 
-inline std::string number_to_string(size_t value)
+inline std::string number_to_string(unsigned int value)
 {
     return fast_itoa(value);
 }
 
 inline std::string number_to_string(long long value)
+{
+    return fast_lltoa(value);
+}
+
+inline std::string number_to_string(uint64_t value)
 {
     return fast_lltoa(value);
 }
@@ -122,6 +127,13 @@ inline bool ends_with(const std::string & str, const std::string & suffix)
     if (str.size() < suffix.size())
         return false;
     return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+inline bool starts_with(const std::string & str, const std::string & prefix)
+{
+    if (str.size() < prefix.size())
+        return false;
+    return str.compare(0, prefix.size(), prefix) == 0;
 }
 
 #endif // CHOWDREN_STRINGCOMMON_H

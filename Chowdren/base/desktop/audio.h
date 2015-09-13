@@ -10,6 +10,7 @@
 #include <alc.h>
 #include <SDL_thread.h>
 #include <SDL_mutex.h>
+#include <SDL_messagebox.h>
 #endif // CHOWDREN_IS_EMSCRIPTEN
 
 #ifndef NOMINMAX
@@ -262,6 +263,7 @@ public:
     SoundList sounds;
 
     Sample(FSFile & fp, Media::AudioType type, size_t size);
+    Sample(unsigned char * data, Media::AudioType type, size_t size);
     ~Sample();
     void add_sound(Sound* sound);
     void remove_sound(Sound* sound);
@@ -512,9 +514,11 @@ public:
     uint64_t samples_processed;
     bool end_buffers[BUFFER_COUNT];
     bool stopping;
+    double seek_time;
 
 #ifdef USE_THREAD_PRELOAD
     bool fill_now;
+    bool with_seek;
 #endif
 
     SoundStream(size_t offset, Media::AudioType type, size_t size)
@@ -535,7 +539,7 @@ public:
     void init(SoundDecoder * decoder)
     {
         file = decoder;
-        playing = loop = stopping = fill_now = false;
+        playing = loop = stopping = fill_now = with_seek = false;
         format = get_format(file->channels);
 
         for (int i = 0; i < BUFFER_COUNT; ++i)
@@ -570,7 +574,7 @@ public:
         }
 
         // Move to the beginning
-        on_seek(0);
+        // on_seek(0);
 
         samples_processed = 0;
 
@@ -622,16 +626,15 @@ public:
         al_check(alSourceStop(source));
         clear_queue();
         al_check(alSourcei(source, AL_BUFFER, 0));
-        on_seek(time);
+        seek_time = time;
         samples_processed = static_cast<uint64_t>(
             time * file->sample_rate * file->channels);
         for (int i = 0; i < BUFFER_COUNT; ++i)
             end_buffers[i] = false;
 #ifdef USE_THREAD_PRELOAD
         fill_now = true;
-        SDL_LockMutex(global_device.stream_cond_mutex);
+        with_seek = true;
         SDL_CondBroadcast(global_device.stream_cond);
-        SDL_UnlockMutex(global_device.stream_cond_mutex);
 #else
         stopping = fill_queue();
         al_check(alSourcePlay(source));
@@ -652,7 +655,9 @@ public:
 
     double get_duration()
     {
-        return double(file->samples) / file->sample_rate / file->channels;
+        return double(file->get_samples())
+               / file->sample_rate
+               / file->channels;
     }
 
     void set_loop(bool loop)
@@ -677,6 +682,10 @@ public:
 
         if (fill_now) {
             fill_now = false;
+            if (with_seek) {
+                on_seek(seek_time);
+                with_seek = false;
+            }
             stopping = fill_queue();
             al_check(alSourcePlay(source));
             return;
@@ -821,6 +830,10 @@ void AudioDevice::open()
     device = alcOpenDevice(NULL);
     if (!device) {
         std::cout << "Device open failed" << std::endl;
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Audio error",
+            "Could not open audio device. Ensure that at least 1 audio "
+            "device is enabled.", NULL);
+        exit(EXIT_FAILURE);
         return;
     }
 
@@ -954,7 +967,16 @@ Sample::Sample(FSFile & fp, Media::AudioType type, size_t size)
     SoundDecoder * file = create_decoder(fp, type, size);
     channels = file->channels;
     sample_rate = file->sample_rate;
-    buffer.init(*file, file->samples);
+    buffer.init(*file, file->get_samples());
+    delete file;
+}
+
+Sample::Sample(unsigned char * data, Media::AudioType type, size_t size)
+{
+    SoundDecoder * file = create_decoder(data, type, size);
+    channels = file->channels;
+    sample_rate = file->sample_rate;
+    buffer.init(*file, file->get_samples());
     delete file;
 }
 

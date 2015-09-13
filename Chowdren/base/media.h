@@ -86,7 +86,7 @@ public:
     bool is_channel_valid(unsigned int channel);
     void add_file(unsigned int id, const std::string & fn);
     void add_cache(unsigned int id, FSFile & fp);
-    void add_data(unsigned int id, FSFile & fp, size_t size, AudioType type);
+    void add_cache(unsigned int id);
     double get_main_volume();
     void set_main_volume(double volume);
 };

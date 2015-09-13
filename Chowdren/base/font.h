@@ -28,26 +28,24 @@ typedef enum
 class FTPoint
 {
     public:
+        double values[2];
+
         inline FTPoint()
         {
             values[0] = 0;
             values[1] = 0;
-            values[2] = 0;
         }
 
-        inline FTPoint(const double x, const double y,
-                       const double z = 0)
+        inline FTPoint(const double x, const double y)
         {
             values[0] = x;
             values[1] = y;
-            values[2] = z;
         }
 
         inline FTPoint& operator += (const FTPoint& point)
         {
             values[0] += point.values[0];
             values[1] += point.values[1];
-            values[2] += point.values[2];
 
             return *this;
         }
@@ -57,7 +55,6 @@ class FTPoint
             FTPoint temp;
             temp.values[0] = values[0] + point.values[0];
             temp.values[1] = values[1] + point.values[1];
-            temp.values[2] = values[2] + point.values[2];
 
             return temp;
         }
@@ -66,7 +63,6 @@ class FTPoint
         {
             values[0] -= point.values[0];
             values[1] -= point.values[1];
-            values[2] -= point.values[2];
 
             return *this;
         }
@@ -76,7 +72,6 @@ class FTPoint
             FTPoint temp;
             temp.values[0] = values[0] - point.values[0];
             temp.values[1] = values[1] - point.values[1];
-            temp.values[2] = values[2] - point.values[2];
 
             return temp;
         }
@@ -86,7 +81,6 @@ class FTPoint
             FTPoint temp;
             temp.values[0] = values[0] * multiplier;
             temp.values[1] = values[1] * multiplier;
-            temp.values[2] = values[2] * multiplier;
 
             return temp;
         }
@@ -100,8 +94,7 @@ class FTPoint
         inline friend double operator * (FTPoint &a, FTPoint& b)
         {
             return a.values[0] * b.values[0]
-                 + a.values[1] * b.values[1]
-                 + a.values[2] * b.values[2];
+                 + a.values[1] * b.values[1];
         }
 
         friend bool operator == (const FTPoint &a, const FTPoint &b);
@@ -114,30 +107,26 @@ class FTPoint
 
         inline void X(double x) { values[0] = x; };
         inline void Y(double y) { values[1] = y; };
-        inline void Z(double z) { values[2] = z; };
 
         inline double X() const { return values[0]; };
         inline double Y() const { return values[1]; };
-        inline double Z() const { return values[2]; };
         inline float Xf() const { return float(values[0]); };
         inline float Yf() const { return float(values[1]); };
-        inline float Zf() const { return float(values[2]); };
-
-    private:
-        double values[3];
 };
 
 class FTBBox
 {
     public:
+        FTPoint lower, upper;
+
         FTBBox()
-        :   lower(0.0f, 0.0f, 0.0f),
-            upper(0.0f, 0.0f, 0.0f)
+        :   lower(0.0f, 0.0f),
+            upper(0.0f, 0.0f)
         {}
 
-        FTBBox(float lx, float ly, float lz, float ux, float uy, float uz)
-        :   lower(lx, ly, lz),
-            upper(ux, uy, uz)
+        FTBBox(float lx, float ly, float ux, float uy)
+        :   lower(lx, ly),
+            upper(ux, uy)
         {}
 
         FTBBox(FTPoint l, FTPoint u)
@@ -150,15 +139,14 @@ class FTBBox
 
         void Invalidate()
         {
-            lower = FTPoint(1.0f, 1.0f, 1.0f);
-            upper = FTPoint(-1.0f, -1.0f, -1.0f);
+            lower = FTPoint(1.0f, 1.0f);
+            upper = FTPoint(-1.0f, -1.0f);
         }
 
         bool IsValid()
         {
             return lower.X() <= upper.X()
-                && lower.Y() <= upper.Y()
-                && lower.Z() <= upper.Z();
+                && lower.Y() <= upper.Y();
         }
 
 
@@ -174,10 +162,8 @@ class FTBBox
         {
             if(bbox.lower.X() < lower.X()) lower.X(bbox.lower.X());
             if(bbox.lower.Y() < lower.Y()) lower.Y(bbox.lower.Y());
-            if(bbox.lower.Z() < lower.Z()) lower.Z(bbox.lower.Z());
             if(bbox.upper.X() > upper.X()) upper.X(bbox.upper.X());
             if(bbox.upper.Y() > upper.Y()) upper.Y(bbox.upper.Y());
-            if(bbox.upper.Z() > upper.Z()) upper.Z(bbox.upper.Z());
 
             return *this;
         }
@@ -191,9 +177,6 @@ class FTBBox
         {
             return lower;
         }
-
-    private:
-        FTPoint lower, upper;
 };
 
 
@@ -341,9 +324,9 @@ public:
     int size;
     float width, height;
     float ascender, descender;
+    int flags;
 
     int numGlyphs;
-
     int textureWidth;
     int textureHeight;
     Texture tex;
@@ -352,9 +335,16 @@ public:
     unsigned int padding;
     int xOffset;
     int yOffset;
-    static Color color;
     FTGlyphContainer * glyphList;
     FTPoint pen;
+    // XXX hack
+    static Color color;
+    static bool custom_shader;
+
+    enum FontFlags
+    {
+        BOLD = 1 << 0
+    };
 
     FTTextureFont(FileStream & stream);
     ~FTTextureFont();
@@ -398,10 +388,10 @@ class FTSimpleLayout
 {
     public:
         FTSimpleLayout();
-        FTBBox BBox(const char* string, const int len = -1,
-                    FTPoint position = FTPoint());
-        FTBBox BBox(const wchar_t* string, const int len = -1,
-                    FTPoint position = FTPoint());
+        FTBBox BBox(const char* string, const int len = -1);
+        FTBBox BBoxL(const char* string, const int len = -1);
+        FTBBox BBox(const wchar_t* string, const int len = -1);
+        int get_lines(const char * s, const int len = -1);
         void Render(const char *string, const int len = -1,
                     FTPoint position = FTPoint());
         void Render(const wchar_t *string, const int len = -1,
@@ -426,17 +416,10 @@ class FTSimpleLayout
         float lineSpacing;
         float tabSpacing;
 
-        void WrapText(const char *buf, const int len, FTPoint position,
-                      FTBBox *bounds);
-        void WrapText(const wchar_t *buf, const int len, FTPoint position,
-                      FTBBox *bounds);
         void OutputWrapped(const char *buf, const int len, FTPoint position,
                            const float RemainingWidth, FTBBox *bounds);
         void OutputWrapped(const wchar_t *buf, const int len, FTPoint position,
                            const float RemainingWidth, FTBBox *bounds);
-
-        template <typename T>
-        inline FTBBox BBoxI(const T* string, const int len, FTPoint position);
 
         template <typename T>
         inline void RenderI(const T* string, const int len,
@@ -447,7 +430,7 @@ class FTSimpleLayout
                                  FTPoint position, const float extraSpace);
         template <typename T>
         void WrapTextI(const T* buf, const int len, FTPoint position,
-                       FTBBox *bounds);
+                       FTBBox *bounds, int & lines);
 
         template <typename T>
         void OutputWrappedI(const T* buf, const int len, FTPoint position,

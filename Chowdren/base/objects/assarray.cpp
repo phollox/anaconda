@@ -3,6 +3,7 @@
 #include "fileio.h"
 #include <iostream>
 #include "stringcommon.h"
+#include "datastream.h"
 
 #define ARRAY_MAGIC "ASSBF1.0"
 
@@ -218,12 +219,13 @@ const std::string & AssociateArray::get_key(ArrayAddress addr)
     return addr.it->first;
 }
 
-void AssociateArray::save(BaseStream & stream, int method)
+template <typename T>
+inline void save_assarray(AssociateArray & array, T & stream, int method)
 {
     stream.write(ARRAY_MAGIC, sizeof(ARRAY_MAGIC)-1);
 
     ArrayMap::iterator it;
-    for (it = map->begin(); it != map->end(); it++) {
+    for (it = array.map->begin(); it != array.map->end(); it++) {
         AssociateArrayItem & item = it->second;
         std::string key = it->first;
         encode_method(key, method);
@@ -251,7 +253,7 @@ void AssociateArray::save(const std::string & path, int method)
         return;
     }
     WriteStream stream;
-    save(stream, method);
+    save_assarray(*this, stream, method);
     stream.save(fp);
     fp.close();
 }
@@ -260,7 +262,7 @@ void AssociateArray::save_encrypted(const std::string & path, int method)
 {
     std::stringstream ss;
     DataStream stream(ss);
-    save(stream, method);
+    save_assarray(*this, stream, method);
     std::string src = ss.str();
     std::string dst;
     cipher.encrypt(&dst, src);
