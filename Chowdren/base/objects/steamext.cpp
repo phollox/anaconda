@@ -472,7 +472,11 @@ bool SteamObject::is_activated()
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     if (!global_steam_obj.initialized)
+#ifdef CHOWDREN_FORCE_STEAM_OPEN
         return false;
+#else
+        return true;
+#endif
     SteamUserStats()->RequestCurrentStats();
     ISteamApps * ownapp = SteamApps();
     return ownapp->BIsSubscribedApp(CHOWDREN_STEAM_APPID);
