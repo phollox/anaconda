@@ -1593,6 +1593,15 @@ void init_joystick()
 {
     SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
 
+    // Reload mappings passed through the environment (by Steam, etc)
+    // so that the ones in gamecontrollerdb.txt don't override them:
+    const char *hint = SDL_GetHint(SDL_HINT_GAMECONTROLLERCONFIG);
+    if (hint && hint[0]) {
+      const size_t hintlen = SDL_strlen(hint);
+      SDL_RWops *hint_rwops = SDL_RWFromConstMem(hint, hintlen+1);
+      SDL_GameControllerAddMappingsFromRW(hint_rwops, 1);
+    };
+
     rumble_effect.type = SDL_HAPTIC_LEFTRIGHT;
     rumble_effect.leftright.length = 0;
 
