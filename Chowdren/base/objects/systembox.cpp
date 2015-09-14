@@ -6,7 +6,7 @@
 #include "common.h"
 
 SystemBox::SystemBox(int x, int y, int type_id)
-: FrameObject(x, y, type_id), layout(NULL)
+: FrameObject(x, y, type_id), layout(NULL), box_flags(0)
 {
     collision = new InstanceBox(this);
 }
@@ -14,13 +14,6 @@ SystemBox::SystemBox(int x, int y, int type_id)
 SystemBox::~SystemBox()
 {
     delete collision;
-}
-
-inline int align_pos(int a, int b)
-{
-    if (a <= 0)
-        return 0;
-    return (a / b) * b;
 }
 
 void SystemBox::draw()
@@ -44,7 +37,8 @@ void SystemBox::draw()
             layout = new FTSimpleLayout();
             font = get_font(12);
             layout->SetFont(font);
-            layout->SetAlignment((TextAlignment)alignment);
+            layout->SetAlignment(
+                (TextAlignment)(box_flags & ALIGN_FLAGS_MASK));
             layout->SetLineLength(width);
         } else {
             font = get_font(12);
@@ -152,6 +146,16 @@ void SystemBox::set_border_2(Color color)
 void SystemBox::set_fill(Color color)
 {
     box_color = color;
+}
+
+void SystemBox::check()
+{
+    box_flags |= CHECKED;
+}
+
+void SystemBox::uncheck()
+{
+    box_flags &= ~CHECKED;
 }
 
 const std::string & SystemBox::get_font_name()

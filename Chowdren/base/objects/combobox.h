@@ -21,6 +21,7 @@ public:
 
     void update();
     void draw();
+    int get_current_line_number();
 };
 
 #endif // CHOWDREN_COMBOBOX_H

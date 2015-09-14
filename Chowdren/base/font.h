@@ -13,7 +13,9 @@ typedef enum
                        ALIGN_JUSTIFY,
     ALIGN_TOP = 1 << 4,
     ALIGN_BOTTOM = 1 << 5,
-    ALIGN_VCENTER = 1 << 6
+    ALIGN_VCENTER = 1 << 6,
+    ALIGN_VERTICAL = ALIGN_TOP | ALIGN_BOTTOM | ALIGN_VCENTER,
+    ALIGN_FLAGS_MASK = ALIGN_HORIZONTAL | ALIGN_VERTICAL
 } TextAlignment;
 
 #ifdef CHOWDREN_USE_FT2

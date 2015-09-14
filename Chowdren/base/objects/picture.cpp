@@ -17,6 +17,8 @@ ActivePicture::~ActivePicture()
 
 void ActivePicture::load(const std::string & fn)
 {
+    filename = fn;
+    std::string path;
 #if defined(CHOWDREN_IS_WIIU) || defined(CHOWDREN_EMULATE_WIIU)
     // small hack to load language-specific files for menu
     size_t dir_end = fn.find_last_of(PATH_SEP);
@@ -24,20 +26,20 @@ void ActivePicture::load(const std::string & fn)
     std::string dir = fn.substr(dir_start+1, dir_end-dir_start-1);
     if (dir == "Menu") {
         std::string name = fn.substr(dir_end + 1);
-        filename = convert_path(fn.substr(0, dir_end+1) +
-                                platform_get_language() + "/" + name);
+        path = convert_path(fn.substr(0, dir_end+1) +
+                            platform_get_language() + "/" + name);
 
     } else
-        filename = convert_path(fn);
+        path = convert_path(fn);
 #else
-    filename = convert_path(fn);
+    path = convert_path(fn);
 #endif
 
 #ifndef NDEBUG
-    std::cout << "load picture: " << filename << std::endl;
+    std::cout << "load picture: " << path << std::endl;
 #endif
 
-    image = get_image_cache(filename, 0, 0, 0, 0, transparent_color);
+    image = get_image_cache(path, 0, 0, 0, 0, transparent_color);
 
     if (image == NULL)
         return;
@@ -115,6 +117,20 @@ int ActivePicture::get_height()
     if (image == NULL)
         return 0;
     return image->height;
+}
+
+int ActivePicture::get_resized_width()
+{
+    if (image == NULL)
+        return 0;
+    return ((SpriteCollision*)collision)->width;
+}
+
+int ActivePicture::get_resized_height()
+{
+    if (image == NULL)
+        return 0;
+    return ((SpriteCollision*)collision)->height;
 }
 
 void ActivePicture::draw()

@@ -1109,6 +1109,8 @@ class Converter(object):
             config_file.putdefine('CHOWDREN_PRELOAD_IMAGES')
         if self.config.use_deferred_collisions():
             config_file.putdefine('CHOWDREN_DEFER_COLLISIONS')
+        if self.config.use_gwen():
+            self.add_define('CHOWDREN_USE_GWEN')
 
         for (name, value) in self.defines:
             if value is None:

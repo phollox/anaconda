@@ -18,12 +18,17 @@ public:
         TOPLEFT_IMAGE
     };
 
+    enum BoxFlags
+    {
+        CHECKED = 1 << 7
+    };
+
     Image * image;
     int type;
     std::string text;
     FTSimpleLayout * layout;
     Color box_color;
-    int alignment;
+    int box_flags;
 
     SystemBox(int x, int y, int type_id);
     ~SystemBox();
@@ -36,6 +41,8 @@ public:
     void set_border_1(Color color);
     void set_border_2(Color color);
     void set_fill(Color color);
+    void check();
+    void uncheck();
     const std::string & get_font_name();
 };
 

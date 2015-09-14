@@ -168,6 +168,7 @@ endif()
 
 if (CHOWDREN_USE_GWEN)
     set(GWEN_DIR "${CHOWDREN_BASE_DIR}/staticlibs/gwen")
+    include_directories("${CHOWDREN_BASE_DIR}/include/staticlibs")
     set(SRCS
         ${SRCS}
         ${CHOWDREN_BASE_DIR}/gui/gwen.cpp

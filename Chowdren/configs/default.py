@@ -8,6 +8,9 @@ def init(converter):
     converter.add_define('CHOWDREN_FORCE_TEXT_LAYOUT')
     converter.add_define('CHOWDREN_TEXT_USE_UTF8')
 
+def use_gwen(converter):
+    return True
+
 def init_container(converter, container):
     pass
 

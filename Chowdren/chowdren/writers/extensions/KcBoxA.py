@@ -169,7 +169,7 @@ class SystemBox(ObjectWriter):
                 color = fill + (255,)
             writer.putlnc('box_color = %s;', make_color(color))
             writer.putlnc('blend_color = %s;', make_color(text_color))
-            writer.putlnc('alignment = %s;', alignment)
+            writer.putlnc('box_flags = %s;', alignment)
         else:
             writer.putln('image = %s;' % self.converter.get_image(self.image))
             if pattern:
@@ -196,6 +196,8 @@ class SystemBox(ObjectWriter):
 actions = make_table(ActionMethodWriter, {
     0 : 'set_size',
     1 : 'set_global_position',
+    4 : 'check',
+    5 : 'uncheck',
     6 : 'hide_fill',
     22 : 'hide_border_1',
     31 : 'hide_border_2',

@@ -54,8 +54,11 @@ conditions = make_table(ConditionMethodWriter, {
 })
 
 expressions = make_table(ExpressionMethodWriter, {
+    0 : '.filename',
     1 : 'get_width()',
     2 : 'get_height()',
+    3 : 'get_resized_width()',
+    4 : 'get_resized_height()',
     9 : '.angle',
     13 : 'get_zoom_x()'
 })

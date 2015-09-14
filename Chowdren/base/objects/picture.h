@@ -38,6 +38,8 @@ public:
     void draw();
     void paste(int dest_x, int dest_y, int src_x, int src_y,
                int src_width, int src_height, int collision_type);
+    int get_resized_width();
+    int get_resized_height();
 };
 
 extern FrameObject * default_picture_instance;

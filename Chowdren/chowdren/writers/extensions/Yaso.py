@@ -21,7 +21,8 @@ conditions = make_table(StaticConditionWriter, {
 })
 
 expressions = make_table(ExpressionMethodWriter, {
-    14 : '.empty_string'
+    14 : '.empty_string',
+    15 : 'platform_get_appdata_dir'
 })
 
 def get_object():

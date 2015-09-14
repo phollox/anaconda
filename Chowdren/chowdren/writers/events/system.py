@@ -2339,7 +2339,9 @@ actions = make_table(ActionMethodWriter, {
 
     # menu actions. don't implement yet.
     'UncheckMenu' : EmptyAction,
-    'CheckMenu' : EmptyAction
+    'CheckMenu' : EmptyAction,
+    'ActivateMenu' : EmptyAction,
+    'DeactivateMenu' : EmptyAction,
 })
 
 conditions = make_table(ConditionMethodWriter, {
