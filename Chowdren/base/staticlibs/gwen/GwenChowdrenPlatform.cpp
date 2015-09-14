@@ -4,7 +4,7 @@
 	See license in Gwen.h
 */
 
-#include "SDL_Clipboard.h"
+#include "SDL_clipboard.h"
 #include "Gwen/Macros.h"
 #include "Gwen/Platform.h"
 #include "Gwen/Utility.h"

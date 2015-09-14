@@ -9,7 +9,7 @@ def init(converter):
     converter.add_define('CHOWDREN_TEXT_USE_UTF8')
 
 def use_gwen(converter):
-    return True
+    return False
 
 def init_container(converter, container):
     pass
