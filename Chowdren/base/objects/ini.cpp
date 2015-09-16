@@ -740,9 +740,7 @@ INI::~INI()
         save_file(false);
 #endif
 	if (!is_global) {
-		std::cout << "Destroy data: " << (unsigned int)data << std::endl;
 		delete data;
-        data = NULL;
 	}
 }
 
