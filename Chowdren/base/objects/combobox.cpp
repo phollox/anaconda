@@ -4,7 +4,7 @@
 // ComboBox
 
 ComboBox::ComboBox(int x, int y, int type_id)
-: FrameObject(x, y, type_id), combo_box(gwen.canvas)
+: FrameObject(x, y, type_id), combo_box(manager.frame->gwen.canvas)
 {
     collision = new InstanceBox(this);
 }
@@ -22,7 +22,68 @@ void ComboBox::update()
 
 void ComboBox::draw()
 {
-    gwen.render(&combo_box);
+    frame->gwen.render(&combo_box);
     if (combo_box.m_Menu != NULL && combo_box.IsMenuOpen())
-        gwen.render(combo_box.m_Menu);
+        frame->gwen.render(combo_box.m_Menu);
+}
+
+const std::string & ComboBox::get_line(int index)
+{
+    std::cout << "get_line not implemented" << std::endl;
+    return empty_string;
+}
+
+void ComboBox::set_current_line(int index)
+{
+    std::cout << "set_current_line not implemented" << std::endl;
+}
+
+void ComboBox::add_line(const std::string value)
+{
+    std::cout << "add_line not implemented" << std::endl;
+}
+
+int ComboBox::get_current_line_number()
+{
+    std::cout << "get_current_line_number not implemented" << std::endl;
+    return 0;
+}
+
+const std::string & ComboBox::get_current_line()
+{
+    std::cout << "get_current_line not implemented" << std::endl;
+    return empty_string;
+}
+
+void ComboBox::highlight()
+{
+    std::cout << "ComboBox::highlight not implemented" << std::endl;
+}
+
+void ComboBox::dehighlight()
+{
+    std::cout << "ComboBox::dehighlight not implemented" << std::endl;
+}
+
+void ComboBox::lose_focus()
+{
+    std::cout << "ComboBox::lose_focus not implemented" << std::endl;
+}
+
+void ComboBox::reset()
+{
+    std::cout << "ComboBox::reset not implemented" << std::endl;
+}
+
+bool ComboBox::is_list_dropped()
+{
+    std::cout << "ComboBox::is_list_dropped not implemented" << std::endl;
+    return false;
+}
+
+int ComboBox::find_string_exact(const std::string & text, int flag)
+{
+    std::cout << "find_string_exact not implemented" << text << " " << flag
+        << std::endl;
+    return 0;
 }

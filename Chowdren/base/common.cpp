@@ -1276,6 +1276,17 @@ bool Frame::mouse_in_zone(int x1, int y1, int x2, int y2)
     return collides(x, y, x+1, y+1, x1, y1, x2, y2);
 }
 
+#ifdef CHOWDREN_SUBAPP_FRAMES
+bool Frame::is_mouse_pressed_once_frame(int button)
+{
+    if (!is_mouse_pressed_once(button))
+        return false;
+    int x, y;
+    get_mouse_pos(&x, &y);
+    return !SubApplication::test_pos(this, x, y);
+}
+#endif
+
 CollisionBase * Frame::test_background_collision(int x, int y)
 {
     if (x < 0 || y < 0 || x > width || y > height)
@@ -1416,7 +1427,7 @@ bool Frame::update()
 void Frame::draw(int remote)
 {
     PROFILE_BEGIN(frame_draw_start);
-    // first, draw the actual window contents
+
     Render::set_view(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 #ifdef CHOWDREN_HAS_MRT
     if (remote == CHOWDREN_REMOTE_TARGET) {

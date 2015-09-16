@@ -5,19 +5,54 @@
 #include "render.h"
 #include "common.h"
 
+#ifdef CHOWDREN_USE_GWEN
+#include "gui/gwen.h"
+
+class Button : public Gwen::Controls::Button
+{
+public:
+    SystemBox * parent;
+
+    GWEN_CONTROL_INLINE(Button, Gwen::Controls::Button)
+    {
+    }
+
+    void OnPress()
+    {
+        parent->clicked = 2;
+        Gwen::Controls::Button::OnPress();
+    }
+};
+#endif
+
 SystemBox::SystemBox(int x, int y, int type_id)
 : FrameObject(x, y, type_id), layout(NULL), box_flags(0)
 {
     collision = new InstanceBox(this);
+#ifdef CHOWDREN_USE_GWEN
+    button = NULL;
+    clicked = 0;
+#endif
 }
 
 SystemBox::~SystemBox()
 {
     delete collision;
+
+#ifdef CHOWDREN_USE_GWEN
+    delete button;
+#endif
 }
 
 void SystemBox::draw()
 {
+#ifdef CHOWDREN_USE_GWEN
+    if (button != NULL) {
+        frame->gwen.render(button);
+        return;
+    }
+#endif
+
     if (image == NULL) {
         int x1 = x;
         int y1 = y;
@@ -130,6 +165,11 @@ void SystemBox::set_size(int w, int h)
 
 void SystemBox::set_text(const std::string & text)
 {
+#ifdef CHOWDREN_USE_GWEN
+    if (button != NULL) {
+        button->SetText(Gwen::TextObject(text));
+    }
+#endif
     this->text = text;
 }
 
@@ -157,6 +197,44 @@ void SystemBox::uncheck()
 {
     box_flags &= ~CHECKED;
 }
+
+void SystemBox::disable()
+{
+    std::cout << "SystemBox::disable not implemented" << std::endl;
+}
+
+bool SystemBox::is_clicked()
+{
+#ifdef CHOWDREN_USE_GWEN
+    return clicked > 0;
+#else
+    return mouse_over() && is_mouse_pressed_once(SDL_BUTTON_LEFT);
+#endif
+}
+
+#ifdef CHOWDREN_USE_GWEN
+
+void SystemBox::update()
+{
+    if (button == NULL)
+        return;
+    button->SetPos(x, y);
+    button->SetSize(width, height);
+    clicked = std::max(0, clicked - 1);
+}
+
+void SystemBox::init_button()
+{
+    button = new Button(manager.frame->gwen.canvas);
+    ((Button*)button)->parent = this;
+}
+
+void SystemBox::on_button()
+{
+    clicked = 1;
+}
+
+#endif
 
 const std::string & SystemBox::get_font_name()
 {

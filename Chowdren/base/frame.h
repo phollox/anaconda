@@ -18,6 +18,10 @@
 #include "fbo.h"
 #endif
 
+#ifdef CHOWDREN_USE_GWEN
+#include "gui/gwen.h"
+#endif
+
 class Background;
 class BackgroundItem;
 class CollisionBase;
@@ -204,6 +208,14 @@ public:
 #ifdef CHOWDREN_USE_BACKMAGIC
     FlatObjectList back_instances[MAX_BACK_ID];
     Backdrop * back_obj;
+#endif
+
+#ifdef CHOWDREN_USE_GWEN
+    GwenData gwen;
+#endif
+
+#ifdef CHOWDREN_SUBAPP_FRAMES
+    bool is_mouse_pressed_once_frame(int button);
 #endif
 
     FrameObject * col_instance_1;

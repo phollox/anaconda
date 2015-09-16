@@ -20,6 +20,7 @@ ScrollbarObject::~ScrollbarObject()
 
 void ScrollbarObject::init_scrollbar(int value)
 {
+    GwenData & gwen = manager.frame->gwen;
     if (vertical)
         scrollbar = new Gwen::Controls::VerticalScrollBar(gwen.canvas);
     else
@@ -76,7 +77,7 @@ void ScrollbarObject::update()
 
 void ScrollbarObject::draw()
 {
-    gwen.render(scrollbar);
+    frame->gwen.render(scrollbar);
     // In case of emergency:
     //gwen.canvas->RenderCanvas();
 }

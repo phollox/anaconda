@@ -745,6 +745,16 @@ FTBBox FTSimpleLayout::BBoxL(const char *string, const int len)
     return tmp;
 }
 
+FTBBox FTSimpleLayout::BBoxL(const wchar_t *string, const int len)
+{
+    FTBBox tmp;
+    int lines;
+    WrapTextI(string, len, FTPoint(), &tmp, lines);
+    double h = lines * currentFont->LineHeight();
+    tmp.upper.values[1] = tmp.lower.values[1] + h;
+    return tmp;
+}
+
 FTBBox FTSimpleLayout::BBox(const wchar_t *string, const int len)
 {
     FTBBox tmp;

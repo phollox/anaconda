@@ -194,7 +194,6 @@ bool Canvas::InputMouseButton( int iButton, bool bDown )
 
 bool Canvas::InputKey( int iKey, bool bDown )
 {
-    printf("Input %d, down %d\n", iKey, bDown);
 	if ( Hidden() ) { return false; }
 
 	if ( iKey <= Gwen::Key::Invalid ) { return false; }

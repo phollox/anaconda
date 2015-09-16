@@ -6,6 +6,10 @@
 #include "font.h"
 #include <string>
 
+#ifdef CHOWDREN_USE_GWEN
+#include "Gwen/Controls/Button.h"
+#endif
+
 class SystemBox : public FrameObject
 {
 public:
@@ -30,6 +34,14 @@ public:
     Color box_color;
     int box_flags;
 
+#ifdef CHOWDREN_USE_GWEN
+    Gwen::Controls::Button * button;
+    int clicked;
+    void update();
+    void init_button();
+    void on_button();
+#endif
+
     SystemBox(int x, int y, int type_id);
     ~SystemBox();
     void set_text(const std::string & text);
@@ -43,7 +55,9 @@ public:
     void set_fill(Color color);
     void check();
     void uncheck();
+    void disable();
     const std::string & get_font_name();
+    bool is_clicked();
 };
 
 extern FrameObject * default_systembox_instance;

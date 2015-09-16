@@ -67,10 +67,13 @@ class ButtonObject(ObjectWriter):
         return self.converter.config.use_gwen()
 
 actions = make_table(ActionMethodWriter, {
+    0 : 'set_text',
+    1 : 'set_visible(true)',
     2 : 'set_visible(false)',
     3 : 'enable', # enable
     4 : 'disable', # disable
-    14 : 'check'
+    14 : 'check',
+    15 : 'uncheck'
 })
 
 conditions = make_table(ConditionMethodWriter, {

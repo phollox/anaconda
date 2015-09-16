@@ -1042,7 +1042,6 @@ bool Base::HandleAccelerator( Gwen::UnicodeString & accelerator )
 
 bool Base::OnKeyPress( int iKey, bool bPress )
 {
-    printf("on key");
 	bool bHandled = false;
 
 	switch ( iKey )

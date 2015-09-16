@@ -313,7 +313,7 @@ void GameManager::draw()
     platform_begin_draw();
     PROFILE_END();
 
-#ifdef CHOWDREN_USE_SUBAPP
+#if defined(CHOWDREN_USE_SUBAPP) && !defined(CHOWDREN_SUBAPP_FRAMES)
     Frame * render_frame;
     if (SubApplication::current != NULL &&
         SubApplication::current->flags & VISIBLE) {
@@ -364,6 +364,11 @@ void GameManager::draw()
     PROFILE_END();
 
     Render::set_offset(0, 0);
+
+#if defined(CHOWDREN_USE_SUBAPP) && defined(CHOWDREN_SUBAPP_FRAMES)
+    SubApplication::draw_frames();
+    Render::set_offset(0, 0);
+#endif
 
 #ifdef CHOWDREN_IS_DEMO
     if (show_build_timer > 0.0) {
@@ -635,7 +640,7 @@ bool GameManager::update()
     platform_poll_events();
 
 #ifdef CHOWDREN_USE_GWEN
-    gwen.update();
+    frame->gwen.update();
 #endif
 
     // player controls

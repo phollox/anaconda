@@ -639,7 +639,11 @@ class MouseClicked(ConditionWriter):
     pre_event = True
 
     def write(self, writer):
-        writer.put('is_mouse_pressed_once(%s)' % self.convert_index(0))
+        if self.converter.config.use_subapp_frames():
+            writer.putc('is_mouse_pressed_once_frame(%s)',
+                        self.convert_index(0))
+        else:
+            writer.put('is_mouse_pressed_once(%s)' % self.convert_index(0))
 
 class ObjectClicked(ConditionWriter):
     # is_always = True

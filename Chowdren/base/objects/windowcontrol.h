@@ -2,6 +2,7 @@
 #define CHOWDREN_WINDOWCONTROL_H
 
 #include "frameobject.h"
+#include <string>
 
 class WindowControl : public FrameObject
 {
@@ -29,6 +30,8 @@ public:
     static void set_visible(bool value);
     static void minimize();
     static void set_placement(int value);
+    static void set_title(const std::string & title);
+    static void set_frame_width(int width, bool adjust);
 };
 
 #endif // CHOWDREN_WINDOWCONTROL_H

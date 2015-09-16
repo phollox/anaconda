@@ -2,6 +2,7 @@
 #include "collision.h"
 #include "gui/gwen.h"
 #include "Gwen/Controls/CheckBox.h"
+#include "manager.h"
 
 // ButtonObject
 
@@ -26,9 +27,9 @@ void ButtonObject::init_button(unsigned int flags)
 #ifdef CHOWDREN_USE_GWEN
     button_flags = flags;
     if (flags & IS_CHECKBOX)
-        button = new Gwen::Controls::CheckBox(gwen.canvas);
+        button = new Gwen::Controls::CheckBox(manager.frame->gwen.canvas);
     else
-        button = new Gwen::Controls::Button(gwen.canvas);
+        button = new Gwen::Controls::Button(manager.frame->gwen.canvas);
     button->SetPos(x, y);
     button->SetSize(width, height);
 #endif
@@ -45,7 +46,7 @@ void ButtonObject::update()
 void ButtonObject::draw()
 {
 #ifdef CHOWDREN_USE_GWEN
-    gwen.render(button);
+    frame->gwen.render(button);
 #endif
 }
 
@@ -65,4 +66,21 @@ void ButtonObject::uncheck()
         return;
     ((Gwen::Controls::CheckBox*)button)->SetChecked(false);
 #endif
+}
+
+void ButtonObject::set_text(const std::string & text)
+{
+#ifdef CHOWDREN_USE_GWEN
+    button->SetText(Gwen::TextObject(text));
+#endif
+}
+
+void ButtonObject::enable()
+{
+    std::cout << "enable not implemented" << std::endl;
+}
+
+void ButtonObject::disable()
+{
+    std::cout << "disable not implemented" << std::endl;
 }

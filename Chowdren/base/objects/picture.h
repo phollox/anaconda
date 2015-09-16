@@ -40,6 +40,8 @@ public:
                int src_width, int src_height, int collision_type);
     int get_resized_width();
     int get_resized_height();
+    void set_offset_x(int value);
+    void set_wrap(bool enabled);
 };
 
 extern FrameObject * default_picture_instance;

@@ -63,6 +63,7 @@ actions = make_table(ActionMethodWriter, {
     13 : 'set_visible(false)',
     12 : 'set_visible(true)',
     16 : 'enable_focus',
+    18 : 'disable',
     23 : 'set_limit',
     30 : 'disable_focus'
 })

@@ -54,6 +54,11 @@ namespace Gwen
 
 				Event::Caller	onChanged;
 
+				int GetIntValue()
+				{
+					return m_iNumber;
+				}
+
 			private:
 
 				virtual void OnEnter();

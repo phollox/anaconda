@@ -127,7 +127,7 @@ namespace Gwen
             FTTextureFont* font = get_font(pFont->size);
             if (font) {
 			    Translate(pos.x, pos.y);
-                FTTextureFont::color = m_Color;
+                FTTextureFont::color = ::Color(0, 0, 0, 255);
                 FTSimpleLayout layout;
                 layout.SetLineLength(10000);
                 layout.SetFont(font);
@@ -141,7 +141,7 @@ namespace Gwen
             FTSimpleLayout layout;
             layout.SetLineLength(10000);
             layout.SetFont(get_font(pFont->size));
-            FTBBox bbox = layout.BBox(text.c_str());
+            FTBBox bbox = layout.BBoxL(text.c_str());
             FTPoint size = bbox.Upper() - bbox.Lower();
             return Gwen::Point((int)ceil(size.X()), (int)ceil(size.Y()));
         }

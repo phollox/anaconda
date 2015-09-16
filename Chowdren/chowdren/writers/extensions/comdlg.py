@@ -8,8 +8,9 @@ from chowdren.writers.events import (StaticConditionWriter,
     ExpressionMethodWriter, EmptyAction)
 
 class CommonDialog(ObjectWriter):
-    class_name = 'CommonDialog'
+    class_name = 'DialogObject'
     static = True
+    filename = 'dialogext'
 
     def write_init(self, writer):
         pass
@@ -18,6 +19,11 @@ actions = make_table(ActionMethodWriter, {
     0 : EmptyAction,
     11 : 'std::cout << ({1}) << std::endl'
 })
+
+actions.update(make_table(StaticActionWriter, {
+    4 : 'set_default_filename',
+    5 : 'set_default_directory'
+}))
 
 conditions = make_table(ConditionMethodWriter, {
 })

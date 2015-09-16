@@ -136,4 +136,10 @@ void EditObject::enable_focus()
     edit_flags |= FOCUS;
 }
 
+
 #endif
+
+void EditObject::disable()
+{
+    std::cout << "EditObject::disable not implemented" << std::endl;
+}

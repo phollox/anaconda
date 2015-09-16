@@ -41,7 +41,9 @@ actions = make_table(StaticActionWriter, {
     28 : SetFrameWidth,
     12 : 'maximize',
     13 : 'restore',
-    21 : 'set_focus(true)'
+    18 : 'set_title',
+    21 : 'set_focus(true)',
+    29 : 'set_frame_width'
 })
 
 conditions = make_table(StaticConditionWriter, {

@@ -2,6 +2,7 @@
 #define CHOWDREN_BUTTONEXT_H
 
 #include "frameobject.h"
+#include <string>
 
 #ifdef CHOWDREN_USE_GWEN
 #include "Gwen/Controls/Button.h"
@@ -28,6 +29,9 @@ public:
     void draw();
     void check();
     void uncheck();
+    void set_text(const std::string & text);
+    void enable();
+    void disable();
 };
 
 #endif // CHOWDREN_BUTTONEXT_H

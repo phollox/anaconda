@@ -9,7 +9,10 @@ def init(converter):
     converter.add_define('CHOWDREN_TEXT_USE_UTF8')
 
 def use_gwen(converter):
-    return False
+    return True
+
+def use_subapp_frames(converter):
+    return True
 
 def init_container(converter, container):
     pass
@@ -109,7 +112,7 @@ def get_dynamic_loop_index(converter, exp):
     return None
 
 def get_fonts(converter):
-    return ('Escapists',)
+    return ('SegoeUI',)
 
 def use_edit_obj(converter):
     return True

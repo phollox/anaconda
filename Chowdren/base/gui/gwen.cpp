@@ -2,17 +2,24 @@
 #include "gwen.h"
 #include "manager.h"
 
-GwenData::GwenData() : renderer()
+static bool initialized = false;
+Gwen::Renderer::Chowdren renderer;
+Gwen::Skin::Simple* skin;
+
+GwenData::GwenData()
 {
-    renderer.Init();
-    skin = new Gwen::Skin::Simple(); // For proper default colors, use empty ctor
-    skin->SetRender(&renderer);
+    if (!initialized) {
+        initialized = true;
+        renderer.Init();
+        // For proper default colors, use empty ctor
+        skin = new Gwen::Skin::Simple();
+        skin->SetRender(&renderer);
+    }
     canvas = new Gwen::Controls::Canvas(skin);
 }
 
 GwenData::~GwenData()
 {
-    delete skin;
     delete canvas;
 }
 
@@ -21,13 +28,11 @@ void GwenData::render(Gwen::Controls::Base* control)
     // Update logic
     control->Think();
     // Set up layout (such as scroll bar buttons)
-    control->RecurseLayout(gwen.skin);
+    control->RecurseLayout(skin);
     // Necessary to do manually here
     renderer.SetClipRegion(control->GetBounds());
     control->RenderRecursive(skin, control->GetBounds());
 }
-
-
 
 int get_state(InputList& il, int v)
 {
@@ -115,5 +120,3 @@ void GwenData::update()
 
     canvas->DoThink();
 }
-
-GwenData gwen;

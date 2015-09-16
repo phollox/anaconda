@@ -613,6 +613,11 @@ class SubApplication(ObjectWriter):
             writer.putlnc('frame_offset = %s;', frame_offset)
             start_frame = 0
 
+        if self.converter.config.use_subapp_frames() and flags['Docked']:
+            dock = data.getDockedPosition()
+            if dock == 'Top':
+                writer.putlnc('set_position(0, 0);')
+
         writer.putlnc('restart(%s);', start_frame)
 
 

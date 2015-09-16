@@ -112,6 +112,7 @@ class SystemBox(ObjectWriter):
                 display_type = BUTTON
         else:
             display_type = NONE
+
         align_top_left = flags['AlignImageTopLeft']
         align_center = flags['AlignImageCenter']
         pattern = flags['AlignImagePattern']
@@ -184,18 +185,29 @@ class SystemBox(ObjectWriter):
         if text:
             writer.putlnc('text = %r;', text)
 
-
         version = data.readInt()
         hyperlink_color = read_system_color(data)
+
+        if self.converter.config.use_gwen():
+            if flags['Button']:
+                writer.putlnc('init_button();')
+
+    def has_updates(self):
+        return self.converter.config.use_gwen()
 
     def get_images(self):
         if self.image == -1:
             return ()
         return (self.image,)
 
+class OnLeftClick(ConditionMethodWriter):
+    is_always = True
+    method = 'is_clicked'
+
 actions = make_table(ActionMethodWriter, {
     0 : 'set_size',
     1 : 'set_global_position',
+    3 : 'disable',
     4 : 'check',
     5 : 'uncheck',
     6 : 'hide_fill',
@@ -212,6 +224,8 @@ actions = make_table(ActionMethodWriter, {
 })
 
 conditions = make_table(ConditionMethodWriter, {
+    0 : OnLeftClick,
+    3 : OnLeftClick
 })
 
 expressions = make_table(ExpressionMethodWriter, {

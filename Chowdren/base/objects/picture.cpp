@@ -156,6 +156,16 @@ void ActivePicture::paste(int dest_x, int dest_y, int src_x, int src_y,
                  src_width, src_height, collision_type, effect, blend_color);
 }
 
+void ActivePicture::set_offset_x(int value)
+{
+    std::cout << "Set offset X not implementd: " << value << std::endl;
+}
+
+void ActivePicture::set_wrap(bool value)
+{
+    std::cout << "Set wrap not implementd: " << value << std::endl;
+}
+
 class DefaultPicture : public ActivePicture
 {
 public:

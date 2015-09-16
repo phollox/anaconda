@@ -22,6 +22,16 @@ public:
     void update();
     void draw();
     int get_current_line_number();
+    const std::string & get_current_line();
+    const std::string & get_line(int index);
+    void set_current_line(int index);
+    void add_line(const std::string line);
+    void highlight();
+    void dehighlight();
+    void lose_focus();
+    void reset();
+    bool is_list_dropped();
+    int find_string_exact(const std::string & text, int flag);
 };
 
 #endif // CHOWDREN_COMBOBOX_H

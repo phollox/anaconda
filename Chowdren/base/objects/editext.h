@@ -28,6 +28,7 @@ public:
     void enable_focus();
     void disable_focus();
     void set_limit(int size);
+    void disable();
 
 #ifdef CHOWDREN_USE_EDITOBJ
     int edit_flags;

@@ -8,8 +8,6 @@
 class GwenData
 {
 public:
-    Gwen::Renderer::Chowdren renderer;
-    Gwen::Skin::Simple* skin;
     Gwen::Controls::Canvas* canvas;
 
     GwenData();
@@ -21,7 +19,5 @@ public:
     // Called from every extension to render itself
     void render(Gwen::Controls::Base* control);
 };
-
-extern GwenData gwen;
 
 #endif // CHOWDREN_MANAGER_H

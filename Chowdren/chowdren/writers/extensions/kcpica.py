@@ -43,6 +43,8 @@ actions = make_table(ActionMethodWriter, {
     9 : 'set_hotspot_mul(0.0f, 0.5f)',
     10 : 'set_hotspot_mul(0.5f, 0.5f)',
     13 : 'set_hotspot_mul(0.5f, 1.0f)',
+    21 : 'set_offset_x',
+    25 : 'set_wrap(false)',
     26 : 'paste',
     15 : 'flip_horizontal',
     4 : 'set_angle',

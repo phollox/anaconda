@@ -12,7 +12,9 @@ class BackgroundPicture(ActivePicture):
         return self.common.newFlags['ObstacleSolid']
 
 actions = make_table(ActionMethodWriter, {
-    0 : 'load'
+    0 : 'load',
+    2 : 'set_visible(true)',
+    3 : 'set_visible(false)',
 })
 
 conditions = make_table(ConditionMethodWriter, {

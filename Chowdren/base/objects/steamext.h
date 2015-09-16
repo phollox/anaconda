@@ -31,6 +31,7 @@ public:
     struct SubResult
     {
         int index;
+        std::string title;
         std::string cloud_path;
         int publish_id;
     };
@@ -48,6 +49,14 @@ public:
 
     const std::string & get_user_name();
     int get_user_id();
+
+    bool is_active(const std::string & session_id);
+    bool is_connected();
+
+    void reset_uncommited_changes();
+    void reset_file_changes();
+    void reset_files();
+    void reset_changes();
 
 #ifdef CHOWDREN_IS_FP
     void find_board(int char_id, int stage_id);

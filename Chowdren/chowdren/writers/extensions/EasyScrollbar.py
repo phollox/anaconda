@@ -58,7 +58,7 @@ conditions = make_table(ConditionMethodWriter, {
 })
 
 expressions = make_table(ExpressionMethodWriter, {
-    0 : 'get_value'
+    0 : 'get_value()'
 })
 
 def get_object():

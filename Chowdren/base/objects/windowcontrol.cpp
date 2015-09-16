@@ -130,3 +130,13 @@ void WindowControl::set_placement(int value)
     // 5=middle/right, 6=bottom/left, 7=bottom/middle, 8=bottom/right.
     std::cout << "Set window placement: " << value << std::endl;
 }
+
+void WindowControl::set_title(const std::string & title)
+{
+    std::cout << "Set window title: " << title << std::endl;
+}
+
+void WindowControl::set_frame_width(int width, bool adjust)
+{
+    std::cout << "Set frame width: " << width << " " << adjust << std::endl;
+}

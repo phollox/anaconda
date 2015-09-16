@@ -739,8 +739,11 @@ INI::~INI()
     if (auto_save && changed)
         save_file(false);
 #endif
-    if (!is_global)
-        delete data;
+	if (!is_global) {
+		std::cout << "Destroy data: " << (unsigned int)data << std::endl;
+		delete data;
+        data = NULL;
+	}
 }
 
 hash_map<std::string, SectionMap> INI::global_data;

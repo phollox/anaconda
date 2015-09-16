@@ -15,6 +15,7 @@ def init(converter):
     converter.add_define('CHOWDREN_FORCE_X360')
     converter.add_define('CHOWDREN_FORCE_TRANSPARENT')
     converter.add_define('CHOWDREN_FORCE_TEXT_LAYOUT')
+    converter.add_define('CHOWDREN_SUBAPP_FRAMES')
 
 def use_image_preload(converter):
     return True
@@ -27,3 +28,6 @@ def use_edit_obj(converter):
 
 def use_gwen(converter):
     return True
+
+def get_fonts(converter):
+    return ('SegoeUI',)

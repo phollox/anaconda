@@ -1111,6 +1111,8 @@ class Converter(object):
             config_file.putdefine('CHOWDREN_DEFER_COLLISIONS')
         if self.config.use_gwen():
             self.add_define('CHOWDREN_USE_GWEN')
+        if self.config.use_subapp_frames():
+            self.add_define('CHOWDREN_SUBAPP_FRAMES')
 
         for (name, value) in self.defines:
             if value is None:

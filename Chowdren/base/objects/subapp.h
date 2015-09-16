@@ -22,6 +22,11 @@ public:
     void update();
     void set_next_frame(int index);
     void set_frame(int index);
+#ifdef CHOWDREN_SUBAPP_FRAMES
+    void draw_subapp();
+    static void draw_frames();
+    static bool test_pos(Frame * frame, int x, int y);
+#endif
 };
 
 #endif // CHOWDREN_SUBAPP_H

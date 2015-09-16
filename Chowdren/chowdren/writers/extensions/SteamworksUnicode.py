@@ -93,6 +93,16 @@ class SearchSubscribedItems(ActionMethodWriter):
             obj = self.converter.get_object(obj)
             writer.putlnc('%s();', steam.search_success_name)
 
+class SearchContentItems(ActionMethodWriter):
+    custom = True
+
+    def write(self, writer):
+        obj = self.get_object()
+        steam = self.converter.get_object_writer(obj)
+        with self.converter.iterate_object(obj, writer, copy=False):
+            obj = self.converter.get_object(obj)
+            writer.putlnc('%s();', steam.search_success_name)
+
 class LoopResults(ActionMethodWriter):
     custom = True
 
@@ -128,6 +138,11 @@ actions = make_table(ActionMethodWriter, {
     17 : 'set_int',
     22 : 'unlock_achievement',
     26 : 'clear_achievements',
+    34 : 'reset_files',
+    52 : 'reset_uncommited_changes',
+    57 : 'reset_file_changes',
+    64 : SearchContentItems,
+    74 : 'reset_changes',
     116 : LoopResults,
     158 : SearchSubscribedItems,
     162 : DownloadUGC
@@ -146,8 +161,10 @@ class OnConnect(OnceCondition):
 
 conditions = make_table(ConditionMethodWriter, {
     0 : OnConnect,
+    4 : 'is_connected',
+    7 : 'has_app',
     21 : 'is_achievement_unlocked',
-    7 : 'has_app'
+    50 : 'is_active'
 })
 
 def get_sub_expression(value):
@@ -164,6 +181,7 @@ expressions = make_table(ExpressionMethodWriter, {
     12 : 'get_unlocked',
     57 : get_sub_expression('index'),
     58 : get_sub_expression('publish_id'),
+    59 : get_sub_expression('title'),
     74 : get_sub_expression('cloud_path')
 })
 

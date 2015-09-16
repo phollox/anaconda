@@ -485,6 +485,38 @@ bool SteamObject::is_activated()
 #endif
 }
 
+bool SteamObject::is_active(const std::string & session_id)
+{
+    std::cout << "is_active not implemented" << std::endl;
+    return false;
+}
+
+bool SteamObject::is_connected()
+{
+    std::cout << "is_connected not implemented" << std::endl;
+    return false;
+}
+
+void SteamObject::reset_uncommited_changes()
+{
+    std::cout << "reset_uncommited_changes not implemented" << std::endl;
+}
+
+void SteamObject::reset_file_changes()
+{
+    std::cout << "reset_file_changes not implemented" << std::endl;
+}
+
+void SteamObject::reset_files()
+{
+    std::cout << "clear_files not implementd" << std::endl;
+}
+
+void SteamObject::reset_changes()
+{
+    std::cout << "reset_changes not implementd" << std::endl;
+}
+
 #if !defined(CHOWDREN_ENABLE_STEAM) && defined(CHOWDREN_IS_FP)
 void SteamObject::find_board(int char_id, int stage_id)
 {

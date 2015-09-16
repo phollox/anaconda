@@ -392,6 +392,7 @@ class FTSimpleLayout
         FTSimpleLayout();
         FTBBox BBox(const char* string, const int len = -1);
         FTBBox BBoxL(const char* string, const int len = -1);
+        FTBBox BBoxL(const wchar_t* string, const int len = -1);
         FTBBox BBox(const wchar_t* string, const int len = -1);
         int get_lines(const char * s, const int len = -1);
         void Render(const char *string, const int len = -1,
