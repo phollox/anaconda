@@ -162,6 +162,25 @@ void ComboBox::SelectItemByName( const Gwen::String & name, bool bFireChangeEven
 	}
 }
 
+void ComboBox::SelectItemByIndex(int index, bool bFireChangeEvents )
+{
+	Base::List & children = m_Menu->GetChildren();
+	Base::List::iterator it = children.begin();
+
+	while ( it != children.end() && index >= 0 )
+	{
+		MenuItem* pChild = gwen_cast<MenuItem> ( *it );
+
+		if (index == 0)
+		{
+			return SelectItem( pChild, bFireChangeEvents );
+		}
+
+		++it;
+		index--;
+	}
+}
+
 void ComboBox::OnLostKeyboardFocus()
 {
 	SetTextColor( Color( 0, 0, 0, 255 ) );

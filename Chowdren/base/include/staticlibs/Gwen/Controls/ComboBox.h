@@ -53,6 +53,9 @@ namespace Gwen
 
 				virtual bool IsMenuComponent() { return true; }
 
+				Menu * GetMenu() { return m_Menu; }
+				void SelectItemByIndex(int index, bool bFireChangeEvents = true);
+
 				Gwen::Event::Caller	onSelection;
 
 			public:

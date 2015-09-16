@@ -938,6 +938,20 @@ bool is_mouse_pressed(int button)
     return manager.mouse.is_pressed(button);
 }
 
+bool is_mouse_pressed_once(int key)
+{
+    if (key < 0)
+        return false;
+    return manager.mouse.is_pressed_once(key);
+}
+
+bool is_mouse_released_once(int key)
+{
+    if (key < 0)
+        return false;
+    return manager.mouse.is_released_once(key);
+}
+
 bool is_key_pressed(int button)
 {
     if (button < 0)
@@ -953,13 +967,6 @@ bool is_any_key_pressed()
 bool is_any_key_pressed_once()
 {
     return manager.keyboard.is_any_pressed_once();
-}
-
-bool is_mouse_pressed_once(int key)
-{
-    if (key < 0)
-        return false;
-    return manager.mouse.is_pressed_once(key);
 }
 
 bool is_key_released_once(int key)

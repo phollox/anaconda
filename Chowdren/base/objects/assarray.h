@@ -54,6 +54,7 @@ public:
 
     AssociateArray(int x, int y, int type_id);
     ~AssociateArray();
+    void init_global();
     void load_encrypted(const std::string & filename, int method);
     void load_data(const std::string & data, int method);
     void set_value(const std::string & key, int value);

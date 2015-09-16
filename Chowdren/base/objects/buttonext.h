@@ -20,6 +20,7 @@ public:
 #ifdef CHOWDREN_USE_GWEN
     unsigned int button_flags;
     Gwen::Controls::Button * button;
+    int clicked;
 #endif
 
     ButtonObject(int x, int y, int type_id);
@@ -32,6 +33,7 @@ public:
     void set_text(const std::string & text);
     void enable();
     void disable();
+    bool is_clicked();
 };
 
 #endif // CHOWDREN_BUTTONEXT_H

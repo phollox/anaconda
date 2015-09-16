@@ -34,17 +34,6 @@ void GwenData::render(Gwen::Controls::Base* control)
     control->RenderRecursive(skin, control->GetBounds());
 }
 
-int get_state(InputList& il, int v)
-{
-    for (int i = 0; i < il.count; i++) {
-        const InputList::InputState & s = il.states[i];
-        if (s.key != v)
-            continue;
-        return s.state;
-    }
-    return -1;
-}
-
 int get_gwen_key(int key)
 {
     static int translations[][2] =  {
@@ -80,27 +69,20 @@ int get_gwen_key(int key)
 void GwenData::update()
 {
     // Cursor
-    static int x, y;
-    int dx = x, dy = y;
-    manager.frame->get_mouse_pos(&x, &y);
-    dx = x - dx;
-    dy = y - dy;
-    canvas->InputMouseMoved(x, y, dx, dy);
+    int dx = m_x, dy = m_y;
+    manager.frame->get_mouse_pos(&m_x, &m_y);
+    dx = m_x - dx;
+    dy = m_y - dy;
+    canvas->InputMouseMoved(m_x, m_y, dx, dy);
 
-    // LMB
-    int lmb = get_state(manager.mouse, SDL_BUTTON_LEFT);
-
-    if (lmb == InputList::STATE_PRESSED)
+    if (is_mouse_pressed_once(SDL_BUTTON_LEFT))
         canvas->InputMouseButton(0, true);
-    else if (lmb == InputList::STATE_RELEASED)
+    else if (is_mouse_released_once(SDL_BUTTON_LEFT))
         canvas->InputMouseButton(0, false);
 
-    // RMB
-    int rmb = get_state(manager.mouse, SDL_BUTTON_LEFT);
-
-    if (rmb == InputList::STATE_PRESSED)
+    if (is_mouse_pressed_once(SDL_BUTTON_RIGHT))
         canvas->InputMouseButton(1, true);
-    else if (rmb == InputList::STATE_RELEASED)
+    else if (is_mouse_released_once(SDL_BUTTON_RIGHT))
         canvas->InputMouseButton(1, false);
 
     // Keyboard
@@ -112,10 +94,12 @@ void GwenData::update()
                 canvas->InputKey(gwen_key, true);
             else if (s.state == InputList::STATE_RELEASED)
                 canvas->InputKey(gwen_key, false);
-        } else if (iswprint(s.key)) {
-            if (s.state == InputList::STATE_PRESSED)
-                canvas->InputCharacter(s.key);
         }
+    }
+
+    std::string::const_iterator it;
+    for (it = manager.input.begin(); it != manager.input.end(); ++it) {
+        canvas->InputCharacter(*it);
     }
 
     canvas->DoThink();

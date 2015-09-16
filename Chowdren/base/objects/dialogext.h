@@ -19,6 +19,7 @@ public:
     static void set_default_directory(const std::string & filename);
     static void open_load_selector(const std::string & start);
     static void open_save_selector(const std::string & start);
+    static const std::string & get_path();
 };
 
 #endif // CHOWDREN_DIALOGEXT_H

@@ -10,6 +10,10 @@
 #include <string>
 #endif
 
+#ifdef CHOWDREN_USE_GWEN
+#include "Gwen/Controls/TextBox.h"
+#endif
+
 class EditObject : public FrameObject
 {
 public:
@@ -29,6 +33,7 @@ public:
     void disable_focus();
     void set_limit(int size);
     void disable();
+    void scroll_to_end();
 
 #ifdef CHOWDREN_USE_EDITOBJ
     int edit_flags;
@@ -37,6 +42,11 @@ public:
     FTTextureFont * font;
     int limit;
 
+#ifdef CHOWDREN_USE_GWEN
+    Gwen::Controls::TextBox * text_box;
+#endif
+
+    ~EditObject();
     void update();
     void draw();
 #endif

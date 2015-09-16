@@ -143,7 +143,7 @@ namespace Gwen
             layout.SetFont(get_font(pFont->size));
             FTBBox bbox = layout.BBoxL(text.c_str());
             FTPoint size = bbox.Upper() - bbox.Lower();
-            return Gwen::Point((int)ceil(size.X()), (int)ceil(size.Y()));
+            return Gwen::Point((int)ceil(size.X())+1, (int)ceil(size.Y()));
         }
 
 		bool Chowdren::InitializeContext( Gwen::WindowProvider* pWindow )

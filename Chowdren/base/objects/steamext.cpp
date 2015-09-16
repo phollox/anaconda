@@ -517,6 +517,62 @@ void SteamObject::reset_changes()
     std::cout << "reset_changes not implementd" << std::endl;
 }
 
+void SteamObject::set_preview_latest(const std::string & local_path,
+                                     const std::string & cloud_path,
+                                     bool overwrite)
+{
+    std::cout << "Set preview image to latest file not implemented"
+        << std::endl;
+}
+
+void SteamObject::upload_changes()
+{
+    std::cout << "upload_changes not implemented" << std::endl;
+}
+
+void SteamObject::set_tags(const std::string & tags)
+{
+    std::cout << "set_tags not implemented: " << tags << std::endl;
+}
+
+void SteamObject::set_description(const std::string & value)
+{
+    std::cout << "set_description not implemented: " << value << std::endl;
+}
+
+void SteamObject::set_file(const std::string & local_path,
+                           const std::string & cloud_path,
+                           bool overwrite)
+{
+    std::cout << "set_file not implemented" << std::endl;
+}
+
+void SteamObject::set_content_title(const std::string & title)
+{
+    std::cout << "set_content_title not implemented" << std::endl;
+}
+
+void SteamObject::set_content_appid(unsigned int value)
+{
+    std::cout << "set_content_appid not implemented" << std::endl;
+}
+
+void SteamObject::set_content_visibility(int value)
+{
+    std::cout << "set_content_visibility not implemented" << std::endl;
+}
+
+void SteamObject::start_content_change(unsigned int content_id,
+                                       const std::string & session_id)
+{
+    std::cout << "start_content_change not implemented" << std::endl;
+}
+
+void SteamObject::start_publish(const std::string & session_id)
+{
+    std::cout << "start_publish not implemented" << std::endl;
+}
+
 #if !defined(CHOWDREN_ENABLE_STEAM) && defined(CHOWDREN_IS_FP)
 void SteamObject::find_board(int char_id, int stage_id)
 {

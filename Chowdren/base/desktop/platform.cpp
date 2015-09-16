@@ -358,7 +358,7 @@ void platform_poll_events()
                 on_controller_button(e.cbutton.which, e.cbutton.button,
                                      e.cbutton.state == SDL_PRESSED);
                 break;
-#ifdef CHOWDREN_USE_EDITOBJ
+#if defined(CHOWDREN_USE_EDITOBJ) || defined(CHOWDREN_USE_GWEN)
             case SDL_TEXTINPUT:
                 manager.input += e.text.text;
                 break;

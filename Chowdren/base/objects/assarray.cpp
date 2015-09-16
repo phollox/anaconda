@@ -7,15 +7,26 @@
 
 #define ARRAY_MAGIC "ASSBF1.0"
 
+static vector<AssociateArray*> arrays;
+
 AssociateArray::AssociateArray(int x, int y, int type_id)
 : FrameObject(x, y, type_id), store()
 {
 }
 
+void AssociateArray::init_global()
+{
+    arrays.push_back(this);
+}
+
 AssociateArray::~AssociateArray()
 {
-    if (map != &global_map)
+    if (map != &global_map) {
         delete map;
+        return;
+    }
+    arrays.erase(std::remove(arrays.begin(), arrays.end(), this),
+                 arrays.end());
 }
 
 void AssociateArray::set_key(const std::string & key)
@@ -144,6 +155,14 @@ void AssociateArray::clear()
     for (int i = 0; i < CHOWDREN_ASSARRAY_STORE; ++i)
         store[i] = NULL;
     map->clear();
+    if (map != &global_map)
+        return;
+    vector<AssociateArray*>::iterator it;
+    for (it = arrays.begin(); it != arrays.end(); ++it) {
+        AssociateArray * array = *it;
+        for (int i = 0; i < CHOWDREN_ASSARRAY_STORE; ++i)
+            array->store[i] = NULL;
+    }
 }
 
 bool AssociateArray::has_key(const std::string & key)

@@ -4,17 +4,28 @@
 #include "frameobject.h"
 #include "events.h"
 
+#ifdef CHOWDREN_USE_GWEN
+#include "Gwen/Controls/WindowControl.h"
+#endif
+
 class SubApplication : public FrameObject
 {
 public:
     FRAMEOBJECT_HEAD(SubApplication)
 
     static SubApplication * current;
+    static int current_x;
+    static int current_y;
     Frames subapp_frame;
     int frame_offset;
     bool done;
     bool starting;
     bool old_ignore_controls;
+
+#ifdef CHOWDREN_USE_GWEN
+    Gwen::Controls::WindowControl * window_control;
+    void init_window();
+#endif
 
     SubApplication(int x, int y, int id);
     ~SubApplication();

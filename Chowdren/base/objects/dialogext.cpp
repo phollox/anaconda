@@ -1,4 +1,5 @@
 #include "dialogext.h"
+#include "stringcommon.h"
 #include <iostream>
 
 static std::string title;
@@ -73,4 +74,9 @@ void DialogObject::open_save_selector(const std::string & dir)
 {
     std::cout << "DialogObject::open_save_selector not implemented"
         << dir << std::endl;
+}
+
+const std::string & DialogObject::get_path()
+{
+    return empty_string;
 }

@@ -57,6 +57,21 @@ public:
     void reset_file_changes();
     void reset_files();
     void reset_changes();
+    void set_preview_latest(const std::string & local_path,
+                            const std::string & cloud_path,
+                            bool overwrite);
+    void upload_changes();
+    void set_tags(const std::string & tags);
+    void set_description(const std::string & value);
+    void set_file(const std::string & local_path,
+                  const std::string & cloud_path,
+                  bool overwrite);
+    void set_content_title(const std::string & title);
+    void set_content_appid(unsigned int id);
+    void set_content_visibility(int value);
+    void start_content_change(unsigned int content_id,
+                              const std::string & session_id);
+    void start_publish(const std::string & session_id);
 
 #ifdef CHOWDREN_IS_FP
     void find_board(int char_id, int stage_id);

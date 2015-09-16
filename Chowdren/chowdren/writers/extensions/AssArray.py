@@ -20,6 +20,7 @@ class AssociateArray(ObjectWriter):
     def write_assarray(self, writer, is_global):
         if is_global:
             writer.putln('map = &global_map;')
+            writer.putln('init_global();')
         else:
             writer.putln('map = new ArrayMap();')
 

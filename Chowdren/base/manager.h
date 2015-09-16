@@ -47,7 +47,7 @@ public:
     InputList keyboard;
     InputList mouse;
 
-#ifdef CHOWDREN_USE_EDITOBJ
+#if defined(CHOWDREN_USE_EDITOBJ) || defined(CHOWDREN_USE_GWEN)
     std::string input;
 #endif
 

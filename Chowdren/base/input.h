@@ -93,13 +93,13 @@ public:
 };
 
 bool is_mouse_pressed(int button);
+bool is_mouse_pressed_once(int button);
+bool is_mouse_released_once(int button);
 bool is_key_pressed(int button);
-bool is_key_pressed(int key);
 bool is_any_key_pressed();
 bool is_any_key_pressed_once();
-bool is_mouse_pressed_once(int key);
-bool is_key_released_once(int key);
-bool is_key_pressed_once(int key);
+bool is_key_released_once(int button);
+bool is_key_pressed_once(int button);
 int get_last_key_pressed();
 
 int get_joystick_direction(int n);

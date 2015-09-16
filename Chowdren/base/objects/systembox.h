@@ -39,7 +39,6 @@ public:
     int clicked;
     void update();
     void init_button();
-    void on_button();
 #endif
 
     SystemBox(int x, int y, int type_id);

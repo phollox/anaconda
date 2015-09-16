@@ -14,6 +14,19 @@ static bool ignore_controls = false;
 static vector<SubApplication*> frames;
 #endif
 
+#define SET_APP() \
+    Frame * old_frame = manager.frame;\
+    manager.frame = &subapp_frame;\
+    int old_x = current_x;\
+    int old_y = current_y;\
+    current_x += get_x();\
+    current_y += get_y()
+
+#define RESTORE_APP() \
+    manager.frame = old_frame;\
+    current_x = old_x;\
+    current_y = old_y
+
 SubApplication::SubApplication(int x, int y, int id)
 : FrameObject(x, y, id)
 {
@@ -22,6 +35,10 @@ SubApplication::SubApplication(int x, int y, int id)
 #ifdef CHOWDREN_SUBAPP_FRAMES
     frames.push_back(this);
     collision = new InstanceBox(this);
+#endif
+
+#ifdef CHOWDREN_USE_GWEN
+    window_control = NULL;
 #endif
 }
 
@@ -33,10 +50,16 @@ SubApplication::~SubApplication()
                  frames.end());
 #endif
 
-    Frame * old_frame = manager.frame;
-    manager.frame = &subapp_frame;
-    subapp_frame.data->on_app_end();
-    manager.frame = old_frame;
+#ifdef CHOWDREN_USE_GWEN
+    delete window_control;
+#endif
+
+    SET_APP();
+    if (!done && !starting) {
+        subapp_frame.data->on_app_end();
+        subapp_frame.data->on_end();
+    }
+    RESTORE_APP();
 
 	if (current == this)
 		current = NULL;
@@ -66,21 +89,18 @@ void SubApplication::update()
     if (done)
         return;
     starting = false;
-    Frame * old_frame = manager.frame;
-    manager.frame = &subapp_frame;
+
+    SET_APP();
 
 #ifdef CHOWDREN_USE_GWEN
     subapp_frame.gwen.update();
+    move_front();
 #endif
 
     if (subapp_frame.next_frame != -1) {
         int next_frame = subapp_frame.next_frame;
-		std::cout << "Prepare new frame: " << (unsigned long)&subapp_frame
-            << " " << next_frame << std::endl;
         if (subapp_frame.index != -1)
             subapp_frame.on_end();
-        std::cout << "Set frame: " << (unsigned long)&subapp_frame <<
-            " " << subapp_frame.index << " " << next_frame << std::endl;
         set_frame(next_frame);
     }
 
@@ -89,16 +109,12 @@ void SubApplication::update()
     height = subapp_frame.height;
 #endif
 
-	std::cout << "Subapp update: " << (unsigned long)&subapp_frame
-        << " " << subapp_frame.index << std::endl;
     bool ret = subapp_frame.update();
-	std::cout << "Subapp update done " << (unsigned long)&subapp_frame
-        << " " << subapp_frame.index << std::endl;
 
     if (!ret)
         subapp_frame.on_end();
 
-    manager.frame = old_frame;
+    RESTORE_APP();
 
     if (ret)
         return;
@@ -119,15 +135,36 @@ void SubApplication::set_frame(int index)
     }
 }
 
+#ifdef CHOWDREN_USE_GWEN
+
+void SubApplication::init_window()
+{
+    Gwen::Controls::Canvas * canvas = manager.frame->gwen.canvas;
+    window_control = new Gwen::Controls::WindowControl(canvas);
+    window_control->SetPos(x-6, y-28);
+    window_control->SetSize(width+12, height+35);
+    window_control->SetClosable(false);
+    window_control->DisableResizing();
+}
+#endif
+
 #ifdef CHOWDREN_SUBAPP_FRAMES
 void SubApplication::draw_subapp()
 {
     if (starting || done || !(flags & VISIBLE))
         return;
-    Render::enable_scissor(x, y, width, height);
-    subapp_frame.off_x = -x;
-    subapp_frame.off_y = -y;
+    if (window_control) {
+        // window_control->SetPos(x-6, y-28);
+        // window_control->SetSize(width+12, height+35);
+        frame->gwen.render(window_control);
+        Gwen::Point p = window_control->GetPos();
+        set_position(p.x + 6, p.y + 28);
+        window_control->SetSize(width+12, height+35);
+    }
+    SET_APP();
+    Render::enable_scissor(current_x, current_y, width, height);
     subapp_frame.draw(0);
+    RESTORE_APP();
     Render::disable_scissor();
 }
 
@@ -153,3 +190,5 @@ bool SubApplication::test_pos(Frame * frame, int x, int y)
 #endif
 
 SubApplication * SubApplication::current = NULL;
+int SubApplication::current_x = 0;
+int SubApplication::current_y = 0;

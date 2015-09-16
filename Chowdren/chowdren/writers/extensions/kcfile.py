@@ -4,7 +4,7 @@ from chowdren.common import get_animation_name, to_c, make_color
 
 from chowdren.writers.events import (StaticConditionWriter,
     StaticActionWriter, StaticExpressionWriter, make_table, EmptyAction,
-    ActionMethodWriter)
+    ActionMethodWriter, ExpressionMethodWriter)
 
 class File(ObjectWriter):
     class_name = 'File'
@@ -48,6 +48,15 @@ conditions = make_table(StaticConditionWriter, {
     5 : 'directory_exists'
 })
 
+class DialogExpression(ExpressionMethodWriter):
+    has_object = False
+
+    def get_string(self):
+        converter = self.converter
+        converter.extension_includes.add('objects/dialogext.h')
+        converter.extension_sources.add('objects/dialogext.cpp')
+        return 'DialogObject::' + ExpressionMethodWriter.get_string(self)
+
 expressions = make_table(StaticExpressionWriter, {
     0 : 'get_size',
     7 : 'get_ext',
@@ -55,6 +64,10 @@ expressions = make_table(StaticExpressionWriter, {
     27 : 'get_appdata_directory()', # directories_my_documents_directory
     28 : 'get_appdata_directory()'
 })
+
+expressions.update(make_table(DialogExpression, {
+    15 : 'get_path()'
+}))
 
 def get_object():
     return File

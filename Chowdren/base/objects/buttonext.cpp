@@ -1,16 +1,36 @@
 #include "objects/buttonext.h"
 #include "collision.h"
-#include "gui/gwen.h"
-#include "Gwen/Controls/CheckBox.h"
 #include "manager.h"
 
 // ButtonObject
+
+#ifdef CHOWDREN_USE_GWEN
+#include "gui/gwen.h"
+#include "Gwen/Controls/CheckBox.h"
+
+class Button : public Gwen::Controls::Button
+{
+public:
+    ButtonObject * parent;
+
+    GWEN_CONTROL_INLINE(Button, Gwen::Controls::Button)
+    {
+    }
+
+    void OnPress()
+    {
+        parent->clicked = 2;
+        Gwen::Controls::Button::OnPress();
+    }
+};
+#endif
 
 ButtonObject::ButtonObject(int x, int y, int type_id)
 : FrameObject(x, y, type_id)
 {
 #ifdef CHOWDREN_USE_GWEN
     collision = new InstanceBox(this);
+    clicked = 0;
 #endif
 }
 
@@ -26,10 +46,12 @@ void ButtonObject::init_button(unsigned int flags)
 {
 #ifdef CHOWDREN_USE_GWEN
     button_flags = flags;
-    if (flags & IS_CHECKBOX)
+    if (flags & IS_CHECKBOX) {
         button = new Gwen::Controls::CheckBox(manager.frame->gwen.canvas);
-    else
-        button = new Gwen::Controls::Button(manager.frame->gwen.canvas);
+    } else {
+        button = new Button(manager.frame->gwen.canvas);
+        ((Button*)button)->parent = this;
+    }
     button->SetPos(x, y);
     button->SetSize(width, height);
 #endif
@@ -40,6 +62,7 @@ void ButtonObject::update()
 #ifdef CHOWDREN_USE_GWEN
     button->SetPos(x, y);
     button->SetSize(width, height);
+    clicked = std::max(clicked - 1, 0);
 #endif
 }
 
@@ -83,4 +106,13 @@ void ButtonObject::enable()
 void ButtonObject::disable()
 {
     std::cout << "disable not implemented" << std::endl;
+}
+
+bool ButtonObject::is_clicked()
+{
+#ifdef CHOWDREN_USE_GWEN
+    return clicked > 0;
+#else
+    return false;
+#endif
 }

@@ -8,17 +8,18 @@
 #ifdef CHOWDREN_USE_GWEN
 #include "gui/gwen.h"
 
-class Button : public Gwen::Controls::Button
+class BoxButton : public Gwen::Controls::Button
 {
 public:
     SystemBox * parent;
 
-    GWEN_CONTROL_INLINE(Button, Gwen::Controls::Button)
+	GWEN_CONTROL_INLINE(BoxButton, Gwen::Controls::Button)
     {
     }
 
     void OnPress()
     {
+        std::cout << "On press" << std::endl;
         parent->clicked = 2;
         Gwen::Controls::Button::OnPress();
     }
@@ -225,13 +226,8 @@ void SystemBox::update()
 
 void SystemBox::init_button()
 {
-    button = new Button(manager.frame->gwen.canvas);
-    ((Button*)button)->parent = this;
-}
-
-void SystemBox::on_button()
-{
-    clicked = 1;
+    button = new BoxButton(manager.frame->gwen.canvas);
+    ((BoxButton*)button)->parent = this;
 }
 
 #endif

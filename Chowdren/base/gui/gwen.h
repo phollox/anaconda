@@ -8,6 +8,8 @@
 class GwenData
 {
 public:
+    int m_x, m_y;
+
     Gwen::Controls::Canvas* canvas;
 
     GwenData();

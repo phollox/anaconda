@@ -39,6 +39,8 @@ namespace Gwen
 				bool IsMenuOpen();
 				void ClearItems();
 
+				int GetIndex(MenuItem * ptr);
+
 				virtual void Open( unsigned int iPos );
 				virtual void Close();
 

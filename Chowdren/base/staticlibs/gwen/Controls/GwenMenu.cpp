@@ -71,6 +71,20 @@ MenuItem* Menu::AddItem( const TextObject & strName, const TextObject & strIconN
 	return pItem;
 }
 
+int Menu::GetIndex(MenuItem * ptr)
+{
+	int i = 0;
+	Base::List & children = GetChildren();
+	for ( Base::List::iterator it = children.begin(); it != children.end(); ++it )
+	{
+		Base* pChild = *it;
+		if (ptr == pChild)
+			return i;
+		i++;
+	}
+	return -1;
+}
+
 void Menu::OnAddItem( MenuItem* item )
 {
 	item->SetTextPadding( Padding( IconMarginDisabled() ? 0 : 24, 0, 16, 0 ) );

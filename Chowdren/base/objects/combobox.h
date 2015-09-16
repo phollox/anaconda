@@ -18,12 +18,13 @@ public:
     ~ComboBox();
 
     Gwen::Controls::ComboBox combo_box;
+    int index_offset;
 
     void update();
     void draw();
     int get_current_line_number();
-    const std::string & get_current_line();
-    const std::string & get_line(int index);
+    std::string get_current_line();
+    std::string get_line(int index);
     void set_current_line(int index);
     void add_line(const std::string line);
     void highlight();

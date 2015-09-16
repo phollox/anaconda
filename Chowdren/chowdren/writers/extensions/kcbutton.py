@@ -76,7 +76,12 @@ actions = make_table(ActionMethodWriter, {
     15 : 'uncheck'
 })
 
+class OnClick(ConditionMethodWriter):
+    is_always = True
+    method = 'is_clicked'
+
 conditions = make_table(ConditionMethodWriter, {
+    1 : OnClick
 })
 
 expressions = make_table(ExpressionMethodWriter, {

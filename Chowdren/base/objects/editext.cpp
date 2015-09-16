@@ -1,5 +1,9 @@
 #include "objects/editext.h"
 
+#ifdef CHOWDREN_USE_GWEN
+#include "gui/gwen.h"
+#endif
+
 // EditObject
 
 #ifndef CHOWDREN_USE_EDITOBJ
@@ -47,10 +51,26 @@ EditObject::EditObject(int x, int y, int type_id)
   font(get_font(14)), limit(-1)
 {
     collision = &edit_col;
+#ifdef CHOWDREN_USE_GWEN
+    text_box = new Gwen::Controls::TextBox(manager.frame->gwen.canvas);
+#endif
 }
+
+
+EditObject::~EditObject()
+{
+#ifdef CHOWDREN_USE_GWEN
+    delete text_box;
+#endif
+}
+
 
 void EditObject::update()
 {
+#ifdef CHOWDREN_USE_GWEN
+    text_box->SetPos(x, y);
+    text_box->SetSize(width, height);
+#else
     if (is_mouse_pressed_once(SDL_BUTTON_LEFT)) {
         int mx, my;
         frame->get_mouse_pos(&mx, &my);
@@ -71,10 +91,14 @@ void EditObject::update()
         text = text.substr(0, text.size() - 1);
     if (is_key_pressed_once(SDLK_RETURN))
         edit_flags &= ~FOCUS;
+#endif
 }
 
 void EditObject::draw()
 {
+#ifdef CHOWDREN_USE_GWEN
+    frame->gwen.render(text_box);
+#else
     if (!init_font()) {
         set_visible(false);
         return;
@@ -103,16 +127,25 @@ void EditObject::draw()
     float xx = x1 + 5.0f;
     int yy = y + font->Ascender() + height * 0.5 - font->LineHeight() * 0.5;
     font->Render(text.c_str(), -1, FTPoint(xx, yy), FTPoint());
+#endif
 }
 
 void EditObject::set_text(const std::string & value)
 {
+#ifdef CHOWDREN_USE_GWEN
+    text_box->SetText(Gwen::TextObject(value), false);
+#else
     text = value;
+#endif
 }
 
 const std::string & EditObject::get_text()
 {
+#ifdef CHOWDREN_USE_GWEN
+    return text_box->GetText().Get();
+#else
     return text;
+#endif
 }
 
 bool EditObject::get_focus()
@@ -142,4 +175,9 @@ void EditObject::enable_focus()
 void EditObject::disable()
 {
     std::cout << "EditObject::disable not implemented" << std::endl;
+}
+
+void EditObject::scroll_to_end()
+{
+    std::cout << "EditObject::scroll_to_end not implemented" << std::endl;
 }

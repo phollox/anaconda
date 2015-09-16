@@ -8,6 +8,18 @@ from chowdren.writers.events import (ComparisonWriter, ActionMethodWriter,
 from mmfparser.bitdict import BitDict
 from mmfparser.data.font import LogFont
 
+COMBO_FLAGS = BitDict(
+    'Simple',
+    'Dropdown',
+    'DropdownList',
+    'ScrollBar',
+    'Sort',
+    'HideOnStart',
+    'SystemColor',
+    'Scroll',
+    'OneBase'
+)
+
 class ComboBox(ObjectWriter):
     class_name = 'ComboBox'
     filename = 'combobox'
@@ -16,24 +28,28 @@ class ComboBox(ObjectWriter):
         data = self.get_data()
         width = data.readShort(True)
         height = data.readShort(True)
-        log_font = LogFont(data, old = True)
+        is_unicode = self.data.settings.get('unicode', False)
+        log_font = self.data.new(LogFont, data, old=not is_unicode)
         font_color = data.readColor()
-        font_style = data.readString(40)
-        flags = data.readInt(True)
+        font_style = self.data.readString(data, 40)
+        flags = COMBO_FLAGS.copy()
+        flags.setFlags(data.readInt(True))
         line_count = data.readShort(True)
         bg_color = data.readColor()
         data.skipBytes(12)
 
         writer.putlnc('width = %s;', width)
         writer.putlnc('height = %s;', height)
-        writer.putlnc('combo_box.m_BackgroundColor = Gwen::Color%s;', bg_color)
+        index_offset = -1 if flags['OneBase'] else 0
+        writer.putlnc('index_offset = %s;', index_offset)
+        # writer.putlnc('combo_box.m_BackgroundColor = Gwen::Color%s;', bg_color)
         writer.putlnc('Gwen::Color font_color%s;', font_color)
-        writer.putlnc('combo_box.SetTextColorOverride(font_color);')
-        writer.putlnc('combo_box.m_Menu->m_Color = font_color;');
-        writer.putlnc('combo_box.m_Menu->m_BackgroundColor = combo_box.m_BackgroundColor;');
+        # writer.putlnc('combo_box.SetTextColorOverride(font_color);')
+        # writer.putlnc('combo_box.m_Menu->m_Color = font_color;');
+        # writer.putlnc('combo_box.m_Menu->m_BackgroundColor = combo_box.m_BackgroundColor;');
 
-        for _ in xrange(0, line_count):
-            line = data.readString()
+        for _ in xrange(line_count):
+            line = self.data.readString(data)
             writer.putlnc('combo_box.AddItem(L"%s");', line)
 
 

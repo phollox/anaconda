@@ -18,6 +18,8 @@ void ComboBox::update()
 {
     combo_box.SetPos(x, y);
     combo_box.SetWidth(width);
+    if (combo_box.IsMenuOpen())
+        move_front();
 }
 
 void ComboBox::draw()
@@ -27,7 +29,7 @@ void ComboBox::draw()
         frame->gwen.render(combo_box.m_Menu);
 }
 
-const std::string & ComboBox::get_line(int index)
+std::string ComboBox::get_line(int index)
 {
     std::cout << "get_line not implemented" << std::endl;
     return empty_string;
@@ -35,24 +37,29 @@ const std::string & ComboBox::get_line(int index)
 
 void ComboBox::set_current_line(int index)
 {
-    std::cout << "set_current_line not implemented" << std::endl;
+    combo_box.SelectItemByIndex(index + index_offset);
 }
 
 void ComboBox::add_line(const std::string value)
 {
-    std::cout << "add_line not implemented" << std::endl;
+    combo_box.AddItem(Gwen::TextObject(value));
 }
 
 int ComboBox::get_current_line_number()
 {
-    std::cout << "get_current_line_number not implemented" << std::endl;
-    return 0;
+	Gwen::Controls::MenuItem * item;
+    item = (Gwen::Controls::MenuItem*)combo_box.GetSelectedItem();
+    Gwen::Controls::Menu * menu = combo_box.GetMenu();
+    int index = menu->GetIndex(item) - index_offset;
+	return index;
 }
 
-const std::string & ComboBox::get_current_line()
+std::string ComboBox::get_current_line()
 {
-    std::cout << "get_current_line not implemented" << std::endl;
-    return empty_string;
+    Gwen::Controls::MenuItem * item;
+    item = (Gwen::Controls::MenuItem*)combo_box.GetSelectedItem();
+    const Gwen::TextObject & text = item->GetText();
+    return text.c_str();
 }
 
 void ComboBox::highlight()
@@ -77,8 +84,7 @@ void ComboBox::reset()
 
 bool ComboBox::is_list_dropped()
 {
-    std::cout << "ComboBox::is_list_dropped not implemented" << std::endl;
-    return false;
+    return combo_box.IsMenuOpen();
 }
 
 int ComboBox::find_string_exact(const std::string & text, int flag)

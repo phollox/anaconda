@@ -65,7 +65,8 @@ actions = make_table(ActionMethodWriter, {
     16 : 'enable_focus',
     18 : 'disable',
     23 : 'set_limit',
-    30 : 'disable_focus'
+    30 : 'disable_focus',
+    33 : 'scroll_to_end'
 })
 
 conditions = make_table(ConditionMethodWriter, {

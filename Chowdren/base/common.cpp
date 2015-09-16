@@ -1042,8 +1042,16 @@ void Layer::draw(int display_x, int display_y)
     x = y = 0;
 #endif
 
-    Render::set_offset(-floor(display_x * coeff_x - x),
-                       -floor(display_y * coeff_y - y));
+#if defined(CHOWDREN_SUBAPP_FRAMES) && defined(CHOWDREN_USE_SUBAPP)
+    int r_x = SubApplication::current_x;
+    int r_y = SubApplication::current_y;
+#else
+    int r_x = 0;
+    int r_y = 0;
+#endif
+
+    Render::set_offset(-floor(display_x * coeff_x - x) + r_x,
+                       -floor(display_y * coeff_y - y) + r_y);
 
 #ifdef CHOWDREN_IS_3DS
     Render::set_global_depth(depth);
@@ -1253,6 +1261,10 @@ void Frame::get_mouse_pos(int * x, int * y)
 {
     *x = manager.mouse_x + off_x;
     *y = manager.mouse_y + off_y;
+#if defined(CHOWDREN_SUBAPP_FRAMES) && defined(CHOWDREN_USE_SUBAPP)
+    *x -= SubApplication::current_x;
+    *y -= SubApplication::current_y;
+#endif
 }
 
 int Frame::get_mouse_x()
@@ -1281,9 +1293,13 @@ bool Frame::is_mouse_pressed_once_frame(int button)
 {
     if (!is_mouse_pressed_once(button))
         return false;
+#ifdef CHOWDREN_USE_SUBAPP
     int x, y;
     get_mouse_pos(&x, &y);
     return !SubApplication::test_pos(this, x, y);
+#else
+    return true;
+#endif
 }
 #endif
 
@@ -1573,8 +1589,6 @@ int Frame::get_loop_index(const std::string & name)
 
 void Frame::reset()
 {
-    std::cout << "Reset frame: " << (unsigned long)this << std::endl;
-
     ObjectList::iterator it;
     for (unsigned int i = 0; i < MAX_OBJECT_ID; i++) {
         ObjectList & list = INSTANCE_MAP.items[i];
