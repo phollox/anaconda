@@ -1573,6 +1573,8 @@ int Frame::get_loop_index(const std::string & name)
 
 void Frame::reset()
 {
+    std::cout << "Reset frame: " << (unsigned int)this << std::endl;
+
     ObjectList::iterator it;
     for (unsigned int i = 0; i < MAX_OBJECT_ID; i++) {
         ObjectList & list = INSTANCE_MAP.items[i];
