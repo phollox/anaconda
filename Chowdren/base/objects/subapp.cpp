@@ -75,11 +75,11 @@ void SubApplication::update()
 
     if (subapp_frame.next_frame != -1) {
         int next_frame = subapp_frame.next_frame;
-		std::cout << "Prepare new frame: " << this->index
+		std::cout << "Prepare new frame: " << (unsigned long)&subapp_frame
             << " " << next_frame << std::endl;
         if (subapp_frame.index != -1)
             subapp_frame.on_end();
-        std::cout << "Set frame: " << this->index <<
+        std::cout << "Set frame: " << (unsigned long)&subapp_frame <<
             " " << subapp_frame.index << " " << next_frame << std::endl;
         set_frame(next_frame);
     }
@@ -89,10 +89,10 @@ void SubApplication::update()
     height = subapp_frame.height;
 #endif
 
-	std::cout << "Subapp update: " << this->index
+	std::cout << "Subapp update: " << (unsigned long)&subapp_frame
         << " " << subapp_frame.index << std::endl;
     bool ret = subapp_frame.update();
-	std::cout << "Subapp update done " << this->index
+	std::cout << "Subapp update done " << (unsigned long)&subapp_frame
         << " " << subapp_frame.index << std::endl;
 
     if (!ret)
