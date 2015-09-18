@@ -16,6 +16,8 @@ def init(converter):
     converter.add_define('CHOWDREN_FORCE_TRANSPARENT')
     converter.add_define('CHOWDREN_FORCE_TEXT_LAYOUT')
     converter.add_define('CHOWDREN_SUBAPP_FRAMES')
+    converter.add_define('CHOWDREN_EMULATE_MENU')
+    converter.add_define('CHOWDREN_PICTURE_OFFSET')
 
 def use_image_preload(converter):
     return True

@@ -346,6 +346,7 @@ class Text(ObjectWriter):
     use_alterables = True
     has_color = True
     filename = 'text'
+    default_instance = 'default_text_instance'
 
     def initialize(self):
         pass
@@ -480,8 +481,8 @@ class Counter(ObjectWriter):
                 writer.putlnc('image_count = %s;', size)
             else:
                 print 'type', counters.getDisplayType(), 'not implemented'
-                return
-                raise NotImplementedError
+                writer.putln('type = HIDDEN_COUNTER;')
+                writer.putln('width = height = 0;')
 
             if display_type in (VERTICAL_BAR, HORIZONTAL_BAR):
                 fill_type = shape_object.fillType

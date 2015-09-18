@@ -21,6 +21,10 @@ public:
     int angle;
     SpriteCollision sprite_col;
 
+#ifdef CHOWDREN_PICTURE_OFFSET
+    int offset_y;
+#endif
+
     ActivePicture(int x, int y, int type_id);
     ~ActivePicture();
     void load(const std::string & fn);
@@ -40,7 +44,7 @@ public:
                int src_width, int src_height, int collision_type);
     int get_resized_width();
     int get_resized_height();
-    void set_offset_x(int value);
+    void set_offset_y(int value);
     void set_wrap(bool enabled);
 };
 

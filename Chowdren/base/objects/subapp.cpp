@@ -75,6 +75,7 @@ void SubApplication::set_next_frame(int index)
     if (starting)
         return;
     subapp_frame.next_frame = index + frame_offset;
+    std::cout << "next frame: " << index << std::endl;
 }
 
 void SubApplication::restart(int index)
@@ -82,6 +83,7 @@ void SubApplication::restart(int index)
     done = false;
     starting = true;
     subapp_frame.next_frame = index + frame_offset;
+    std::cout << "restart: " << index << std::endl;
 }
 
 void SubApplication::update()
@@ -154,8 +156,6 @@ void SubApplication::draw_subapp()
     if (starting || done || !(flags & VISIBLE))
         return;
     if (window_control) {
-        // window_control->SetPos(x-6, y-28);
-        // window_control->SetSize(width+12, height+35);
         frame->gwen.render(window_control);
         Gwen::Point p = window_control->GetPos();
         set_position(p.x + 6, p.y + 28);
@@ -172,6 +172,7 @@ void SubApplication::draw_frames()
 {
     vector<SubApplication*>::iterator it;
     for (it = frames.begin(); it != frames.end(); ++it) {
+        Render::set_offset(0, 0);
         (*it)->draw_subapp();
     }
 }
@@ -179,9 +180,11 @@ void SubApplication::draw_frames()
 bool SubApplication::test_pos(Frame * frame, int x, int y)
 {
     PointCollision p(x, y);
-    vector<SubApplication*>::iterator it;
-    for (it = frames.begin(); it != frames.end(); ++it) {
+    vector<SubApplication*>::reverse_iterator it;
+    for (it = frames.rbegin(); it != frames.rend(); ++it) {
         SubApplication * subapp = *it;
+        if (&subapp->subapp_frame == frame)
+            return false;
         if (collide(&p, subapp->collision))
             return true;
     }

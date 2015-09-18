@@ -5,6 +5,8 @@
 static std::string title;
 static std::string text;
 
+static std::string path;
+
 void DialogObject::set_title(const std::string & value)
 {
     title = value;
@@ -50,6 +52,7 @@ void DialogObject::set_default_filename(const std::string & filename)
 {
     std::cout << "DialogObject::set_default_filename not implemented"
         << filename << std::endl;
+    path = filename;
 }
 
 void DialogObject::set_default_extension(const std::string & ext)
@@ -78,5 +81,5 @@ void DialogObject::open_save_selector(const std::string & dir)
 
 const std::string & DialogObject::get_path()
 {
-    return empty_string;
+    return path;
 }

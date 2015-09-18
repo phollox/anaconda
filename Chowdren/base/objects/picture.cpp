@@ -8,6 +8,9 @@ ActivePicture::ActivePicture(int x, int y, int type_id)
 {
     sprite_col.instance = this;
     collision = &sprite_col;
+#ifdef CHOWDREN_PICTURE_OFFSET
+    offset_y = 0;
+#endif
 }
 
 ActivePicture::~ActivePicture()
@@ -17,6 +20,10 @@ ActivePicture::~ActivePicture()
 
 void ActivePicture::load(const std::string & fn)
 {
+#ifndef NDEBUG
+    if (fn != filename)
+        std::cout << "load filename: " << fn << std::endl;
+#endif
     filename = fn;
     std::string path;
 #if defined(CHOWDREN_IS_WIIU) || defined(CHOWDREN_EMULATE_WIIU)
@@ -33,10 +40,6 @@ void ActivePicture::load(const std::string & fn)
         path = convert_path(fn);
 #else
     path = convert_path(fn);
-#endif
-
-#ifndef NDEBUG
-    std::cout << "load picture: " << path << std::endl;
 #endif
 
     image = get_image_cache(path, 0, 0, 0, 0, transparent_color);
@@ -139,6 +142,24 @@ void ActivePicture::draw()
         return;
     image->hotspot_x = sprite_col.hotspot_x;
     image->hotspot_y = sprite_col.hotspot_y;
+#ifdef CHOWDREN_PICTURE_OFFSET
+    if (offset_y != 0) {
+        image->upload_texture();
+        int ww = image->width * scale_x;
+        int hh = image->height * scale_y;
+
+        int x2 = x + ww;
+        int y2 = y + hh - offset_y;
+
+        float t_x1 = 0.0f;
+        float t_x2 = 1.0f;
+        float t_y1 = float(offset_y) / float(hh);
+        float t_y2 = 1.0f;
+        Render::draw_tex(x, y, x2, y2, blend_color, image->tex,
+                         t_x1, t_y1, t_x2, t_y2);
+        return;
+    }
+#endif
     draw_image(image, x, y, blend_color, angle, scale_x, scale_y,
                horizontal_flip);
 }
@@ -156,9 +177,11 @@ void ActivePicture::paste(int dest_x, int dest_y, int src_x, int src_y,
                  src_width, src_height, collision_type, effect, blend_color);
 }
 
-void ActivePicture::set_offset_x(int value)
+void ActivePicture::set_offset_y(int value)
 {
-    std::cout << "Set offset X not implementd: " << value << std::endl;
+#ifdef CHOWDREN_PICTURE_OFFSET
+    offset_y = value;
+#endif
 }
 
 void ActivePicture::set_wrap(bool value)

@@ -931,6 +931,8 @@ void Layer::destroy_backgrounds()
 
 void Layer::destroy_backgrounds(int x, int y, bool fine)
 {
+    if (back == NULL)
+        return;
     if (fine)
         std::cout << "Destroy backgrounds at " << x << ", " << y <<
             " (" << fine << ") not implemented" << std::endl;
@@ -2992,16 +2994,36 @@ void start_joystick_rumble(int n, const std::string & name, int times)
     joystick_vibrate(n, effect.l, effect.r, effect.duration);
 }
 
-// asan
+#ifdef CHOWDREN_EMULATE_MENU
 
-#if !defined(NDEBUG) && (defined(__clang__) || defined (__GNUC__))
-const char * asan_default_options = "suppressions=asan.supp";
+// menu emulation
 
-extern "C"
-__attribute__((no_sanitize_address))
-const char *__asan_default_options()
+hash_map<unsigned int, bool> menu_map;
+
+bool is_menu_checked(unsigned int id)
 {
-    return asan_default_options;
+    return menu_map[id];
+}
+
+void check_menu(unsigned int id)
+{
+    menu_map[id] = true;
+}
+
+void uncheck_menu(unsigned int id)
+{
+    menu_map[id] = false;
+}
+
+void activate_menu(unsigned int id)
+{
+    std::cout << "activate menu: " << id << std::endl;
+}
+
+
+void deactivate_menu(unsigned int id)
+{
+    std::cout << "deactivate menu: " << id << std::endl;
 }
 
 #endif

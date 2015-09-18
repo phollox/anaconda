@@ -237,3 +237,17 @@ void FontInfo::set_scale(FrameObject * obj, float scale)
 
 
 std::string FontInfo::vertical_tab("\x0B");
+
+class DefaultText : public Text
+{
+public:
+    DefaultText()
+    : Text(0, 0, 0)
+    {
+        collision = new InstanceBox(this);
+        setup_default_instance(this);
+    }
+};
+
+static DefaultText default_text;
+FrameObject * default_text_instance = &default_text;

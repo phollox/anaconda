@@ -505,4 +505,16 @@ inline std::string get_platform()
 #endif
 }
 
+#ifdef CHOWDREN_EMULATE_MENU
+
+// menu emulation
+
+bool is_menu_checked(unsigned int id);
+void check_menu(unsigned int id);
+void uncheck_menu(unsigned int id);
+void activate_menu(unsigned int id);
+void deactivate_menu(unsigned int id);
+
+#endif
+
 #endif // CHOWDREN_COMMON_H

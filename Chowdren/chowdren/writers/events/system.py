@@ -2342,11 +2342,15 @@ actions = make_table(ActionMethodWriter, {
     'ChangeInputKey' : ChangeInputKey,
 
     # menu actions. don't implement yet.
-    'UncheckMenu' : EmptyAction,
-    'CheckMenu' : EmptyAction,
-    'ActivateMenu' : EmptyAction,
-    'DeactivateMenu' : EmptyAction,
+    'UncheckMenu' : 'uncheck_menu',
+    'CheckMenu' : 'check_menu',
+    'ActivateMenu' : 'activate_menu',
+    'DeactivateMenu' : 'deactivate_menu',
 })
+
+class AlwaysFalse(FalseCondition):
+    def is_negated(self):
+        return False
 
 conditions = make_table(ConditionMethodWriter, {
     'CompareAlterableValue' : make_comparison('alterables->values.get(%s)'),
@@ -2430,7 +2434,7 @@ conditions = make_table(ConditionMethodWriter, {
     'MouseInZone' : MouseInZone,
 
     # menu conditions, don't implement yet
-    'MenuChecked' : FalseCondition
+    'MenuChecked' : 'is_menu_checked'
 })
 
 expressions = make_table(ExpressionMethodWriter, {

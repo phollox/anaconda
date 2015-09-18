@@ -58,4 +58,6 @@ public:
     static void set_scale(FrameObject * obj, float scale);
 };
 
+extern FrameObject * default_text_instance;
+
 #endif // CHOWDREN_TEXT_H
