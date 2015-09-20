@@ -517,8 +517,8 @@ public:
     double seek_time;
 
 #ifdef USE_THREAD_PRELOAD
-    bool fill_now;
-    bool with_seek;
+    volatile bool fill_now;
+    volatile bool with_seek;
 #endif
 
     SoundStream(size_t offset, Media::AudioType type, size_t size)
@@ -584,12 +584,13 @@ public:
 
 #ifdef USE_THREAD_PRELOAD
         fill_now = true;
+        playing = true;
         SDL_CondBroadcast(global_device.stream_cond);
 #else
         stopping = fill_queue();
         al_check(alSourcePlay(source));
-#endif
         playing = true;
+#endif
     }
 
     void pause()

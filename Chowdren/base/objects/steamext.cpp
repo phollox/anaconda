@@ -85,10 +85,14 @@ int SteamGlobal::init()
     }
 	std::cout << "Initialized Steam API" << std::endl;
 
+    bool debug_achievements = getenv("CHOWDREN_DEBUG_ACHIEVEMENTS") != NULL;
 #if 0
-	if (!SteamUserStats()->ResetAllStats(true))
-		std::cout << "Could not reset stats" << std::endl;
+    debug_achievements = true;
 #endif
+    if (debug_achievements) {
+    	if (!SteamUserStats()->ResetAllStats(true))
+    		std::cout << "Could not reset stats" << std::endl;
+    }
 	if (!SteamUserStats()->RequestCurrentStats())
 		std::cout << "Could not request Steam stats" << std::endl;
 

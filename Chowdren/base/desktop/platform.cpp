@@ -161,7 +161,6 @@ static void on_key(SDL_KeyboardEvent & e)
     else
         has_ctrl = false;
 #endif
-
     bool state = e.state == SDL_PRESSED;
     int key = e.keysym.sym;
 
