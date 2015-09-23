@@ -1884,11 +1884,12 @@ std::string convert_path(const std::string & v)
 
 bool platform_file_open_dialog(const std::string & title,
                                const std::string & filter,
-                               const std::string & def,
+                               const std::string & in_def,
                                bool multiple,
                                vector<std::string> & out)
 {
     SAVE_CWD();
+    std::string def = convert_path(in_def);
     const char * ret = tinyfd_openFileDialog(title.c_str(),
                                              def.c_str(),
                                              0,
@@ -1903,10 +1904,11 @@ bool platform_file_open_dialog(const std::string & title,
 
 bool platform_file_save_dialog(const std::string & title,
                                const std::string & filter,
-                               const std::string & def,
+                               const std::string & in_def,
                                std::string & out)
 {
     SAVE_CWD();
+    std::string def = convert_path(in_def);
     const char * ret = tinyfd_saveFileDialog(title.c_str(),
                                              def.c_str(),
                                              0,
