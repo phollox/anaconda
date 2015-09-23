@@ -20,6 +20,11 @@ def init(converter):
     converter.add_define('CHOWDREN_PICTURE_OFFSET')
     converter.add_define('CHOWDREN_AUTOSAVE_ON_CHANGE')
     converter.add_define('CHOWDREN_NO_FULLSCREEN')
+    converter.add_define('CHOWDREN_STEAM_APPID', 298630)
+    converter.add_define('CHOWDREN_TEXT_USE_UTF8')
+    converter.add_define('CHOWDREN_INI_USE_UTF8')
+    converter.add_define('CHOWDREN_USE_STEAM_LANGUAGE')
+    converter.add_define('CHOWDREN_FORCE_STEAM_OPEN')
 
     values = converter.game.globalValues.items
     values[7] = 0 # turn off dev mode

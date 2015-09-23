@@ -1880,7 +1880,7 @@ std::string convert_path(const std::string & v)
 
 #define SAVE_CWD() char temp[PATH_MAX];\
                    if (!getcwd(temp, PATH_MAX)) temp[0] = '\0'
-#define RESTORE_CWD() chdir(temp)
+#define RESTORE_CWD() (void)chdir(temp)
 
 bool platform_file_open_dialog(const std::string & title,
                                const std::string & filter,
