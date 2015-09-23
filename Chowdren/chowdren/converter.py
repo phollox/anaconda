@@ -1845,6 +1845,9 @@ class Converter(object):
         frame_file.end_brace()
 
         event_file.putmeth('void %s' % handle_name)
+
+        self.config.write_frame_pre(event_file)
+
         event_file.putlnc('test_collisions_%s();', frame_index)
 
         end_markers = []

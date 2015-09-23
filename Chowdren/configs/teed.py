@@ -29,6 +29,31 @@ def init(converter):
     values = converter.game.globalValues.items
     values[7] = 0 # turn off dev mode
 
+def write_frame_pre(converter, writer):
+    if converter.current_frame_index != 0:
+        return
+    writer.putln('static bool lang_set = false;')
+    writer.putln('if (!lang_set) {')
+    writer.indent()
+    writer.putln('lang_set = true;')
+    writer.putlnc('std::string lang = platform_get_language();')
+    langs = {
+        'English': 'eng',
+        'Russian': 'rus',
+        'Spanish': 'spa',
+        'German': 'ger',
+        'French': 'fre',
+        'Polish': 'pol'
+    }
+    for k, v in langs.iteritems():
+        writer.putlnc('if (lang == %r) lang = %r;', k, v, cpp=False)
+    writer.putlnc('global_strings->set(5, lang);')
+    writer.end_brace()
+
+def init_frame(converter, frame):
+    if frame.name != 'Editor':
+        return
+    del frame.events.items[0].actions[1]
 
 def use_subapp_frames(converter):
     return True

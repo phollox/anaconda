@@ -26,6 +26,9 @@ def write_pre(converter, writer, group):
 def write_frame_post(converter, writer):
     pass
 
+def write_frame_pre(converter, writer):
+    pass
+
 def init_obj(converter, obj):
     pass
 

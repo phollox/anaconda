@@ -11,6 +11,7 @@
 #include <sstream>
 #include <vector>
 #include "Gwen/Structures.h"
+#include "utfconv.h"
 
 namespace Gwen
 {
@@ -43,19 +44,19 @@ namespace Gwen
 		{
 			if ( !strIn.length() ) { return ""; }
 
-			String temp( strIn.length(), ( char ) 0 );
-			std::use_facet< std::ctype<wchar_t> > ( std::locale() ). \
-			narrow( &strIn[0], &strIn[0] + strIn.length(), ' ', &temp[0] );
-			return temp;
+			std::string temp((char*)&strIn[0], strIn.size()*2);
+			std::string out;
+			convert_utf16_to_utf8(temp, out);
+			return out;
 		}
 
 		inline UnicodeString StringToUnicode( const String & strIn )
 		{
 			if ( !strIn.length() ) { return L""; }
 
-			UnicodeString temp( strIn.length(), ( wchar_t ) 0 );
-			std::use_facet< std::ctype<wchar_t> > ( std::locale() ). \
-			widen( &strIn[0], &strIn[0] + strIn.length(), &temp[0] );
+			std::string out;
+			convert_utf8_to_utf16(strIn, out);
+			UnicodeString temp((wchar_t*)&out[0], out.size() / 2);
 			return temp;
 		}
 

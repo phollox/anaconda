@@ -15,8 +15,7 @@
 #include "fbo.h"
 #endif
 
-// XXX move this?
-#include "staticlibs/utf16to8.cpp"
+#include "staticlibs/utfconv.cpp"
 
 #ifdef CHOWDREN_USE_VALUEADD
 #include "extra_keys.cpp"

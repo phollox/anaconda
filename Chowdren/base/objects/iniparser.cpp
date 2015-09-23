@@ -14,7 +14,7 @@ http://code.google.com/p/inih/
 #include <sstream>
 #include <istream>
 #include "platform.h"
-#include "utf16to8.h"
+#include "utfconv.h"
 
 inline int is_space(unsigned char c)
 {
