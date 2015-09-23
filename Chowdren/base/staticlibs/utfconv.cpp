@@ -10,10 +10,17 @@ void convert_utf8_to_utf16(const std::string & value, std::string & out)
     unsigned char * source = (unsigned char*)&value[0];
     unsigned char * end = source + value.size();
     out.resize(value.size() * 2);
-    unsigned short * target = (unsigned short*)&out[0];
-    unsigned short * res = utf8::unchecked::utf8to16(source, end, target);
-    unsigned char * target_c = (unsigned char*)target;
-    unsigned char * res_c = (unsigned char*)res;
+
+    union {
+        unsigned short * target;
+        unsigned char * target_c;
+    };
+    union {
+        unsigned short * res;
+        unsigned char * res_c;
+    };
+    target_c = (unsigned char*)&out[0];
+    res = utf8::unchecked::utf8to16(source, end, target);
     out.resize((unsigned long)(res_c - target_c));
 }
 
@@ -23,8 +30,16 @@ void convert_utf16_to_utf8(const std::string & value, std::string & out)
         out.resize(0);
         return;
     }
-    unsigned short * source = (unsigned short*)&value[0];
-    unsigned short * end = (unsigned short*)(&value[0] + value.size());
+    union {
+        unsigned short * source;
+        unsigned char * source_c;
+    };
+    union {
+        unsigned short * end;
+        unsigned char * end_c;
+    };
+    source_c = (unsigned char*)&value[0];
+    end_c = (unsigned char*)(&value[0] + value.size());
     if (value.size() >= 2 && (unsigned char)value[0] == 0xFF
         && (unsigned char)value[1] == 0xFE)
     {
