@@ -1873,13 +1873,13 @@ std::string convert_path(const std::string & v)
 #include <direct.h>
 #define chdir _chdir
 #define getcwd _getcwd
-#define MAX_PATH 4096
+#define PATH_MAX 4096
 #else
 #include <limits.h>
 #endif
 
-#define SAVE_CWD() char temp[MAX_PATH];\
-                   if (!getcwd(temp, MAX_PATH)) temp[0] = '\0'
+#define SAVE_CWD() char temp[PATH_MAX];\
+                   if (!getcwd(temp, PATH_MAX)) temp[0] = '\0'
 #define RESTORE_CWD() chdir(temp)
 
 bool platform_file_open_dialog(const std::string & title,
