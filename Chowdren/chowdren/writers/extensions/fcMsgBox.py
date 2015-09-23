@@ -24,7 +24,20 @@ actions = make_table(StaticActionWriter, {
     35 : 'create'
 })
 
+class OnSuccess(StaticConditionWriter):
+    method = 'is_success'
+    is_always = True
+    post_event = True
+
+class OnFailure(StaticConditionWriter):
+    method = 'is_failure'
+    is_always = True
+    post_event = True
+
 conditions = make_table(StaticConditionWriter, {
+    4 : OnFailure,
+    5 : OnSuccess,
+    8 : OnSuccess
 })
 
 expressions = make_table(StaticExpressionWriter, {

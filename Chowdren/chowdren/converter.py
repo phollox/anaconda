@@ -1089,8 +1089,18 @@ class Converter(object):
         config_file.putdefine('COPYRIGHT', game.copyright)
         config_file.putdefine('ABOUT', game.aboutText)
         config_file.putdefine('AUTHOR', game.author)
+
         config_file.putdefine('WINDOW_WIDTH', header.windowWidth)
         config_file.putdefine('WINDOW_HEIGHT', header.windowHeight)
+        if self.config.use_subapp_frames():
+            config_file.putlnc('#define DISPLAY_WIDTH %s',
+                               'manager.frame->display_width')
+            config_file.putlnc('#define DISPLAY_HEIGHT %s',
+                               'manager.frame->display_height')
+        else:
+            config_file.putdefine('DISPLAY_WIDTH', header.windowWidth)
+            config_file.putdefine('DISPLAY_HEIGHT', header.windowHeight)
+
         config_file.putdefine('FRAMERATE', header.frameRate)
         config_file.putdefine('MAX_OBJECT_ID', self.max_type_id)
         config_file.putdefine('MAX_BACK_ID', len(self.back_ids))

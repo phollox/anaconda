@@ -212,10 +212,13 @@ public:
 
 #ifdef CHOWDREN_USE_GWEN
     GwenData gwen;
+    int old_mouse_x;
+    int old_mouse_y;
 #endif
 
 #ifdef CHOWDREN_SUBAPP_FRAMES
     bool is_mouse_pressed_once_frame(int button);
+    int display_width, display_height;
 #endif
 
     FrameObject * col_instance_1;
@@ -278,7 +281,11 @@ public:
 
     int frame_right()
     {
+#ifdef CHOWDREN_SUBAPP_FRAMES
+        return new_off_x + display_width;
+#else
         return new_off_x + WINDOW_WIDTH;
+#endif
     }
 
     int frame_top()
@@ -288,7 +295,11 @@ public:
 
     int frame_bottom()
     {
+#ifdef CHOWDREN_SUBAPP_FRAMES
+        return new_off_y + display_height;
+#else
         return new_off_y + WINDOW_HEIGHT;
+#endif
     }
 
     void event_callback(int id)

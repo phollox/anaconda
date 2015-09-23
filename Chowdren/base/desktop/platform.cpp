@@ -591,7 +591,11 @@ void d3d_reset(bool last_failed)
 
     int display = SDL_GetWindowDisplayIndex(global_window);
 
+#ifdef CHOWDREN_NO_EXCLUSIVE_MODE
+    if (false) {
+#else
     if (is_fullscreen && display == device_display_index) {
+#endif
         SDL_DisplayMode mode;
         SDL_GetDesktopDisplayMode(display, &mode);
         pparams.Windowed = FALSE;
@@ -967,6 +971,9 @@ bool platform_get_vsync()
 
 void platform_set_fullscreen(bool value)
 {
+#ifdef CHOWDREN_NO_FULLSCREEN
+    return;
+#endif
     if (value == is_fullscreen)
         return;
     is_fullscreen = value;
@@ -1856,6 +1863,78 @@ std::string convert_path(const std::string & v)
     std::replace(value.begin(), value.end(), '/', '\\');
 #endif
     return value;
+}
+
+// dialog
+
+#include "tinyfiledialogs.h"
+
+#ifdef _WIN32
+#include <direct.h>
+#define chdir _chdir
+#define getcwd _getcwd
+#define MAXPATHLEN 1024
+#endif
+
+#define SAVE_CWD() char temp[MAXPATHLEN];\
+                   if (!getcwd(temp, MAXPATHLEN)) temp[0] = '\0'
+#define RESTORE_CWD() chdir(temp)
+
+bool platform_file_open_dialog(const std::string & title,
+                               const std::string & filter,
+                               const std::string & def,
+                               bool multiple,
+                               vector<std::string> & out)
+{
+    SAVE_CWD();
+    const char * ret = tinyfd_openFileDialog(title.c_str(),
+                                             def.c_str(),
+                                             0,
+                                             NULL,
+                                             NULL,
+                                             multiple);
+    if (ret != NULL)
+        out.push_back(std::string(ret));
+    RESTORE_CWD();
+    return ret != NULL;
+}
+
+bool platform_file_save_dialog(const std::string & title,
+                               const std::string & filter,
+                               const std::string & def,
+                               std::string & out)
+{
+    SAVE_CWD();
+    const char * ret = tinyfd_saveFileDialog(title.c_str(),
+                                             def.c_str(),
+                                             0,
+                                             NULL,
+                                             NULL);
+    if (ret != NULL)
+        out = ret;
+    RESTORE_CWD();
+    return ret != NULL;
+}
+
+bool platform_show_dialog(const std::string & title,
+                          const std::string & message,
+                          DialogType type)
+{
+    const char * dialog_type = "ok";
+    switch (type) {
+        case DIALOG_OK:
+            dialog_type = "ok";
+            break;
+        case DIALOG_OKCANCEL:
+            dialog_type = "okcancel";
+            break;
+        case DIALOG_YESNO:
+            dialog_type = "yesno";
+            break;
+    }
+    int ret = tinyfd_messageBox(title.c_str(), message.c_str(), dialog_type,
+                                "info", 1);
+    return ret == 1;
 }
 
 // debug

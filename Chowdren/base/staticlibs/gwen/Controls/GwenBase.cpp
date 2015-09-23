@@ -79,6 +79,8 @@ Base::~Base()
 
 	if ( Gwen::HoveredControl == this ) { Gwen::HoveredControl = NULL; }
 
+	if ( Gwen::GlobalHoveredControl == this ) { Gwen::GlobalHoveredControl = NULL; }
+
 	if ( Gwen::KeyboardFocus == this ) { Gwen::KeyboardFocus = NULL; }
 
 	if ( Gwen::MouseFocus == this ) { Gwen::MouseFocus = NULL; }

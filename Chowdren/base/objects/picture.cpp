@@ -3,7 +3,7 @@
 // ActivePicture
 
 ActivePicture::ActivePicture(int x, int y, int type_id)
-: FrameObject(x, y, type_id), image(NULL), horizontal_flip(false),
+: FrameObject(x, y, type_id), image(NULL), picture_flags(0),
   scale_x(1.0f), scale_y(1.0f), angle(0)
 {
     sprite_col.instance = this;
@@ -48,6 +48,8 @@ void ActivePicture::load(const std::string & fn)
         return;
 
     sprite_col.set_image(image, 0, 0);
+    if (picture_flags & FORCE_RESIZE)
+        set_size(width, height);
 }
 
 void ActivePicture::set_transparent_color(const Color & color)
@@ -74,7 +76,7 @@ void ActivePicture::set_hotspot_mul(float x, float y)
 
 void ActivePicture::flip_horizontal()
 {
-    horizontal_flip = !horizontal_flip;
+    picture_flags ^= HORIZONTAL_FLIP;
 }
 
 void ActivePicture::set_scale(float value)
@@ -85,6 +87,8 @@ void ActivePicture::set_scale(float value)
 
 void ActivePicture::set_size(int w, int h)
 {
+	if (image == NULL)
+		return;
     float sx = w / float(image->width);
     float sy = h / float(image->height);
     scale_x = sx;
@@ -161,7 +165,7 @@ void ActivePicture::draw()
     }
 #endif
     draw_image(image, x, y, blend_color, angle, scale_x, scale_y,
-               horizontal_flip);
+               picture_flags & HORIZONTAL_FLIP);
 }
 
 void ActivePicture::paste(int dest_x, int dest_y, int src_x, int src_y,

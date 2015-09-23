@@ -12,6 +12,8 @@
 #include <d3d9.h>
 
 #elif CHOWDREN_USE_GL
+// SDL_opengl.h defines WIN32_LEAN_AND_MEAN
+#undef WIN32_LEAN_AND_MEAN
 #include <SDL_opengl.h>
 
 extern PFNGLBLENDEQUATIONSEPARATEEXTPROC __glBlendEquationSeparateEXT;

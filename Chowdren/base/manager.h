@@ -17,6 +17,9 @@ class GameManager
 {
 public:
     Frame * frame;
+#ifdef CHOWDREN_SUBAPP_FRAMES
+    Frame * main_frame;
+#endif
     GlobalValues * values;
     GlobalStrings * strings;
     FPSLimiter fps_limit;

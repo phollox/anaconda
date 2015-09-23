@@ -61,6 +61,7 @@ public:
     };
 
     static int offset[2];
+    static int viewport[4];
 
     static void init();
 
@@ -117,6 +118,57 @@ public:
     static void set_global_depth(float depth);
     static void set_depth(float depth);
 #endif
+
+    struct SavedOffset
+    {
+        int save[2];
+
+        SavedOffset()
+        {
+            save[0] = Render::offset[0];
+            save[1] = Render::offset[1];
+        }
+
+        void restore()
+        {
+            Render::set_offset(save[0], save[1]);
+        }
+    };
+
+    struct SavedViewport
+    {
+        int save[4];
+
+        SavedViewport()
+        {
+            save[0] = Render::viewport[0];
+            save[1] = Render::viewport[1];
+            save[2] = Render::viewport[2];
+            save[3] = Render::viewport[3];
+        }
+
+        void restore()
+        {
+            Render::set_view(save[0], save[1], save[2], save[3]);
+        }
+    };
+
+    struct SavedViewportOffset
+    {
+        SavedViewport viewport;
+        SavedOffset offset;
+
+        SavedViewportOffset()
+        : offset(), viewport()
+        {
+        }
+
+        void restore()
+        {
+            viewport.restore();
+            offset.restore();
+        }
+    };
 };
 
 #include "renderplatform.h"

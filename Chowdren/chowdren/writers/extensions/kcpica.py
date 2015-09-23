@@ -4,7 +4,19 @@ from chowdren.writers.events import (ComparisonWriter, ActionMethodWriter,
     ConditionMethodWriter, ExpressionMethodWriter, make_table)
 from mmfparser.bitdict import BitDict
 
+FLAGS = BitDict(
+    'Resize',
+    'HideOnStart',
+    'TransparentBlack',
+    'TransparentFirstPixel',
+    'FlippedHorizontally',
+    'FlippedVertically',
+    'Resample',
+    'WrapModeOff'
+)
+
 class ActivePicture(ObjectWriter):
+    is_active_picture = True
     class_name = 'ActivePicture'
     filename = 'picture'
     use_alterables = True
@@ -12,27 +24,29 @@ class ActivePicture(ObjectWriter):
 
     def write_init(self, writer):
         data = self.get_data()
-        width = data.readInt()
-        height = data.readInt()
-        self.flags = BitDict(
-            'Resize',
-            'HideOnStart',
-            'TransparentBlack',
-            'TransparentFirstPixel',
-            'FlippedHorizontally',
-            'FlippedVertically',
-            'Resample',
-            'WrapModeOff',
-        )
-        self.flags.setFlags(data.readInt(True))
-        visible = not self.flags['HideOnStart']
-        transparent_color = data.readColor()
-        if not self.flags['TransparentFirstPixel']:
+        if self.is_active_picture:
+            width = data.readInt()
+            height = data.readInt()
+            flags_int = data.readInt(True)
+            transparent_color = data.readColor()
+            image = data.readString(260) or None
+        else:
+            width = data.readShort(True)
+            height = data.readShort(True)
+            flags_int = data.readShort(True)
+            image = data.readString(260) or None
+            transparent_color = data.readColor()
+
+        flags = FLAGS.copy()
+        flags.setFlags(flags_int)
+        visible = not flags['HideOnStart']
+        if not flags['TransparentFirstPixel']:
             writer.putln('set_transparent_color(%s);' %
                          make_color(transparent_color))
-        image = data.readString(260) or None
         writer.putlnc('sprite_col.width = width = %s;', width)
         writer.putlnc('sprite_col.height = height = %s;', height)
+        if flags['Resize']:
+            writer.putlnc('picture_flags |= FORCE_RESIZE;')
         # objects_file.putdef('filename', image)
 
 actions = make_table(ActionMethodWriter, {

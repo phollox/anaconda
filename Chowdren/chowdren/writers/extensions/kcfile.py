@@ -4,7 +4,7 @@ from chowdren.common import get_animation_name, to_c, make_color
 
 from chowdren.writers.events import (StaticConditionWriter,
     StaticActionWriter, StaticExpressionWriter, make_table, EmptyAction,
-    ActionMethodWriter, ExpressionMethodWriter)
+    ActionMethodWriter, ExpressionMethodWriter, ConditionMethodWriter)
 
 class File(ObjectWriter):
     class_name = 'File'
@@ -41,12 +41,28 @@ actions.update(make_table(DialogAction, {
     19 : 'open_save_selector'
 }))
 
+class DialogCondition(ConditionMethodWriter):
+    has_object = False
+    is_always = True
+    post_event = True
+
+    def write(self, writer):
+        converter = self.converter
+        converter.extension_includes.add('objects/dialogext.h')
+        converter.extension_sources.add('objects/dialogext.cpp')
+        writer.put('DialogObject::')
+        ConditionMethodWriter.write(self, writer)
+
 conditions = make_table(StaticConditionWriter, {
     1 : 'name_exists',
     2 : 'file_readable',
     4 : 'file_exists',
-    5 : 'directory_exists'
+    5 : 'directory_exists',
 })
+
+conditions.update(make_table(DialogCondition, {
+    6 : 'is_file_success'    
+}))
 
 class DialogExpression(ExpressionMethodWriter):
     has_object = False

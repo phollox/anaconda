@@ -40,6 +40,7 @@ namespace Gwen
 				void ClearItems();
 
 				int GetIndex(MenuItem * ptr);
+				int GetItemCount();
 
 				virtual void Open( unsigned int iPos );
 				virtual void Close();

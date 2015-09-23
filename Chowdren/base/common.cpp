@@ -429,10 +429,11 @@ void Background::draw(Layer * layer, int v[4])
             fbo.init(cache_pos[2] - cache_pos[0], cache_pos[3] - cache_pos[1]);
 
         fbo.bind();
+        Render::SavedViewport saved_vp;
+        Render::SavedOffset saved_offset;
         Render::set_view(0, 0,
                          cache_pos[2] - cache_pos[0],
                          cache_pos[3] - cache_pos[1]);
-		int old_offset[2] = {Render::offset[0], Render::offset[1]};
         Render::set_offset(-cache_pos[0], -cache_pos[1]);
         Render::clear(0, 0, 0, 0);
 
@@ -446,14 +447,14 @@ void Background::draw(Layer * layer, int v[4])
 
         fbo.unbind();
 
-        Render::set_view(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-        Render::set_offset(old_offset[0], old_offset[1]);
+        saved_vp.restore();
+        saved_offset.restore();
     } else if (!new_paste.empty()) {
         fbo.bind();
+        Render::SavedViewportOffset saved;
         Render::set_view(0, 0,
                          cache_pos[2] - cache_pos[0],
                          cache_pos[3] - cache_pos[1]);
-        int old_offset[2] = {Render::offset[0], Render::offset[1]};
         Render::set_offset(-cache_pos[0], -cache_pos[1]);
 
         BackgroundItems::const_iterator it;
@@ -462,8 +463,7 @@ void Background::draw(Layer * layer, int v[4])
             item->draw();
         }
         fbo.unbind();
-        Render::set_view(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-        Render::set_offset(old_offset[0], old_offset[1]);
+        saved.restore();
 
         new_paste.clear();
     }
@@ -1266,6 +1266,13 @@ void Frame::get_mouse_pos(int * x, int * y)
 #if defined(CHOWDREN_SUBAPP_FRAMES) && defined(CHOWDREN_USE_SUBAPP)
     *x -= SubApplication::current_x;
     *y -= SubApplication::current_y;
+    if (SubApplication::test_pos(this)) {
+        *x = old_mouse_x;
+        *y = old_mouse_y;
+        return;
+    }
+    old_mouse_x = *x;
+    old_mouse_y = *y;
 #endif
 }
 
@@ -1296,9 +1303,7 @@ bool Frame::is_mouse_pressed_once_frame(int button)
     if (!is_mouse_pressed_once(button))
         return false;
 #ifdef CHOWDREN_USE_SUBAPP
-    int x, y;
-    get_mouse_pos(&x, &y);
-    return !SubApplication::test_pos(this, x, y);
+    return !SubApplication::test_pos(this);
 #else
     return true;
 #endif
@@ -1446,7 +1451,14 @@ void Frame::draw(int remote)
 {
     PROFILE_BEGIN(frame_draw_start);
 
+#ifdef CHOWDREN_SUBAPP_FRAMES
+    Render::set_view(0, 0,
+                     SubApplication::current_x + display_width,
+                     SubApplication::current_y + display_height);
+#else
     Render::set_view(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+#endif
+
 #ifdef CHOWDREN_HAS_MRT
     if (remote == CHOWDREN_REMOTE_TARGET) {
         Render::clear(Color(0, 0, 0, 255));

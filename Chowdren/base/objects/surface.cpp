@@ -66,7 +66,7 @@ void SurfaceObject::draw()
     if (use_fbo_blit) {
         surface_fbo.bind();
 
-		int old_offset[2] = {Render::offset[0], Render::offset[1]};
+        Render::SavedViewportOffset saved;
         Render::set_view(0, 0, SURFACE_FBO_WIDTH, SURFACE_FBO_HEIGHT);
         Render::set_offset(0, 0);
         Render::clear(clear_color);
@@ -84,9 +84,8 @@ void SurfaceObject::draw()
         }
         blit_images.clear();
 
-        Render::set_view(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-        Render::set_offset(old_offset[0], old_offset[1]);
         surface_fbo.unbind();
+        saved.restore();
 
         begin_draw(SURFACE_FBO_WIDTH, SURFACE_FBO_HEIGHT);
 

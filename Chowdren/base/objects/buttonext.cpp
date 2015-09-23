@@ -23,6 +23,23 @@ public:
         Gwen::Controls::Button::OnPress();
     }
 };
+
+class CheckBox : public Gwen::Controls::CheckBox
+{
+public:
+    ButtonObject * parent;
+
+    GWEN_CONTROL_INLINE(CheckBox, Gwen::Controls::CheckBox)
+    {
+    }
+
+    void OnPress()
+    {
+        parent->clicked = 2;
+        Gwen::Controls::CheckBox::OnPress();
+    }
+};
+
 #endif
 
 ButtonObject::ButtonObject(int x, int y, int type_id)
@@ -47,9 +64,10 @@ void ButtonObject::init_button(unsigned int flags)
 #ifdef CHOWDREN_USE_GWEN
     button_flags = flags;
     if (flags & IS_CHECKBOX) {
-        button = new Gwen::Controls::CheckBox(manager.frame->gwen.canvas);
+        button = new CheckBox(manager.frame->gwen.frame_base);
+        ((CheckBox*)button)->parent = this;
     } else {
-        button = new Button(manager.frame->gwen.canvas);
+        button = new Button(manager.frame->gwen.frame_base);
         ((Button*)button)->parent = this;
     }
     button->SetPos(x, y);
@@ -60,6 +78,7 @@ void ButtonObject::init_button(unsigned int flags)
 void ButtonObject::update()
 {
 #ifdef CHOWDREN_USE_GWEN
+    button->SetHidden(!get_visible());
     button->SetPos(x, y);
     button->SetSize(width, height);
     clicked = std::max(clicked - 1, 0);
@@ -69,7 +88,9 @@ void ButtonObject::update()
 void ButtonObject::draw()
 {
 #ifdef CHOWDREN_USE_GWEN
-    frame->gwen.render(button);
+    button->SetHidden(!get_visible());
+    button->SetPos(x, y);
+    button->SetSize(width, height);
 #endif
 }
 
@@ -100,12 +121,16 @@ void ButtonObject::set_text(const std::string & text)
 
 void ButtonObject::enable()
 {
-    std::cout << "enable not implemented" << std::endl;
+#ifdef CHOWDREN_USE_GWEN
+    button->SetDisabled(false);
+#endif
 }
 
 void ButtonObject::disable()
 {
-    std::cout << "disable not implemented" << std::endl;
+#ifdef CHOWDREN_USE_GWEN
+    button->SetDisabled(true);
+#endif
 }
 
 bool ButtonObject::is_clicked()

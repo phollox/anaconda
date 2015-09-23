@@ -22,7 +22,9 @@ public:
     enum EditFlags
     {
         PASSWORD = 1 << 0,
-        FOCUS = 1 << 1
+        FOCUS = 1 << 1,
+        READ_ONLY = 1 << 2,
+        MULTILINE = 1 << 3,
     };
 
     EditObject(int x, int y, int type_id);
@@ -44,6 +46,9 @@ public:
 
 #ifdef CHOWDREN_USE_GWEN
     Gwen::Controls::TextBox * text_box;
+    Gwen::Controls::ScrollControl * scroller;
+    Gwen::Controls::Base * base_control;
+    void init_control();
 #endif
 
     ~EditObject();

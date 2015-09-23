@@ -36,11 +36,14 @@ class EditObject(ObjectWriter):
         data = self.get_data()
         width = data.readShort(True)
         height = data.readShort(True)
-        logFont = LogFont(data, old = True)
+        is_unicode = self.data.settings.get('unicode', False)
+        font = self.data.new(LogFont, data, old=not is_unicode)
         data.skipBytes(4 * 16) # custom colors?
         foregroundColor = data.readColor()
         backgroundColor = data.readColor()
         data.skipBytes(40) # text-style?
+        if is_unicode:
+            data.skipBytes(40)
         flags = EDIT_FLAGS.copy()
         flags.setFlags(data.readInt())
 
@@ -48,6 +51,13 @@ class EditObject(ObjectWriter):
         writer.putlnc('height = %s;', height)
         if flags['Password']:
             writer.putlnc('edit_flags |= PASSWORD;')
+        if flags['Multiline']:
+            writer.putlnc('edit_flags |= MULTILINE;')
+        if flags['ReadOnly']:
+            writer.putlnc('edit_flags |= READ_ONLY;')
+
+        if self.converter.config.use_gwen():
+            writer.putlnc('init_control();')
 
     @staticmethod
     def write_application(converter):

@@ -134,9 +134,17 @@ void WindowControl::set_placement(int value)
 void WindowControl::set_title(const std::string & title)
 {
     std::cout << "Set window title: " << title << std::endl;
+#ifdef CHOWDREN_USE_GWEN
+    manager.frame->gwen.title = title;
+#endif
 }
 
 void WindowControl::set_frame_width(int width, bool adjust)
 {
-    std::cout << "Set frame width: " << width << " " << adjust << std::endl;
+    manager.frame->set_width(width, adjust);
+}
+
+void WindowControl::set_frame_height(int height, bool adjust)
+{
+    manager.frame->set_height(height, adjust);
 }

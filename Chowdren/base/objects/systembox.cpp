@@ -41,7 +41,8 @@ SystemBox::~SystemBox()
     delete collision;
 
 #ifdef CHOWDREN_USE_GWEN
-    delete button;
+    if (button)
+        button->DelayedDelete();
 #endif
 }
 
@@ -49,7 +50,9 @@ void SystemBox::draw()
 {
 #ifdef CHOWDREN_USE_GWEN
     if (button != NULL) {
-        frame->gwen.render(button);
+        button->SetHidden(!get_visible());
+        button->SetPos(x, y);
+        button->SetSize(width, height);
         return;
     }
 #endif
@@ -219,14 +222,12 @@ void SystemBox::update()
 {
     if (button == NULL)
         return;
-    button->SetPos(x, y);
-    button->SetSize(width, height);
     clicked = std::max(0, clicked - 1);
 }
 
 void SystemBox::init_button()
 {
-    button = new BoxButton(manager.frame->gwen.canvas);
+    button = new BoxButton(manager.frame->gwen.frame_base);
     ((BoxButton*)button)->parent = this;
 }
 

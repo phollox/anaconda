@@ -4,13 +4,17 @@
 #include "Gwen/Gwen.h"
 #include "Gwen/Skins/Simple.h"
 #include "Gwen/Renderers/Chowdren.h"
+#include <string>
 
 class GwenData
 {
 public:
     int m_x, m_y;
 
-    Gwen::Controls::Canvas* canvas;
+    std::string title;
+
+    Gwen::Controls::Canvas * canvas;
+    Gwen::Controls::Base * frame_base;
 
     GwenData();
     ~GwenData();

@@ -124,6 +124,7 @@ void ScrollControl::UpdateScrollBars()
 	if ( !m_InnerPanel )
 	{ return; }
 
+#if 0
 	if ( ContentsAreDocked() )
 	{
 		m_VerticalScrollBar->SetHidden( true );
@@ -132,6 +133,7 @@ void ScrollControl::UpdateScrollBars()
 		m_InnerPanel->SetPos( 0, 0 );
 		return;
 	}
+#endif
 
 	int childrenWidth = 0;
 	int childrenHeight = 0;

@@ -63,6 +63,9 @@ class ButtonObject(ObjectWriter):
             strings.append(data.readString())
             tooltip = data.readString()
 
+        if flags['DisableOnStart']:
+            writer.putlnc('disable();')
+
     def has_updates(self):
         return self.converter.config.use_gwen()
 
@@ -78,6 +81,7 @@ actions = make_table(ActionMethodWriter, {
 
 class OnClick(ConditionMethodWriter):
     is_always = True
+    post_event = True
     method = 'is_clicked'
 
 conditions = make_table(ConditionMethodWriter, {

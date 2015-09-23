@@ -14,8 +14,7 @@ public:
     FRAMEOBJECT_HEAD(SubApplication)
 
     static SubApplication * current;
-    static int current_x;
-    static int current_y;
+    static int current_x, current_y;
     Frames subapp_frame;
     int frame_offset;
     bool done;
@@ -23,8 +22,11 @@ public:
     bool old_ignore_controls;
 
 #ifdef CHOWDREN_USE_GWEN
+    bool gwen_close;
+    int start_x, start_y;
     Gwen::Controls::WindowControl * window_control;
     void init_window();
+    void init_frame();
 #endif
 
     SubApplication(int x, int y, int id);
@@ -36,7 +38,7 @@ public:
 #ifdef CHOWDREN_SUBAPP_FRAMES
     void draw_subapp();
     static void draw_frames();
-    static bool test_pos(Frame * frame, int x, int y);
+    static bool test_pos(Frame * frame);
 #endif
 };
 

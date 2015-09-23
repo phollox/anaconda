@@ -13,6 +13,7 @@
 namespace Gwen
 {
 	// Globals
+	GWEN_EXPORT Controls::Base* GlobalHoveredControl = NULL;
 	GWEN_EXPORT Controls::Base* HoveredControl = NULL;
 	GWEN_EXPORT Controls::Base* KeyboardFocus = NULL;
 	GWEN_EXPORT Controls::Base* MouseFocus = NULL;

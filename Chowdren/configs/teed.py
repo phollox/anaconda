@@ -4,13 +4,13 @@ def use_deferred_collisions(converter):
     return False
 
 def init(converter):
+    converter.game.header.windowWidth = 1280
+    converter.game.header.windowHeight = 800
     converter.add_define('CHOWDREN_IS_TE')
     converter.add_define('CHOWDREN_IS_TEED')
     converter.add_define('CHOWDREN_QUICK_SCALE')
-    converter.add_define('CHOWDREN_POINT_FILTER')
     converter.add_define('CHOWDREN_OBSTACLE_IMAGE')
     converter.add_define('CHOWDREN_TEXTURE_GC')
-    converter.add_define('CHOWDREN_SPECIAL_POINT_FILTER')
     converter.add_define('CHOWDREN_JOYSTICK2_CONTROLLER')
     converter.add_define('CHOWDREN_FORCE_X360')
     converter.add_define('CHOWDREN_FORCE_TRANSPARENT')
@@ -18,6 +18,15 @@ def init(converter):
     converter.add_define('CHOWDREN_SUBAPP_FRAMES')
     converter.add_define('CHOWDREN_EMULATE_MENU')
     converter.add_define('CHOWDREN_PICTURE_OFFSET')
+    converter.add_define('CHOWDREN_AUTOSAVE_ON_CHANGE')
+    converter.add_define('CHOWDREN_NO_FULLSCREEN')
+
+    values = converter.game.globalValues.items
+    values[7] = 0 # turn off dev mode
+
+
+def use_subapp_frames(converter):
+    return True
 
 def use_image_preload(converter):
     return True

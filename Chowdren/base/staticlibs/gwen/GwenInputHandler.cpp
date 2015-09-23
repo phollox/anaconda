@@ -67,9 +67,14 @@ enum
 	ACT_MESSAGE
 };
 
+#include <iostream>
+
 void UpdateHoveredControl( Controls::Base* pInCanvas )
 {
 	Controls::Base* pHovered = pInCanvas->GetControlAt( MousePosition.x, MousePosition.y );
+
+	if (pHovered)
+		Gwen::GlobalHoveredControl = pHovered;
 
 	if ( pHovered != Gwen::HoveredControl )
 	{

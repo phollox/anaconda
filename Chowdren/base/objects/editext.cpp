@@ -51,16 +51,45 @@ EditObject::EditObject(int x, int y, int type_id)
   font(get_font(14)), limit(-1)
 {
     collision = &edit_col;
-#ifdef CHOWDREN_USE_GWEN
-    text_box = new Gwen::Controls::TextBox(manager.frame->gwen.canvas);
-#endif
 }
 
+#ifdef CHOWDREN_USE_GWEN
+class TextScroller : public Gwen::Controls::ScrollControl
+{
+public:
+    GWEN_CONTROL_INLINE(TextScroller, Gwen::Controls::ScrollControl)
+    {
+
+    }
+};
+
+void EditObject::init_control()
+{
+    Gwen::Controls::Base * base = manager.frame->gwen.frame_base;
+    if ((edit_flags & (MULTILINE | READ_ONLY)) == (MULTILINE | READ_ONLY)) {
+        scroller = new Gwen::Controls::ScrollControl(base);
+        scroller->SetScroll(false, true);
+        text_box = new Gwen::Controls::TextBoxMultiline(scroller);
+        base_control = scroller;
+    } else if (edit_flags & MULTILINE) {
+        text_box = new Gwen::Controls::TextBoxMultiline(base);
+        base_control = text_box;
+        scroller = NULL;
+    } else {
+        text_box = new Gwen::Controls::TextBox(base);
+        scroller = NULL;
+        base_control = text_box;
+    }
+    text_box->SetCursor(Gwen::CursorType::Beam);
+}
+#endif
 
 EditObject::~EditObject()
 {
 #ifdef CHOWDREN_USE_GWEN
-    delete text_box;
+    text_box->DelayedDelete();
+    if (scroller)
+        scroller->DelayedDelete();
 #endif
 }
 
@@ -68,8 +97,14 @@ EditObject::~EditObject()
 void EditObject::update()
 {
 #ifdef CHOWDREN_USE_GWEN
-    text_box->SetPos(x, y);
-    text_box->SetSize(width, height);
+    base_control->SetHidden(!get_visible());
+    base_control->SetPos(x, y);
+    base_control->SetSize(width, height);
+    if (scroller) {    
+        text_box->SizeToContents();
+        text_box->SetSize(std::max(text_box->Width(), width),
+                          std::max(text_box->Height(), height));
+    }
 #else
     if (is_mouse_pressed_once(SDL_BUTTON_LEFT)) {
         int mx, my;
@@ -97,7 +132,6 @@ void EditObject::update()
 void EditObject::draw()
 {
 #ifdef CHOWDREN_USE_GWEN
-    frame->gwen.render(text_box);
 #else
     if (!init_font()) {
         set_visible(false);
@@ -174,7 +208,11 @@ void EditObject::enable_focus()
 
 void EditObject::disable()
 {
+#ifdef CHOWDREN_USE_GWEN
+    text_box->SetDisabled(true);
+#else
     std::cout << "EditObject::disable not implemented" << std::endl;
+#endif
 }
 
 void EditObject::scroll_to_end()

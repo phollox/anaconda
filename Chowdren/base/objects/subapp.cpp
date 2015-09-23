@@ -19,8 +19,15 @@ static vector<SubApplication*> frames;
     manager.frame = &subapp_frame;\
     int old_x = current_x;\
     int old_y = current_y;\
-    current_x += get_x();\
-    current_y += get_y()
+    if (window_control) {\
+        current_x += start_x + 6;\
+        current_y += start_y + 28;\
+    } else {\
+        current_x += x + layer->off_x - frame->off_x;\
+        current_y += y + layer->off_y - frame->off_y;\
+    }
+
+#define SET_APP_RENDER() \
 
 #define RESTORE_APP() \
     manager.frame = old_frame;\
@@ -35,10 +42,14 @@ SubApplication::SubApplication(int x, int y, int id)
 #ifdef CHOWDREN_SUBAPP_FRAMES
     frames.push_back(this);
     collision = new InstanceBox(this);
+    start_x = x;
+    start_y = y;
+    flags &= ~SCROLL;
 #endif
 
 #ifdef CHOWDREN_USE_GWEN
     window_control = NULL;
+    gwen_close = false;
 #endif
 }
 
@@ -51,7 +62,8 @@ SubApplication::~SubApplication()
 #endif
 
 #ifdef CHOWDREN_USE_GWEN
-    delete window_control;
+	if (window_control)
+		window_control->DelayedDelete();
 #endif
 
     SET_APP();
@@ -75,7 +87,6 @@ void SubApplication::set_next_frame(int index)
     if (starting)
         return;
     subapp_frame.next_frame = index + frame_offset;
-    std::cout << "next frame: " << index << std::endl;
 }
 
 void SubApplication::restart(int index)
@@ -83,21 +94,22 @@ void SubApplication::restart(int index)
     done = false;
     starting = true;
     subapp_frame.next_frame = index + frame_offset;
-    std::cout << "restart: " << index << std::endl;
 }
 
 void SubApplication::update()
 {
+#ifdef CHOWDREN_USE_GWEN
+    subapp_frame.gwen.frame_base->SetHidden(done || starting);
+    if (done && gwen_close) {
+        destroy();
+        return;
+    }
+#endif
     if (done)
         return;
     starting = false;
 
     SET_APP();
-
-#ifdef CHOWDREN_USE_GWEN
-    subapp_frame.gwen.update();
-    move_front();
-#endif
 
     if (subapp_frame.next_frame != -1) {
         int next_frame = subapp_frame.next_frame;
@@ -109,9 +121,34 @@ void SubApplication::update()
 #ifdef CHOWDREN_SUBAPP_FRAMES
     width = subapp_frame.width;
     height = subapp_frame.height;
+    subapp_frame.display_width = subapp_frame.width;
+    subapp_frame.display_height = subapp_frame.height;
+
+    if (window_control == NULL) {
+        int display_width = manager.main_frame->display_width - 32;
+        int display_height = manager.main_frame->display_height - 32;
+        int change_x = get_x();
+        int change_y = get_y();
+        if (current_x + width >= display_width) {
+            int off_x = (current_x + width) - display_width;
+            change_x -= off_x;
+            current_x -= off_x;
+        }
+        if (current_y + height >= display_height) {
+            int off_y = (current_x + height) - display_height;
+            change_y -= off_y;
+            current_y -= off_y;
+        }
+        set_position(change_x, change_y);
+    }
 #endif
 
     bool ret = subapp_frame.update();
+
+#ifdef CHOWDREN_USE_GWEN
+    if (gwen_close)
+        ret = false;
+#endif
 
     if (!ret)
         subapp_frame.on_end();
@@ -129,6 +166,7 @@ void SubApplication::set_frame(int index)
 {
     done = false;
     subapp_frame.set_index(index);
+    set_visible(true);
 
     if (!has_ignore_controls) {
         ignore_controls = manager.ignore_controls;
@@ -139,14 +177,46 @@ void SubApplication::set_frame(int index)
 
 #ifdef CHOWDREN_USE_GWEN
 
+class GwenWindow : public Gwen::Controls::WindowControl
+{
+public:
+    SubApplication * parent;
+
+    GWEN_CONTROL_INLINE(GwenWindow, Gwen::Controls::WindowControl)
+    {
+        onWindowClosed.Add(this, &GwenWindow::on_close);
+    }
+
+    void on_close()
+    {
+        parent->gwen_close = true;
+    }
+
+    void Render(Gwen::Skin::Base * skin)
+    {
+        Render::set_offset(0, 0);
+        Gwen::Controls::WindowControl::Render(skin);
+        parent->draw_subapp();
+
+    }
+};
+
 void SubApplication::init_window()
 {
-    Gwen::Controls::Canvas * canvas = manager.frame->gwen.canvas;
-    window_control = new Gwen::Controls::WindowControl(canvas);
-    window_control->SetPos(x-6, y-28);
+    Gwen::Controls::Canvas * canvas = manager.main_frame->gwen.canvas;
+    window_control = new GwenWindow(canvas);
+    window_control->SetName("WindowBase");
+    subapp_frame.gwen.frame_base->SetParent(window_control);
+    ((GwenWindow*)window_control)->parent = this;
+    window_control->SetPos(x + 200, y + 200);
     window_control->SetSize(width+12, height+35);
-    window_control->SetClosable(false);
     window_control->DisableResizing();
+}
+
+void SubApplication::init_frame()
+{
+    Gwen::Controls::Canvas * canvas = manager.main_frame->gwen.canvas;
+    subapp_frame.gwen.frame_base->SetParent(canvas);
 }
 #endif
 
@@ -156,39 +226,60 @@ void SubApplication::draw_subapp()
     if (starting || done || !(flags & VISIBLE))
         return;
     if (window_control) {
-        frame->gwen.render(window_control);
         Gwen::Point p = window_control->GetPos();
-        set_position(p.x + 6, p.y + 28);
+        start_x = p.x;
+        start_y = p.y;
         window_control->SetSize(width+12, height+35);
+        window_control->SetTitle(subapp_frame.gwen.title.c_str());
+    } else {
+        subapp_frame.gwen.frame_base->SetPos(x - frame->off_x,
+                                             y - frame->off_y);
     }
+    width = subapp_frame.width;
+    height = subapp_frame.height;
+    subapp_frame.display_width = subapp_frame.width;
+    subapp_frame.display_height = subapp_frame.height;
+    subapp_frame.gwen.frame_base->SetSize(width, height);
+    Render::set_offset(0, 0);
+    Render::SavedViewportOffset saved;
     SET_APP();
     Render::enable_scissor(current_x, current_y, width, height);
     subapp_frame.draw(0);
     RESTORE_APP();
     Render::disable_scissor();
+    saved.restore();
 }
 
 void SubApplication::draw_frames()
 {
     vector<SubApplication*>::iterator it;
     for (it = frames.begin(); it != frames.end(); ++it) {
-        Render::set_offset(0, 0);
+        if ((*it)->window_control != NULL)
+            continue;
         (*it)->draw_subapp();
     }
 }
 
-bool SubApplication::test_pos(Frame * frame, int x, int y)
+bool SubApplication::test_pos(Frame * frame)
 {
-    PointCollision p(x, y);
-    vector<SubApplication*>::reverse_iterator it;
-    for (it = frames.rbegin(); it != frames.rend(); ++it) {
-        SubApplication * subapp = *it;
-        if (&subapp->subapp_frame == frame)
+    if (Gwen::MouseFocus)
+        return true;
+    Gwen::Controls::Base * frame_base;
+    frame_base = frame->gwen.frame_base;
+    Gwen::Controls::Base * hover = Gwen::HoveredControl;
+    if (frame_base == frame->gwen.canvas && hover != frame_base)
+        return true;
+    Gwen::Controls::Base * test = hover;
+    while (test) {
+        if (test == frame_base)
             return false;
-        if (collide(&p, subapp->collision))
-            return true;
+        if (test->GetName() == "WindowBase")
+            break;
+        test = test->GetParent();
     }
-    return false;
+    if (hover && !hover->Visible())
+        return false;
+    return true;
 }
 #endif
 

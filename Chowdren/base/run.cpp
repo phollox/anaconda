@@ -69,7 +69,6 @@ void GameManager::init()
 #ifdef CHOWDREN_USE_PROFILER
     PROFILE_SET_DAMPING(0.0);
 #endif
-    frame = &static_frames;
 
 #ifdef CHOWDREN_IS_DEMO
     idle_timer_started = false;
@@ -91,6 +90,15 @@ void GameManager::init()
         axis_values[i] = 0;
     }
 #endif
+
+    frame = &static_frames;
+
+#ifdef CHOWDREN_SUBAPP_FRAMES
+    frame->display_width = WINDOW_WIDTH;
+    frame->display_height = WINDOW_HEIGHT;
+    main_frame = frame;
+#endif
+
     platform_init();
     media.init();
     set_window(false);
@@ -368,6 +376,9 @@ void GameManager::draw()
 #if defined(CHOWDREN_USE_SUBAPP) && defined(CHOWDREN_SUBAPP_FRAMES)
     SubApplication::draw_frames();
     Render::set_offset(0, 0);
+    frame->gwen.update();
+    frame->gwen.canvas->RenderCanvas();
+    Render::set_offset(0, 0);
 #endif
 
 #ifdef CHOWDREN_IS_DEMO
@@ -638,10 +649,6 @@ bool GameManager::update()
     mouse.update();
 
     platform_poll_events();
-
-#ifdef CHOWDREN_USE_GWEN
-    frame->gwen.update();
-#endif
 
     // player controls
     int new_control = get_player_control_flags(1);
@@ -954,6 +961,10 @@ bool is_mouse_released_once(int key)
 
 bool is_key_pressed(int button)
 {
+#ifdef CHOWDREN_USE_GWEN
+    if (Gwen::KeyboardFocus)
+        return false;
+#endif
     if (button < 0)
         return false;
     return manager.keyboard.is_pressed(button);
@@ -961,16 +972,28 @@ bool is_key_pressed(int button)
 
 bool is_any_key_pressed()
 {
+#ifdef CHOWDREN_USE_GWEN
+    if (Gwen::KeyboardFocus)
+        return false;
+#endif
     return manager.keyboard.is_any_pressed();
 }
 
 bool is_any_key_pressed_once()
 {
+#ifdef CHOWDREN_USE_GWEN
+    if (Gwen::KeyboardFocus)
+        return false;
+#endif
     return manager.keyboard.is_any_pressed_once();
 }
 
 bool is_key_released_once(int key)
 {
+#ifdef CHOWDREN_USE_GWEN
+    if (Gwen::KeyboardFocus)
+        return false;
+#endif
     if (key < 0)
         return false;
     return manager.keyboard.is_released_once(key);
@@ -978,6 +1001,10 @@ bool is_key_released_once(int key)
 
 bool is_key_pressed_once(int key)
 {
+#ifdef CHOWDREN_USE_GWEN
+    if (Gwen::KeyboardFocus)
+        return false;
+#endif
     if (key < 0)
         return false;
     return manager.keyboard.is_pressed_once(key);

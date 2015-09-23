@@ -48,10 +48,6 @@ if(EMSCRIPTEN)
     add_definitions(-DCHOWDREN_IS_EMSCRIPTEN)
 endif()
 
-if (NOT CMAKE_CROSSCOMPILING)
-    add_definitions(-DCHOWDREN_IS_DESKTOP)
-endif()
-
 if (USE_GL)
     add_definitions(-DCHOWDREN_USE_GL)
 elseif (USE_D3D)
@@ -63,10 +59,15 @@ elseif (USE_GLES2)
     add_definitions(-DCHOWDREN_USE_GLES2)
 endif()
 
+if (NOT CMAKE_CROSSCOMPILING)
+    add_definitions(-DCHOWDREN_IS_DESKTOP)
+endif()
+
 if (NOT CMAKE_CROSSCOMPILING OR EMSCRIPTEN)
     set(PLATFORM_SRCS
         ${CHOWDREN_BASE_DIR}/desktop/glslshader.cpp
         ${CHOWDREN_BASE_DIR}/desktop/fbo.cpp
+        ${CHOWDREN_BASE_DIR}/desktop/tinyfiledialogs.c
         ${PLATFORM_SRCS}
     )
 endif()
@@ -249,7 +250,9 @@ if(WIN32)
     endif()
     set(CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include/win32"
         ${CMAKE_INCLUDE_PATH})
-    set(SRCS ${SRCS} resource.rc)
+    set(SRCS
+        ${SRCS}
+        resource.rc)
     set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES} winmm)
 elseif(APPLE)
     set(CMAKE_LIBRARY_PATH "${CHOWDREN_BASE_DIR}/lib/osx"

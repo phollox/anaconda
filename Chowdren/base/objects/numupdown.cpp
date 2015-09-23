@@ -8,7 +8,7 @@
 NumericUpDown::NumericUpDown(int x, int y, int type_id)
 : FrameObject(x, y, type_id)
 #ifdef CHOWDREN_USE_GWEN
-, control(manager.frame->gwen.canvas)
+, control(manager.frame->gwen.frame_base)
 #endif
 {
 #ifdef CHOWDREN_USE_GWEN
@@ -37,6 +37,7 @@ void NumericUpDown::init_control(int value, int min, int max)
 void NumericUpDown::update()
 {
 #ifdef CHOWDREN_USE_GWEN
+    control.SetHidden(!get_visible());
     control.SetPos(x, y);
     control.SetSize(width, height);
 #endif
@@ -45,7 +46,9 @@ void NumericUpDown::update()
 void NumericUpDown::draw()
 {
 #ifdef CHOWDREN_USE_GWEN
-    frame->gwen.render(&control);
+    control.SetHidden(!get_visible());
+    control.SetPos(x, y);
+    control.SetSize(width, height);
 #endif
 }
 

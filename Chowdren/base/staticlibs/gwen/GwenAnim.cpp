@@ -19,15 +19,11 @@ static Gwen::Anim::Animation::ChildList g_AnimationsListed;
 void Gwen::Anim::Add( Gwen::Controls::Base* control, Animation* animation )
 {
 	animation->m_Control = control;
-    // GWEN_NO_ANIMATION is broken, so do it manually
-	//g_Animations[control].push_back( animation );
+	g_Animations[control].push_back( animation );
 }
 
 void Gwen::Anim::Cancel( Gwen::Controls::Base* control )
 {
-    // GWEN_NO_ANIMATION is broken, so do it manually
-    return;
-
 	/* cannot use std::list iterator with algoryhtmns based on pointers
 	struct AnimDeletePredicate
 	{

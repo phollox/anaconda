@@ -162,6 +162,28 @@ void ComboBox::SelectItemByName( const Gwen::String & name, bool bFireChangeEven
 	}
 }
 
+int ComboBox::GetItemIndex( const Gwen::String & name)
+{
+	Base::List & children = m_Menu->GetChildren();
+	Base::List::iterator it = children.begin();
+
+	int index = 0;
+	while ( it != children.end() )
+	{
+		MenuItem* pChild = gwen_cast<MenuItem> ( *it );
+
+		if ( pChild->GetText() == name )
+		{
+			return index;
+		}
+
+		++index;
+		++it;
+	}
+
+	return -1;
+}
+
 void ComboBox::SelectItemByIndex(int index, bool bFireChangeEvents )
 {
 	Base::List & children = m_Menu->GetChildren();
@@ -179,6 +201,27 @@ void ComboBox::SelectItemByIndex(int index, bool bFireChangeEvents )
 		++it;
 		index--;
 	}
+}
+
+MenuItem * ComboBox::GetItemByIndex(int index)
+{
+	Base::List & children = m_Menu->GetChildren();
+	Base::List::iterator it = children.begin();
+
+	while ( it != children.end() && index >= 0 )
+	{
+		MenuItem* pChild = gwen_cast<MenuItem> ( *it );
+
+		if (index == 0)
+		{
+			return pChild;
+		}
+
+		++it;
+		index--;
+	}
+
+	return NULL;
 }
 
 void ComboBox::OnLostKeyboardFocus()

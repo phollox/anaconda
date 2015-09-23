@@ -5,6 +5,7 @@
 */
 
 #include "SDL_clipboard.h"
+#include "SDL_mouse.h"
 #include "Gwen/Macros.h"
 #include "Gwen/Platform.h"
 #include "Gwen/Utility.h"
@@ -15,13 +16,53 @@
 static Gwen::UnicodeString gs_ClipboardEmulator;
 #endif
 
-void Gwen::Platform::Sleep( unsigned int iMS )
+void Gwen::Platform::Sleep(unsigned int iMS)
 {
     platform_sleep((double)iMS / 1000.0);
 }
 
-void Gwen::Platform::SetCursor( unsigned char iCursor )
+void Gwen::Platform::SetCursor(unsigned char cursor)
 {
+#ifdef CHOWDREN_IS_DESKTOP
+    static SDL_Cursor * system_cursor = NULL;
+    if (cursor != NULL)
+		SDL_FreeCursor(system_cursor);
+    SDL_SystemCursor id = SDL_SYSTEM_CURSOR_ARROW;
+    switch (cursor) {
+        case Gwen::CursorType::Normal:
+            id = SDL_SYSTEM_CURSOR_ARROW;
+            break;
+        case Gwen::CursorType::Beam:
+            id = SDL_SYSTEM_CURSOR_IBEAM;
+            break;
+        case Gwen::CursorType::SizeNS:
+            id = SDL_SYSTEM_CURSOR_SIZENS;
+            break;
+        case Gwen::CursorType::SizeWE:
+            id = SDL_SYSTEM_CURSOR_SIZEWE;
+            break;
+        case Gwen::CursorType::SizeNWSE:
+            id = SDL_SYSTEM_CURSOR_SIZENWSE;
+            break;
+        case Gwen::CursorType::SizeNESW:
+            id = SDL_SYSTEM_CURSOR_SIZENESW;
+            break;
+        case Gwen::CursorType::SizeAll:
+            id = SDL_SYSTEM_CURSOR_SIZEALL;
+            break;
+        case Gwen::CursorType::No:
+            id = SDL_SYSTEM_CURSOR_NO;
+            break;
+        case Gwen::CursorType::Wait:
+            id = SDL_SYSTEM_CURSOR_WAIT;
+            break;
+        case Gwen::CursorType::Finger:
+            id = SDL_SYSTEM_CURSOR_HAND;
+            break;
+    }
+	system_cursor = SDL_CreateSystemCursor(id);
+	SDL_SetCursor(system_cursor);
+#endif
 }
 
 Gwen::UnicodeString Gwen::Platform::GetClipboardText()

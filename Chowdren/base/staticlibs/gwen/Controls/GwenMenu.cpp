@@ -38,6 +38,8 @@ void Menu::RenderUnder( Skin::Base* skin )
 	skin->DrawShadow( this );
 }
 
+#include <iostream>
+
 void Menu::Layout( Skin::Base* skin )
 {
 	int childrenHeight = 0;
@@ -55,7 +57,7 @@ void Menu::Layout( Skin::Base* skin )
 	if ( Y() + childrenHeight > GetCanvas()->Height() )
 	{ childrenHeight = GetCanvas()->Height() - Y(); }
 
-	SetSize( Width(), childrenHeight );
+	SetSize( Width(), std::min(childrenHeight, 300 ));
 	BaseClass::Layout( skin );
 }
 
@@ -98,6 +100,11 @@ void Menu::OnAddItem( MenuItem* item )
 	if ( w < Width() ) { w = Width(); }
 
 	SetSize( w, Height() );
+}
+
+int Menu::GetItemCount()
+{
+	return m_InnerPanel->Children.size();
 }
 
 void Menu::ClearItems()

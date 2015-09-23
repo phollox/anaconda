@@ -48,13 +48,20 @@ class ComboBox(ObjectWriter):
         # writer.putlnc('combo_box.m_Menu->m_Color = font_color;');
         # writer.putlnc('combo_box.m_Menu->m_BackgroundColor = combo_box.m_BackgroundColor;');
 
+        writer.putlnc('init_control();')
+
         for _ in xrange(line_count):
             line = self.data.readString(data)
-            writer.putlnc('combo_box.AddItem(L"%s");', line)
+            writer.putlnc('combo_box->AddItem(L"%s");', line)
 
 
     def has_updates(self):
         return True
+
+class SelectionChanged(ConditionMethodWriter):
+    is_always = True
+    post_event = True
+    method = 'is_selection_changed'
 
 actions = make_table(ActionMethodWriter, {
     5 :  'reset',
@@ -68,6 +75,7 @@ actions = make_table(ActionMethodWriter, {
 })
 
 conditions = make_table(ConditionMethodWriter, {
+    3 : SelectionChanged,
     5 : 'is_list_dropped',
 })
 

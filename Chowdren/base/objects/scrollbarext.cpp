@@ -8,7 +8,7 @@
 ScrollbarObject::ScrollbarObject(int x, int y, int type_id)
 : FrameObject(x, y, type_id), scrollbar(NULL)
 {
-    flags &= ~SCROLL;
+    // flags &= ~SCROLL;
     collision = new InstanceBox(this);
 }
 
@@ -72,12 +72,12 @@ int ScrollbarObject::get_value()
 
 void ScrollbarObject::update()
 {
+    scrollbar->SetHidden(!get_visible());
     scrollbar->SetPos(x, y);
 }
 
 void ScrollbarObject::draw()
 {
-    frame->gwen.render(scrollbar);
-    // In case of emergency:
-    //gwen.canvas->RenderCanvas();
+    scrollbar->SetHidden(!get_visible());
+    scrollbar->SetPos(x, y);
 }

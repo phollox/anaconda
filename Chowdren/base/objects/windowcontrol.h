@@ -32,6 +32,7 @@ public:
     static void set_placement(int value);
     static void set_title(const std::string & title);
     static void set_frame_width(int width, bool adjust);
+    static void set_frame_height(int height, bool adjust);
 };
 
 #endif // CHOWDREN_WINDOWCONTROL_H

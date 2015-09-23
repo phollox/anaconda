@@ -82,6 +82,7 @@ namespace Gwen
 
 	};
 
+	extern GWEN_EXPORT Controls::Base*	GlobalHoveredControl;
 	extern GWEN_EXPORT Controls::Base*	HoveredControl;
 	extern GWEN_EXPORT Controls::Base*	KeyboardFocus;
 	extern GWEN_EXPORT Controls::Base*	MouseFocus;

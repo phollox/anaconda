@@ -622,6 +622,8 @@ class SubApplication(ObjectWriter):
         if self.converter.config.use_gwen():
             if flags['Popup'] and flags['Caption']:
                 writer.putlnc('init_window();')
+            else:
+                writer.putlnc('init_frame();')
 
         writer.putlnc('restart(%s);', start_frame)
 

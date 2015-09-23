@@ -3,6 +3,8 @@ from chowdren.writers.events import (ComparisonWriter, ActionMethodWriter,
     ConditionMethodWriter, ExpressionMethodWriter, make_table)
 
 class BackgroundPicture(ActivePicture):
+    is_active_picture = False
+
     def is_static_background(self):
         return False
 

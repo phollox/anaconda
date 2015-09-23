@@ -1,11 +1,23 @@
 #include "dialogext.h"
 #include "stringcommon.h"
 #include <iostream>
+#include "platform.h"
+#include "manager.h"
 
 static std::string title;
 static std::string text;
 
 static std::string path;
+
+static Frame * file_dialog_frame = NULL;
+static unsigned int file_dialog_loop_count = 0;
+
+static Frame * dialog_frame = NULL;
+static unsigned int dialog_loop_count = 0;
+
+static DialogType dialog_type = DIALOG_OK;
+static unsigned int dialog_id = -1;
+static bool dialog_result;
 
 void DialogObject::set_title(const std::string & value)
 {
@@ -19,17 +31,20 @@ void DialogObject::set_text(const std::string & value)
 
 void DialogObject::create(unsigned int id)
 {
-    std::cout << "DialogObject::create not implemented" << std::endl;
+    dialog_id = id;
+    dialog_result = platform_show_dialog(title, text, dialog_type);
+    dialog_frame = manager.frame;
+    dialog_loop_count = manager.frame->loop_count;
 }
 
 void DialogObject::set_ok()
 {
-    std::cout << "DialogObject::set_ok not implemented" << std::endl;
+    dialog_type = DIALOG_OK;
 }
 
 void DialogObject::set_yes_no()
 {
-    std::cout << "DialogObject::set_yes_no not implemented" << std::endl;
+    dialog_type = DIALOG_YESNO;
 }
 
 void DialogObject::set_modal()
@@ -69,14 +84,58 @@ void DialogObject::set_default_directory(const std::string & dir)
 
 void DialogObject::open_load_selector(const std::string & dir)
 {
-    std::cout << "DialogObject::open_load_selector not implemented"
-        << dir << std::endl;
+    vector<std::string> names;
+    file_dialog_frame = NULL;
+    if (!platform_file_open_dialog(title, "", dir, false, names))
+        return;
+    file_dialog_loop_count = manager.frame->loop_count;
+    file_dialog_frame = manager.frame;
+    path = names[0];
 }
 
 void DialogObject::open_save_selector(const std::string & dir)
 {
-    std::cout << "DialogObject::open_save_selector not implemented"
-        << dir << std::endl;
+    if (!platform_file_save_dialog(title, "", dir, path))
+        return;
+    file_dialog_loop_count = manager.frame->loop_count;
+    file_dialog_frame = manager.frame;
+}
+
+bool DialogObject::is_file_success()
+{
+    if (manager.frame != file_dialog_frame)
+        return false;
+    if (manager.frame->loop_count > file_dialog_loop_count) {
+        file_dialog_frame = NULL;
+        return false;
+    }
+    return true;
+}
+
+bool DialogObject::is_success(unsigned int id)
+{
+    if (dialog_id != id)
+        return false;
+    if (manager.frame != dialog_frame)
+        return false;
+    if (manager.frame->loop_count > dialog_loop_count) {
+        dialog_frame = NULL;
+        return false;
+    }
+    return dialog_result;
+}
+
+bool DialogObject::is_failure(unsigned int id)
+{
+    if (dialog_id != id)
+        return false;
+    if (manager.frame != file_dialog_frame)
+        return false;
+    if (manager.frame->loop_count > file_dialog_loop_count) {
+        file_dialog_frame = NULL;
+        return false;
+    }
+    return !dialog_result;
 }
 
 const std::string & DialogObject::get_path()

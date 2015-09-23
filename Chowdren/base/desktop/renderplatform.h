@@ -50,7 +50,6 @@ struct RenderData
     float adjust_x, adjust_y;
     float trans_x, trans_y;
     float pos_x, pos_y;
-    int viewport[4];
 };
 
 extern RenderData render_data;
@@ -85,6 +84,7 @@ inline void Render::set_offset(int x, int y)
 
 inline void Render::set_view(int x, int y, int w, int h)
 {
+    y = WINDOW_HEIGHT - y - h;
 #ifdef CHOWDREN_USE_D3D
     D3DVIEWPORT9 viewport;
     viewport.X = x;
@@ -106,10 +106,10 @@ inline void Render::set_view(int x, int y, int w, int h)
     render_data.trans_y = -2.0f / h;
 #endif
     set_offset(offset[0], offset[1]);
-    render_data.viewport[0] = x;
-    render_data.viewport[1] = y;
-    render_data.viewport[2] = w;
-    render_data.viewport[3] = h;
+    viewport[0] = x;
+    viewport[1] = y;
+    viewport[2] = w;
+    viewport[3] = h;
 }
 
 inline void Render::clear(Color c)

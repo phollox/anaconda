@@ -20,6 +20,9 @@ public:
     static void open_load_selector(const std::string & start);
     static void open_save_selector(const std::string & start);
     static const std::string & get_path();
+    static bool is_file_success();
+    static bool is_failure(unsigned int id);
+    static bool is_success(unsigned int id);
 };
 
 #endif // CHOWDREN_DIALOGEXT_H

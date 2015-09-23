@@ -13,8 +13,15 @@ class ActivePicture : public FrameObject
 public:
     FRAMEOBJECT_HEAD(ActivePicture)
 
+    enum PictureFlags
+    {
+        HORIZONTAL_FLIP = 1 << 0,
+        FORCE_RESIZE = 1 << 1
+    };
+
+
     Image * image;
-    bool horizontal_flip;
+    unsigned int picture_flags;
     std::string filename;
     TransparentColor transparent_color;
     float scale_x, scale_y;

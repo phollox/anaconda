@@ -111,6 +111,28 @@ inline void platform_walk_folder(const std::string & path,
 void platform_print_stats();
 void platform_debug(const std::string & error);
 
+// dialog
+bool platform_file_open_dialog(const std::string & title,
+                               const std::string & filter,
+                               const std::string & def,
+                               bool multiple,
+                               vector<std::string> & out);
+bool platform_file_save_dialog(const std::string & title,
+                               const std::string & filter,
+                               const std::string & def,
+                               std::string & out);
+
+enum DialogType
+{
+    DIALOG_OK,
+    DIALOG_OKCANCEL,
+    DIALOG_YESNO
+};
+
+bool platform_show_dialog(const std::string & title,
+                          const std::string & message,
+                          DialogType type);
+
 // joystick
 bool is_joystick_attached(int n);
 bool is_joystick_pressed(int n, int button);

@@ -17,7 +17,9 @@ public:
     ComboBox(int x, int y, int type_id);
     ~ComboBox();
 
-    Gwen::Controls::ComboBox combo_box;
+    Gwen::Controls::ComboBox * combo_box;
+    int old_index;
+    int selection_changed;
     int index_offset;
 
     void update();
@@ -32,7 +34,9 @@ public:
     void lose_focus();
     void reset();
     bool is_list_dropped();
+    bool is_selection_changed();
     int find_string_exact(const std::string & text, int flag);
+    void init_control();
 };
 
 #endif // CHOWDREN_COMBOBOX_H
