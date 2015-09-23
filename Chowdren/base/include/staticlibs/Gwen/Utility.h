@@ -44,7 +44,12 @@ namespace Gwen
 		{
 			if ( !strIn.length() ) { return ""; }
 
-			std::string temp((char*)&strIn[0], strIn.size()*2);
+			union {
+				const wchar_t * str;
+				const char * str_c;
+			};
+			str = &strIn[0];
+			std::string temp(str_c, strIn.size()*2);
 			std::string out;
 			convert_utf16_to_utf8(temp, out);
 			return out;
@@ -56,7 +61,12 @@ namespace Gwen
 
 			std::string out;
 			convert_utf8_to_utf16(strIn, out);
-			UnicodeString temp((wchar_t*)&out[0], out.size() / 2);
+			union {
+				wchar_t * out_w;
+				char * out_c;
+			};
+			out_c = &out[0];
+			UnicodeString temp(out_w, out.size() / 2);
 			return temp;
 		}
 
