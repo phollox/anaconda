@@ -11,7 +11,6 @@
 #include <sstream>
 #include <vector>
 #include "Gwen/Structures.h"
-#include "utfconv.h"
 
 namespace Gwen
 {
@@ -40,35 +39,9 @@ namespace Gwen
 #pragma warning( disable : 4996 )
 #endif
 
-		inline String UnicodeToString( const UnicodeString & strIn )
-		{
-			if ( !strIn.length() ) { return ""; }
+		String UnicodeToString( const UnicodeString & strIn );
 
-			union {
-				const wchar_t * str;
-				const char * str_c;
-			};
-			str = &strIn[0];
-			std::string temp(str_c, strIn.size()*2);
-			std::string out;
-			convert_utf16_to_utf8(temp, out);
-			return out;
-		}
-
-		inline UnicodeString StringToUnicode( const String & strIn )
-		{
-			if ( !strIn.length() ) { return L""; }
-
-			std::string out;
-			convert_utf8_to_utf16(strIn, out);
-			union {
-				wchar_t * out_w;
-				char * out_c;
-			};
-			out_c = &out[0];
-			UnicodeString temp(out_w, out.size() / 2);
-			return temp;
-		}
+		UnicodeString StringToUnicode( const String & strIn );
 
 		template<typename T> void Replace( T & str, const T & strFind, const T & strReplace )
 		{
