@@ -1452,9 +1452,10 @@ void Frame::draw(int remote)
     PROFILE_BEGIN(frame_draw_start);
 
 #ifdef CHOWDREN_SUBAPP_FRAMES
-    Render::set_view(0, 0,
-                     SubApplication::current_x + display_width,
-                     SubApplication::current_y + display_height);
+    // XXX hack hack hack
+    int h = SubApplication::current_y + display_height;
+    Render::set_view(0, WINDOW_HEIGHT - h,
+                     SubApplication::current_x + display_width, h);
 #else
     Render::set_view(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 #endif

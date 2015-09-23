@@ -84,16 +84,19 @@ inline void Render::set_offset(int x, int y)
 
 inline void Render::set_view(int x, int y, int w, int h)
 {
-    y = WINDOW_HEIGHT - y - h;
+    viewport[0] = x;
+    viewport[1] = y;
+    viewport[2] = w;
+    viewport[3] = h;
 #ifdef CHOWDREN_USE_D3D
-    D3DVIEWPORT9 viewport;
-    viewport.X = x;
-    viewport.Y = y;
-    viewport.Width = w;
-    viewport.Height = h;
-    viewport.MinZ = 0.0f;
-    viewport.MaxZ = 1.0f;
-    render_data.device->SetViewport(&viewport);
+    D3DVIEWPORT9 vp;
+    vp.X = x;
+    vp.Y = y;
+    vp.Width = w;
+    vp.Height = h;
+    vp.MinZ = 0.0f;
+    vp.MaxZ = 1.0f;
+    render_data.device->SetViewport(&vp);
     render_data.adjust_x = -(w + 1) / 2.0f;
     render_data.adjust_y = -(h - 1) / 2.0f;
     render_data.trans_x = 2.0f / w;
@@ -106,10 +109,6 @@ inline void Render::set_view(int x, int y, int w, int h)
     render_data.trans_y = -2.0f / h;
 #endif
     set_offset(offset[0], offset[1]);
-    viewport[0] = x;
-    viewport[1] = y;
-    viewport[2] = w;
-    viewport[3] = h;
 }
 
 inline void Render::clear(Color c)

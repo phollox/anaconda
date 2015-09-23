@@ -241,13 +241,14 @@ void SubApplication::draw_subapp()
     subapp_frame.display_height = subapp_frame.height;
     subapp_frame.gwen.frame_base->SetSize(width, height);
     Render::set_offset(0, 0);
-    Render::SavedViewportOffset saved;
+    Render::SavedViewport saved;
     SET_APP();
     Render::enable_scissor(current_x, current_y, width, height);
     subapp_frame.draw(0);
     RESTORE_APP();
     Render::disable_scissor();
     saved.restore();
+    Render::set_offset(0, 0);
 }
 
 void SubApplication::draw_frames()
