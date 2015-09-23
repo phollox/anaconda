@@ -1055,6 +1055,8 @@ class Converter(object):
         frames_file.close()
 
         strings_file = self.open_code('intern.cpp')
+        strings_file.putlnc('#include <string>')
+        strings_file.putlnc('#include "image.h"')
         strings_header = self.open_code('intern.h')
         strings_header.start_guard('CHOWDREN_STRINGS_H')
         strings_header.putln('#include <string>')

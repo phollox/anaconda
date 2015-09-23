@@ -6,7 +6,6 @@
 #include <iterator>
 #include <iomanip>
 #include "md5.h"
-#include "intern.cpp"
 #include "overlap.cpp"
 #include "collision.cpp"
 #include "objects/active.h"

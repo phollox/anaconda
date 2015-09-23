@@ -25,6 +25,7 @@ def init(converter):
     converter.add_define('CHOWDREN_FORCE_16_9')
     converter.add_define('CHOWDREN_STEAM_APPID', 274270)
     # converter.add_define('CHOWDREN_PASTE_BROADPHASE')
+    converter.add_define('CHOWDREN_USE_STEAM_LANGUAGE')
 
     strings = converter.game.globalStrings.items
     if converter.platform_name == 'ps4':
@@ -205,6 +206,4 @@ except ImportError:
     pass
 
 def get_locals(converter):
-    if not FORCE_PS4 and converter.platform_name in ('generic', 'd3d'):
-        return None
     return nah.local_dict

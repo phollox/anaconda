@@ -76,6 +76,7 @@ set(SRCS
     ${OBJECTSRCS}
     fonts.cpp
     lists.cpp
+    intern.cpp
     ${CHOWDREN_BASE_DIR}/render.cpp
     ${CHOWDREN_BASE_DIR}/run.cpp
     ${CHOWDREN_BASE_DIR}/keyconv.cpp
