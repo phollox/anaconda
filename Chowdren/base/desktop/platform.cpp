@@ -1175,7 +1175,7 @@ void platform_hide_mouse()
     SDL_ShowCursor(0);
 }
 
-#ifdef CHOWDREN_USE_STEAM_LANGUAGE
+#if defined(CHOWDREN_USE_STEAM_LANGUAGE) && defined(CHOWDREN_ENABLE_STEAM)
 
 const std::string & get_steam_language();
 const std::string & platform_get_language()
