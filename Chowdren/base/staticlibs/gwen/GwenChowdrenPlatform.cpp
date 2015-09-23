@@ -25,6 +25,10 @@ void Gwen::Platform::SetCursor(unsigned char cursor)
 {
 #ifdef CHOWDREN_IS_DESKTOP
     static SDL_Cursor * system_cursor = NULL;
+    static int current_cursor = -1;
+    if (cursor == current_cursor)
+        return;
+    current_cursor = cursor;
     if (system_cursor != NULL)
 		SDL_FreeCursor(system_cursor);
     SDL_SystemCursor id = SDL_SYSTEM_CURSOR_ARROW;
