@@ -19,7 +19,7 @@ def init(converter):
     converter.add_define('CHOWDREN_TEXT_USE_UTF8')
     converter.add_define('CHOWDREN_INI_USE_UTF8')
     converter.add_define('CHOWDREN_FORCE_STEAM_OPEN')
-    converter.add_define('CHOWDREN_USE_STEAM_LANGUAGE')    
+    converter.add_define('CHOWDREN_USE_STEAM_LANGUAGE')
 
 def write_frame_post(converter, writer):
     if converter.current_frame_index != 0:

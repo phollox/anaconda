@@ -1644,7 +1644,7 @@ int get_joystick_last_press(int n)
 {
     if (!is_joystick_attached(n))
         return CHOWDREN_BUTTON_INVALID;
-    return remap_button(get_joy(n).last_press + 1);
+    return unremap_button(get_joy(n).last_press + 1);
 }
 
 extern std::string empty_string;

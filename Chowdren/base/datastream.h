@@ -182,7 +182,7 @@ public:
     FSFile & fp;
 
     FileStream(FSFile & fp)
-    : BaseStream(), fp(fp)
+    : fp(fp)
     {
     }
 

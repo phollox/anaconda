@@ -122,5 +122,6 @@ bool is_player_pressed(int player, int flags);
 bool is_player_pressed_once(int player, int flags);
 
 int remap_button(int n);
+int unremap_button(int n);
 
 #endif // CHOWDREN_INPUT_H

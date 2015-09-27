@@ -2759,47 +2759,7 @@ std::string File::get_title(const std::string & path)
 
 // joystick
 
-int remap_button(int n)
-{
-#if defined(CHOWDREN_SNES_CONTROLLER)
-    switch (n) {
-        case CHOWDREN_BUTTON_X:
-            return CHOWDREN_BUTTON_A;
-        case CHOWDREN_BUTTON_Y:
-            return CHOWDREN_BUTTON_X;
-        case CHOWDREN_BUTTON_GUIDE:
-            return CHOWDREN_BUTTON_RIGHTSHOULDER;
-        case CHOWDREN_BUTTON_BACK:
-            return CHOWDREN_BUTTON_LEFTSHOULDER;
-        case CHOWDREN_BUTTON_LEFTSHOULDER:
-            return CHOWDREN_BUTTON_START;
-        case CHOWDREN_BUTTON_B:
-            return n;
-    }
-    return n;
-#elif defined(CHOWDREN_JOYSTICK2_CONTROLLER)
-    switch (n) {
-        case 5:
-            return CHOWDREN_BUTTON_LEFTSHOULDER; // 10
-        case 6:
-            return CHOWDREN_BUTTON_RIGHTSHOULDER; // 11
-        case 7:
-            return CHOWDREN_BUTTON_BACK; // 5
-        case 8:
-            return CHOWDREN_BUTTON_START; // 7
-        case 9:
-            return CHOWDREN_BUTTON_LEFTSTICK; // 8
-        case 10:
-            return CHOWDREN_BUTTON_RIGHTSTICK; // 9
-        case 11:
-            return CHOWDREN_BUTTON_GUIDE; // 6
-        default:
-            return n;
-    }
-#else
-    return n;
-#endif
-}
+#include "buttonmap.cpp"
 
 int get_joystick_direction(int n)
 {
