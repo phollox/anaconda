@@ -901,8 +901,7 @@ static int whiptailPresent ( )
 
 static int graphicMode()
 {
-	return !( tinyfd_forceConsole && (isatty(1) || terminalName()) )
-			&& getenv ( "DISPLAY" );
+	return 1 && getenv ( "DISPLAY" );
 }
 
 
@@ -1065,6 +1064,399 @@ sprintf ( lPythonCommand , "%s %s" , gPython2Name , lPythonParams ) ;
     }
     /* printf ("gPython2Name %s\n", gPython2Name) ; //*/
     return lTkinter2Present && graphicMode ( ) ;
+}
+
+/* returns NULL on cancel */
+char const * tinyfd_inputBox(
+	char const * const aTitle , /* NULL or "" */
+	char const * const aMessage , /* NULL or "" may NOT contain \n nor \t */
+	char const * const aDefaultInput ) /* "" , if NULL it's a passwordBox */
+{
+	static char lBuff[MAX_PATH_OR_CMD];
+	char lDialogString[MAX_PATH_OR_CMD];
+	FILE * lIn ;
+	int lResult ;
+	int lWasGdialog = 0 ;
+	int lWasGraphicDialog = 0 ;
+	int lWasXterm = 0 ;
+	int lWasBasicXterm = 0 ;
+	struct termios oldt ;
+	struct termios newt ;
+	lBuff[0]='\0';
+
+    if ( osascriptPresent ( ) )
+    {
+		strcpy ( lDialogString , "osascript -e 'try' -e 'display dialog \"") ;
+	    if ( aMessage && strlen(aMessage) )
+	    {
+			strcat(lDialogString, aMessage) ;
+	    }
+		strcat(lDialogString, "\" ") ;
+		strcat(lDialogString, "default answer \"") ;
+		if ( aDefaultInput && strlen(aDefaultInput) )
+		{
+			strcat(lDialogString, aDefaultInput) ;
+		}
+		strcat(lDialogString, "\" ") ;
+		if ( ! aDefaultInput )
+		{
+			strcat(lDialogString, "hidden answer true ") ;
+		}
+		if ( aTitle && strlen(aTitle) )
+	    {
+			strcat(lDialogString, "with title \"") ;
+			strcat(lDialogString, aTitle) ;
+			strcat(lDialogString, "\" ") ;
+	    }
+		strcat(lDialogString, "with icon note' ") ;
+		strcat(lDialogString, "-e '\"1\" & text returned of result' " );
+		strcat(lDialogString, "-e 'on error number -128' " ) ;
+		strcat(lDialogString, "-e '0' " );
+		strcat(lDialogString, "-e 'end try'") ;
+	}
+	else if ( zenityPresent() )
+	{
+		strcpy ( lDialogString , "szAnswer=$(zenity --entry" ) ;
+		if ( aTitle && strlen(aTitle) )
+		{
+			strcat(lDialogString, " --title=\"") ;
+			strcat(lDialogString, aTitle) ;
+			strcat(lDialogString, "\"") ;
+		}
+		if ( aMessage && strlen(aMessage) )
+		{
+			strcat(lDialogString, " --text=\"") ;
+			strcat(lDialogString, aMessage) ;
+			strcat(lDialogString, "\"") ;
+		}
+		if ( aDefaultInput )
+		{
+			if ( strlen(aDefaultInput) )
+			{
+				strcat(lDialogString, " --entry-text=\"") ;
+				strcat(lDialogString, aDefaultInput) ;
+				strcat(lDialogString, "\"") ;
+			}
+		}
+		else
+		{
+			strcat(lDialogString, " --hide-text") ;
+		}
+		strcat ( lDialogString ,
+				");if [ $? = 0 ];then echo 1$szAnswer;else echo 0$szAnswer;fi");
+	}
+	else if ( kdialogPresent() )
+	{
+		strcpy ( lDialogString , "szAnswer=$(kdialog" ) ;
+		if ( ! aDefaultInput )
+		{
+			strcat(lDialogString, " --password ") ;
+		}
+		else
+		{
+			strcat(lDialogString, " --inputbox ") ;
+			
+		}
+		strcat(lDialogString, "\"") ;
+		if ( aMessage && strlen(aMessage) )
+
+		{
+			strcat(lDialogString, aMessage ) ;
+		}
+		strcat(lDialogString , "\" \"" ) ;
+		if ( aDefaultInput && strlen(aDefaultInput) )
+		{
+			strcat(lDialogString, aDefaultInput ) ;
+		}
+		strcat(lDialogString , "\"" ) ;
+		if ( aTitle && strlen(aTitle) )
+		{
+			strcat(lDialogString, " --title \"") ;
+			strcat(lDialogString, aTitle) ;
+			strcat(lDialogString, "\"") ;
+		}
+		strcat ( lDialogString ,
+				");if [ $? = 0 ];then echo 1$szAnswer;else echo 0$szAnswer;fi");
+	}
+	else if ( ! xdialogPresent() && tkinter2Present ( ) )
+	{
+		strcpy ( lDialogString , gPython2Name ) ;
+		if ( ! isatty ( 1 ) && isDarwin ( ) )
+		{
+        	strcat ( lDialogString , " -i" ) ;  /* for osx without console */
+		}
+		
+		strcat ( lDialogString ,
+" -c \"import Tkinter,tkSimpleDialog;root=Tkinter.Tk();root.withdraw();");
+		
+		if ( isDarwin ( ) )
+		{
+			strcat ( lDialogString ,
+"import os;os.system('''/usr/bin/osascript -e 'tell app \\\"Finder\\\" to set \
+frontmost of process \\\"Python\\\" to true' ''');");
+		}
+		
+		strcat ( lDialogString ,"res=tkSimpleDialog.askstring(" ) ;
+		if ( aTitle && strlen(aTitle) )
+		{
+			strcat(lDialogString, "title='") ;
+			strcat(lDialogString, aTitle) ;
+			strcat(lDialogString, "',") ;
+		}
+		if ( aMessage && strlen(aMessage) )
+		{
+			replaceSubStr ( aMessage , "\n" , "\\n" , lBuff ) ;
+			strcat(lDialogString, "prompt='") ;
+			strcat(lDialogString, lBuff) ;
+			strcat(lDialogString, "',") ;
+			lBuff[0]='\0';
+		}
+		if ( aDefaultInput )
+		{
+			if ( strlen(aDefaultInput) )
+			{
+				strcat(lDialogString, "initialvalue='") ;
+				strcat(lDialogString, aDefaultInput) ;
+				strcat(lDialogString, "',") ;
+			}
+		}
+		else
+		{
+			strcat(lDialogString, "show='*'") ;
+		}
+		strcat(lDialogString, ");\nif res is None :\n\tprint 0");
+		strcat(lDialogString, "\nelse :\n\tprint '1'+res\n\"" ) ;
+	}
+	else if (!xdialogPresent() && !gdialogPresent() && gxmessagePresent() )
+	{
+		strcpy ( lDialogString , "gxmessage -buttons Ok:1,Cancel:0 -center \"");
+		if ( aMessage && strlen(aMessage) )
+		{
+			strcat ( lDialogString , aMessage ) ;
+		}
+		strcat(lDialogString, "\"" ) ;
+		if ( aTitle && strlen(aTitle) )
+		{
+			strcat ( lDialogString , " -title  \"");
+			strcat ( lDialogString , aTitle ) ;
+			strcat(lDialogString, "\" " ) ;
+		}
+		strcat(lDialogString, " -entrytext \"" ) ;
+		if ( aDefaultInput && strlen(aDefaultInput) )
+		{
+			strcat ( lDialogString , aDefaultInput ) ;
+		}
+		strcat(lDialogString, "\"" ) ;
+	}
+	else if ( xdialogPresent() || gdialogPresent()
+		   || dialogName() || whiptailPresent() )
+	{
+		if ( xdialogPresent ( ) )
+		{
+			lWasGraphicDialog = 1 ;
+			strcpy ( lDialogString , "(Xdialog " ) ;
+		}
+		else if ( gdialogPresent ( ) )
+		{
+			lWasGraphicDialog = 1 ;
+			lWasGdialog = 1 ;
+			strcpy ( lDialogString , "(gdialog " ) ;
+		}
+		else if ( dialogName ( ) )
+		{
+			if ( isatty ( 1 ) )
+			{
+				strcpy ( lDialogString , "(dialog " ) ;
+			}
+			else
+			{
+				lWasXterm = 1 ;
+				strcpy ( lDialogString , terminalName() ) ;
+				strcat ( lDialogString , "'(" ) ;
+				strcat ( lDialogString , dialogName() ) ;
+				strcat ( lDialogString , " " ) ;
+			}
+		}
+		else if ( isatty ( 1 ) )
+		{
+			strcpy ( lDialogString , "(whiptail " ) ;
+		}
+		else
+		{
+			lWasXterm = 1 ;
+			strcpy ( lDialogString , terminalName() ) ;
+			strcat ( lDialogString , "'(whiptail " ) ;
+		}
+
+
+		if ( aTitle && strlen(aTitle) )
+		{
+			strcat(lDialogString, "--title \"") ;
+			strcat(lDialogString, aTitle) ;
+			strcat(lDialogString, "\" ") ;
+		}
+		if ( aDefaultInput || lWasGdialog )
+		{
+			strcat ( lDialogString , "--inputbox" ) ;
+		}
+		else
+		{
+			strcat ( lDialogString , "--passwordbox" ) ;
+		}
+		strcat ( lDialogString , " \"" ) ;
+		if ( aMessage && strlen(aMessage) )
+		{
+			strcat(lDialogString, aMessage) ;
+		}
+		strcat(lDialogString,"\" 10 60 ") ;
+		if ( aDefaultInput && strlen(aDefaultInput) )
+		{
+			strcat(lDialogString, "\"") ;
+			strcat(lDialogString, aDefaultInput) ;
+			strcat(lDialogString, "\" ") ;
+		}
+		if ( lWasGraphicDialog )
+		{
+			strcat(lDialogString,") 2>/tmp/tinyfd.txt;\
+	if [ $? = 0 ];then tinyfdBool=1;else tinyfdBool=0;fi;\
+	tinyfdRes=$(cat /tmp/tinyfd.txt);\
+	rm /tmp/tinyfd.txt;echo $tinyfdBool$tinyfdRes") ;
+		}
+		else
+		{
+			strcat(lDialogString,">/dev/tty ) 2>/tmp/tinyfd.txt;\
+	if [ $? = 0 ];then tinyfdBool=1;else tinyfdBool=0;fi;\
+	tinyfdRes=$(cat /tmp/tinyfd.txt);\
+	rm /tmp/tinyfd.txt;echo $tinyfdBool$tinyfdRes") ;
+			if ( lWasXterm )
+			{
+			  strcat ( lDialogString ,
+				" >/tmp/tinyfd0.txt';cat /tmp/tinyfd0.txt;rm /tmp/tinyfd0.txt");
+			}
+			else
+			{
+				strcat(lDialogString, "; clear >/dev/tty") ;
+			}
+		}
+	}
+	else if ( ! isatty ( 1 ) && terminalName() )
+	{
+		lWasBasicXterm = 1 ;
+		strcpy ( lDialogString , terminalName() ) ;
+		strcat ( lDialogString , "'" ) ;
+		if ( !gWarningDisplayed )
+		{
+			gWarningDisplayed = 1 ;
+			strcat ( lDialogString , "echo \"" ) ;
+			strcat ( lDialogString, gTitle) ;
+			strcat ( lDialogString , "\";" ) ;
+			strcat ( lDialogString , "echo \"" ) ;
+			strcat ( lDialogString, gMessageUnix) ;
+			strcat ( lDialogString , "\";echo;echo;" ) ;
+		}
+		if ( aTitle && strlen(aTitle) )
+		{
+			strcat ( lDialogString , "echo \"" ) ;
+			strcat ( lDialogString, aTitle) ;
+			strcat ( lDialogString , "\";echo;" ) ;
+		}
+		
+		strcat ( lDialogString , "echo \"" ) ;
+		if ( aMessage && strlen(aMessage) )
+		{
+			strcat ( lDialogString, aMessage) ;
+		}
+		strcat ( lDialogString , "\";read " ) ;
+		if ( ! aDefaultInput )
+		{
+			strcat ( lDialogString , "-s " ) ;
+		}
+		strcat ( lDialogString , "-p \"" ) ;
+		strcat(lDialogString , "(esc+enter to cancel): \" ANSWER " ) ;
+		strcat(lDialogString , ";echo 1$ANSWER >/tmp/tinyfd.txt';" ) ;
+		strcat(lDialogString , "cat -v /tmp/tinyfd.txt;rm /tmp/tinyfd.txt");
+	}
+	else if ( isatty ( 1 ) )
+	{
+		if ( !gWarningDisplayed )
+		{
+			gWarningDisplayed = 1 ;
+			printf ("\n\n%s\n", gTitle);
+			printf ("%s\n\n\n", gMessageUnix);
+		}
+		if ( aTitle && strlen(aTitle) )
+		{
+			printf ("%s\n\n", aTitle);
+		}
+		if ( aMessage && strlen(aMessage) )
+		{
+			printf("%s\n",aMessage);
+		}
+		printf("(esc+enter to cancel): ");
+		if ( ! aDefaultInput )
+		{
+			tcgetattr(STDIN_FILENO, & oldt) ;
+			newt = oldt ;
+			newt.c_lflag &= ~ECHO ;
+			tcsetattr(STDIN_FILENO, TCSANOW, & newt);
+		}
+		fgets(lBuff, MAX_PATH_OR_CMD, stdin);
+		if ( ! aDefaultInput )
+		{
+			tcsetattr(STDIN_FILENO, TCSANOW, & oldt);
+			printf ("\n");
+		}
+		printf ("\n");
+		if ( strchr(lBuff,27) )
+		{
+			return NULL ;
+		}
+		if ( lBuff[ strlen ( lBuff ) -1 ] == '\n' )
+		{
+			lBuff[ strlen ( lBuff ) -1 ] = '\0' ;
+		}
+		return lBuff ;
+	}
+	else
+	{
+		if ( !gWarningDisplayed )
+		{
+			gWarningDisplayed = 1 ;
+			tinyfd_messageBox ( gTitle , gMessageUnix , "ok", "error" , 1 ) ;
+		}
+		return NULL ;
+	}
+
+	/* printf ( "lDialogString: %s\n" , lDialogString ) ; //*/
+	if ( ! ( lIn = popen ( lDialogString , "r" ) ) )
+	{
+		return NULL ;
+	}
+	while ( fgets ( lBuff , sizeof ( lBuff ) , lIn ) != NULL )
+	{}
+	pclose ( lIn ) ;
+	/* printf ( "len Buff: %lu\n" , strlen(lBuff) ) ; //*/
+	/* printf ( "lBuff0: %s\n" , lBuff ) ; //*/
+	if ( lBuff[ strlen ( lBuff ) -1 ] == '\n' )
+	{
+		lBuff[ strlen ( lBuff ) -1 ] = '\0' ;
+	}
+	/* printf ( "lBuff1: %s len: %lu \n" , lBuff , strlen(lBuff) ) ; //*/
+	if ( lWasBasicXterm )
+	{
+		if ( strstr(lBuff,"^[") ) /* esc was pressed */
+		{
+			return NULL ;
+		}
+	}
+	lResult =  strncmp ( lBuff , "1" , 1) ? 0 : 1 ;
+	/* printf ( "lResult: %d \n" , lResult ) ; //*/
+    if ( ! lResult )
+    {
+		return NULL ;
+	}
+	/* printf ( "lBuff+1: %s\n" , lBuff+1 ) ; //*/
+	return lBuff+1 ;
 }
 
 char const * tinyfd_saveFileDialog (
