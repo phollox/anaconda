@@ -29,38 +29,11 @@ typedef enum {
 }nfdresult_t;
 
 
-static char g_errorstr[NFD_MAX_STRLEN] = {0};
 #define NFD_MAX_STRLEN 256
+static char g_errorstr[NFD_MAX_STRLEN] = {0};
 #define _NFD_UNUSED(x) ((void)x)
 #define NFD_UTF8_BOM "\xEF\xBB\xBF"
 
-/* public routines */
-
-const char *NFD_GetError( void )
-{
-    return g_errorstr;
-}
-
-size_t NFD_PathSet_GetCount( const nfdpathset_t *pathset )
-{
-    assert(pathset);
-    return pathset->count;
-}
-
-nfdchar_t *NFD_PathSet_GetPath( const nfdpathset_t *pathset, size_t num )
-{
-    assert(pathset);
-    assert(num < pathset->count);
-    
-    return pathset->buf + pathset->indices[num];
-}
-
-void NFD_PathSet_Free( nfdpathset_t *pathset )
-{
-    assert(pathset);
-    NFDi_Free( pathset->indices );
-    NFDi_Free( pathset->buf );
-}
 
 /* internal routines */
 
@@ -156,6 +129,34 @@ size_t NFDi_UTF8_Strlen( const nfdchar_t *str )
     }
 
     return character_count; 
+}
+
+/* public routines */
+
+const char *NFD_GetError( void )
+{
+    return g_errorstr;
+}
+
+size_t NFD_PathSet_GetCount( const nfdpathset_t *pathset )
+{
+    assert(pathset);
+    return pathset->count;
+}
+
+nfdchar_t *NFD_PathSet_GetPath( const nfdpathset_t *pathset, size_t num )
+{
+    assert(pathset);
+    assert(num < pathset->count);
+    
+    return pathset->buf + pathset->indices[num];
+}
+
+void NFD_PathSet_Free( nfdpathset_t *pathset )
+{
+    assert(pathset);
+    NFDi_Free( pathset->indices );
+    NFDi_Free( pathset->buf );
 }
 
 int NFDi_IsFilterSegmentChar( char ch )
