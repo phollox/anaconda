@@ -70,6 +70,13 @@ if (NOT CMAKE_CROSSCOMPILING OR EMSCRIPTEN)
         ${CHOWDREN_BASE_DIR}/desktop/tinyfiledialogs.c
         ${PLATFORM_SRCS}
     )
+
+    if (APPLE)
+        set(PLATFORM_SRCS
+            ${CHOWDREN_BASE_DIR}/desktop/tinyfiledialogs.m
+            ${PLATFORM_SRCS}
+        )
+    endif()
 endif()
 
 set(SRCS

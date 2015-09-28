@@ -1920,25 +1920,60 @@ bool platform_file_save_dialog(const std::string & title,
     return ret != NULL;
 }
 
+#include "dialoglocale.cpp"
+
 bool platform_show_dialog(const std::string & title,
                           const std::string & message,
                           DialogType type)
 {
-    const char * dialog_type = "ok";
+    SDL_MessageBoxData data;
+    data.flags = SDL_MESSAGEBOX_INFORMATION;
+    data.window = global_window;
+    data.title = title.c_str();
+    data.message = message.c_str();
+    int good;
+    const char * first = NULL;
+    const char * second = NULL;
     switch (type) {
         case DIALOG_OK:
-            dialog_type = "ok";
+            good = -1;
+            first = get_locale_ok();
+            second = NULL;
             break;
         case DIALOG_OKCANCEL:
-            dialog_type = "okcancel";
+            good = 1;
+            first = get_locale_ok();
+            second = get_locale_cancel();
             break;
         case DIALOG_YESNO:
-            dialog_type = "yesno";
+            good = 1;
+            first = get_locale_yes();
+            second = get_locale_no();
             break;
     }
-    int ret = tinyfd_messageBox(title.c_str(), message.c_str(), dialog_type,
-                                "info", 1);
-    return ret == 1;
+    SDL_MessageBoxButtonData buttons[2];
+    data.buttons = buttons;
+    data.numbuttons = 1;
+    if (second == NULL) {
+        buttons[0].flags = SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT;
+        buttons[0].buttonid = 1;
+        buttons[0].text = first;
+    } else {
+        buttons[0].flags = SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT;
+        buttons[0].buttonid = 2;
+        buttons[0].text = second;
+        buttons[1].flags = SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT;
+        buttons[1].buttonid = 1;
+        buttons[1].text = first;
+        data.numbuttons++;
+    }
+    data.colorScheme = NULL;
+    int hit;
+    if (SDL_ShowMessageBox(&data, &hit) != 0)
+        return false;
+    if (good == -1)
+        return true;
+    return hit == good;
 }
 
 // debug

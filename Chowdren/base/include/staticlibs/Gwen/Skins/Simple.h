@@ -65,7 +65,7 @@ namespace Gwen
 				{
 					int w = control->Width();
 					int h = control->Height();
-					DrawButton( w, h, bDepressed, bHovered );
+					DrawButton( w, h, bDepressed, bHovered, false, bDisabled );
 				}
 
 				virtual void DrawWindowCloseButton( Gwen::Controls::Base* control, bool bDepressed, bool bHovered, bool bDisabled )
@@ -146,33 +146,38 @@ namespace Gwen
 					m_Render->DrawFilledRect( Gwen::Rect( x, y, w, h ) );
 				}
 
-				virtual void DrawButton( int w, int h, bool bDepressed, bool bHovered, bool bSquared = false )
+				virtual void DrawButton( int w, int h, bool bDepressed, bool bHovered, bool bSquared = false, bool bDisabled = false)
 				{
-					if ( bDepressed )	{ m_Render->SetDrawColor( m_colControlDark ); }
-					else if ( bHovered ) { m_Render->SetDrawColor( m_colControlBright ); }
-					else				{ m_Render->SetDrawColor( m_colControl ); }
+					float mul = 1.0f;
+					if (bDisabled) {
+						mul = 0.6f;
+						bHovered = false;
+					}
+					if ( bDepressed )	{ m_Render->SetDrawColor( m_colControlDark * mul ); }
+					else if ( bHovered ) { m_Render->SetDrawColor( m_colControlBright * mul ); }
+					else				{ m_Render->SetDrawColor( m_colControl * mul ); }
 
 					m_Render->DrawFilledRect( Gwen::Rect( 1, 1, w - 2, h - 2 ) );
 
-					if ( bDepressed )	{ m_Render->SetDrawColor( m_colControlDark ); }
-					else if ( bHovered ) { m_Render->SetDrawColor( m_colControl ); }
-					else				{ m_Render->SetDrawColor( m_colControlDark ); }
+					if ( bDepressed )	{ m_Render->SetDrawColor( m_colControlDark * mul ); }
+					else if ( bHovered ) { m_Render->SetDrawColor( m_colControl * mul ); }
+					else				{ m_Render->SetDrawColor( m_colControlDark * mul ); }
 
 					m_Render->DrawFilledRect( Gwen::Rect( 1, h * 0.5, w - 2, h * 0.5 - 2 ) );
 
 					if ( !bDepressed )
 					{
-						m_Render->SetDrawColor( m_colControlBright );
+						m_Render->SetDrawColor( m_colControlBright * mul );
 						m_Render->DrawShavedCornerRect( Gwen::Rect( 1, 1, w - 2, h - 2 ), bSquared );
 					}
 					else
 					{
-						m_Render->SetDrawColor( m_colControlDarker );
+						m_Render->SetDrawColor( m_colControlDarker * mul );
 						m_Render->DrawShavedCornerRect( Gwen::Rect( 1, 1, w - 2, h - 2 ), bSquared );
 					}
 
 					// Border
-					m_Render->SetDrawColor( m_colControlOutlineNormal );
+					m_Render->SetDrawColor( m_colControlOutlineNormal * mul );
 					m_Render->DrawShavedCornerRect( Gwen::Rect( 0, 0, w, h ), bSquared );
 				}
 
