@@ -221,7 +221,7 @@ static void SetDefaultPath( NSSavePanel *dialog, const nfdchar_t *defaultPath )
     NSString *imageName = [defaultPathString lastPathComponent];
     NSString *baseName = [imageName stringByDeletingPathExtension];
     [dialog setDirectoryURL:url];
-    [dialog setNameFieldStringValue:baseName]
+    [dialog setNameFieldStringValue:baseName];
 }
 
 
