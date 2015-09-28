@@ -167,16 +167,15 @@ class FrameData
 {
 public:
     std::string name;
-    Frame * frame;
 
     FrameData();
-    virtual void event_callback(int id);
-    virtual void init();
-    virtual void on_start();
-    virtual void on_end();
-    virtual void on_app_end();
-    virtual void handle_events();
-    virtual void handle_pre_events();
+    virtual void event_callback(Frame * frame, int id);
+    virtual void init(Frame * frame);
+    virtual void on_start(Frame * frame);
+    virtual void on_end(Frame * frame);
+    virtual void on_app_end(Frame * frame);
+    virtual void handle_events(Frame * frame);
+    virtual void handle_pre_events(Frame * frame);
 };
 
 
@@ -304,12 +303,12 @@ public:
 
     void event_callback(int id)
     {
-        data->event_callback(id);
+        data->event_callback(this, id);
     }
 
     void on_end()
     {
-        data->on_end();
+        data->on_end(this);
         reset();
     }
 

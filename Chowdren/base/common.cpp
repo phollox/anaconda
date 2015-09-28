@@ -1134,31 +1134,31 @@ FrameData::FrameData()
 {
 }
 
-void FrameData::event_callback(int id)
+void FrameData::event_callback(Frame * frame, int id)
 {
 }
 
-void FrameData::init()
+void FrameData::init(Frame * frame)
 {
 }
 
-void FrameData::on_start()
+void FrameData::on_start(Frame * frame)
 {
 }
 
-void FrameData::on_end()
+void FrameData::on_end(Frame * frame)
 {
 }
 
-void FrameData::on_app_end()
+void FrameData::on_app_end(Frame * frame)
 {
 }
 
-void FrameData::handle_events()
+void FrameData::handle_events(Frame * frame)
 {
 }
 
-void FrameData::handle_pre_events()
+void FrameData::handle_pre_events(Frame * frame)
 {
 }
 
@@ -1416,12 +1416,12 @@ bool Frame::update()
     }
 
     if (loop_count == 0) {
-        data->init();
+        data->init(this);
         update_objects();
-        data->on_start();
+        data->on_start(this);
     } else {
         PROFILE_BEGIN(handle_pre_events);
-        data->handle_pre_events();
+        data->handle_pre_events(this);
         PROFILE_END();
 
         PROFILE_BEGIN(frame_update_objects);
@@ -1434,7 +1434,7 @@ bool Frame::update()
     }
 
     PROFILE_BEGIN(handle_events);
-    data->handle_events();
+    data->handle_events(this);
     update_display_center();
     PROFILE_END();
 

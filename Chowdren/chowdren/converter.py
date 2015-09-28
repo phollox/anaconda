@@ -987,7 +987,6 @@ class Converter(object):
         event_file.putln('break;')
         event_file.dedent()
         event_file.end_brace()
-        event_file.putln('data->frame = this;')
         event_file.end_brace()
 
         if not self.assets.skip:
@@ -1656,7 +1655,7 @@ class Converter(object):
 
         self.frame_images[frame_index] = startup_images
 
-        frame_file.putmeth('void init')
+        frame_file.putmeth('void init', 'Frame * frame')
         frame_file.putlnc('%s%s();', events_ref, start_name)
         frame_file.end_brace()
 
@@ -1767,7 +1766,7 @@ class Converter(object):
             end_name = self.write_generated(end_name, event_file,
                                             frame_end_groups)
 
-        frame_file.putmeth('void on_end')
+        frame_file.putmeth('void on_end', 'Frame * frame')
         if frame_end_groups:
             frame_file.putlnc('%s%s();', events_ref, end_name)
         frame_file.putlnc('%sreset();', events_ref)
@@ -1779,12 +1778,12 @@ class Converter(object):
             end_name = self.write_generated(end_name, event_file,
                                             app_end_groups)
 
-            frame_file.putmeth('void on_app_end')
+            frame_file.putmeth('void on_app_end', 'Frame * frame')
             frame_file.putlnc('%s%s();', events_ref, end_name)
             frame_file.end_brace()
 
         # write event callbacks
-        frame_file.putmeth('void event_callback', 'int id')
+        frame_file.putmeth('void event_callback', 'Frame * frame', 'int id')
         if self.event_callbacks:
             frame_file.putln('switch (id) {')
             frame_file.indent()
@@ -1842,7 +1841,7 @@ class Converter(object):
 
         # write main 'always' handler
         handle_name = 'handle_frame_%s_events' % (frame_index+1)
-        frame_file.putmeth('void handle_events')
+        frame_file.putmeth('void handle_events', 'Frame * frame')
         frame_file.putlnc('%s%s();', events_ref, handle_name)
         frame_file.end_brace()
 
@@ -1907,7 +1906,7 @@ class Converter(object):
 
         # pre-events
         handle_name = 'handle_frame_%s_pre_events' % (frame_index+1)
-        frame_file.putmeth('void handle_pre_events')
+        frame_file.putmeth('void handle_pre_events', 'Frame * frame')
         frame_file.putlnc('%s%s();', events_ref, handle_name)
         frame_file.end_brace()
 
@@ -1927,7 +1926,7 @@ class Converter(object):
             event_start_name = self.write_generated(event_start_name,
                                                     event_file,
                                                     start_groups)
-            frame_file.putmeth('void on_start')
+            frame_file.putmeth('void on_start', 'Frame * frame')
             frame_file.putlnc('%s%s();', events_ref, event_start_name)
             frame_file.end_brace()
 

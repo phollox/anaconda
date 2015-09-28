@@ -44,7 +44,7 @@ SubApplication::SubApplication(int x, int y, int id)
     collision = new InstanceBox(this);
     start_x = x;
     start_y = y;
-    flags &= ~SCROLL;
+    flags &= SCROLL;
 #endif
 
 #ifdef CHOWDREN_USE_GWEN
@@ -68,8 +68,8 @@ SubApplication::~SubApplication()
 
     SET_APP();
     if (!done && !starting) {
-        subapp_frame.data->on_app_end();
-        subapp_frame.data->on_end();
+        subapp_frame.data->on_app_end(&subapp_frame);
+        subapp_frame.data->on_end(&subapp_frame);
     }
     RESTORE_APP();
 
@@ -217,6 +217,9 @@ void SubApplication::init_frame()
 {
     Gwen::Controls::Canvas * canvas = manager.main_frame->gwen.canvas;
     subapp_frame.gwen.frame_base->SetParent(canvas);
+    flags &= ~SCROLL;
+    x += manager.frame->off_x;
+    y += manager.frame->off_y;
 }
 #endif
 
@@ -232,8 +235,8 @@ void SubApplication::draw_subapp()
         window_control->SetSize(width+12, height+35);
         window_control->SetTitle(subapp_frame.gwen.title.c_str());
     } else {
-        subapp_frame.gwen.frame_base->SetPos(x - frame->off_x,
-                                             y - frame->off_y);
+        subapp_frame.gwen.frame_base->SetPos(x + layer->off_x - frame->off_x,
+                                             y + layer->off_y - frame->off_y);
     }
     width = subapp_frame.width;
     height = subapp_frame.height;

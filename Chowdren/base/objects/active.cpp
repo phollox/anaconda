@@ -42,6 +42,8 @@ void Active::initialize_active(bool collision_box)
 
 Active::~Active()
 {
+    if (name == "map")
+        std::cout << "destroy" << std::endl;
 }
 
 void Active::set_animation(int value)
