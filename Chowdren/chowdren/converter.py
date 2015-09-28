@@ -1731,12 +1731,24 @@ class Converter(object):
         start_writer.putraw('#endif')
 
         # set up qualifiers
-        for name, instances in qualifier_setup.iteritems():
-            start_writer.putlnc('static ObjectList* '
-                                '%s_instances[] = {%s, NULL};',
-                                name, ', '.join(instances))
-            start_writer.putlnc('%s.set(%s, &%s_instances[0]);', name,
-                                len(instances), name)
+        if self.config.use_subapp_frames():
+            for name, instances in qualifier_setup.iteritems():
+                start_writer.putlnc('static ObjectList* %s_instances[%s+1];',
+                                    name, len(instances))
+                for instance_index, list_name in enumerate(instances):
+                    start_writer.putlnc('%s_instances[%s] = %s;',
+                                        name, instance_index, list_name)
+                start_writer.putlnc('%s_instances[%s] = NULL;', name,
+                                    len(instances))
+                start_writer.putlnc('%s.set(%s, &%s_instances[0]);', name,
+                                    len(instances), name)
+        else:
+            for name, instances in qualifier_setup.iteritems():
+                start_writer.putlnc('static ObjectList* '
+                                    '%s_instances[] = {%s, NULL};',
+                                    name, ', '.join(instances))
+                start_writer.putlnc('%s.set(%s, &%s_instances[0]);', name,
+                                    len(instances), name)
 
         startup_instances = self.config.get_startup_instances(
             startup_instances)
