@@ -24,9 +24,18 @@ from mmfparser.data.chunkloaders.transition import FadeIn, FadeOut
 from mmfparser.data import chunk
 from mmfparser.loader import DataLoader
 
+class LayerEffect(DataLoader):
+    def read(self, reader):
+        inkEffect = reader.readInt(True)
+        self.inkEffect = inkEffect & 0xFFFF
+        self.inkEffectValue = reader.readInt(True)
+        reader.skipBytes(20 - 8) # XXX
+
 class LayerEffects(DataLoader):
     def read(self, reader):
-        reader.seek(0, 2)
+        self.effects = []
+        for _ in xrange(len(reader) / 20):
+            self.effects.append(self.new(LayerEffect, reader))
 
 class FrameEffects(DataLoader):
     def read(self, reader):
@@ -149,6 +158,13 @@ class Frame(DataLoader):
 
         self.layers = newChunks.popChunk(Layers)
 
+        try:
+            layerEffects = newChunks.popChunk(LayerEffects)
+            for index, item in enumerate(layerEffects.effects):
+                self.layers.items[index].effect = item
+        except IndexError:
+            pass
+
         self.events = newChunks.popChunk(Events)
         self.maxObjects = self.events.maxObjects
 
@@ -207,6 +223,7 @@ class Layer(DataLoader):
     yCoefficient = None
     numberOfBackgrounds = None
     backgroundIndex = None
+    effect = None
 
     def initialize(self):
         self.flags = BitDict(

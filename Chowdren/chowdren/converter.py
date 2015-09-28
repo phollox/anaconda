@@ -1708,6 +1708,15 @@ class Converter(object):
                                 layer_index, layer_index,
                                 layer.xCoefficient, layer.yCoefficient,
                                 visible, wrap_horizontal, wrap_vertical)
+            effect = layer.effect
+            if effect is None:
+                continue
+            inkEffect = effect.inkEffect
+            if inkEffect & HWA_EFFECT or inkEffect == SHADER_EFFECT:
+                b, g, r = get_color_tuple(effect.inkEffectValue)
+                a = (effect.inkEffectValue & 0xFF000000) >> 24
+                start_writer.putlnc('layers[%s].blend_color = %s;',
+                                    layer_index, make_color((r, g, b, a)))
 
         start_writer.putraw('#ifdef CHOWDREN_HAS_MRT')
         for layer_index, layer in enumerate(frame.layers.items):
