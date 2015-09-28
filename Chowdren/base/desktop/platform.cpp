@@ -1890,6 +1890,7 @@ bool platform_file_open_dialog(const std::string & title,
 {
     SAVE_CWD();
     std::string def = convert_path(in_def);
+    std::cout << "default open path: " << def << std::endl;
     const char * ret = tinyfd_openFileDialog(title.c_str(),
                                              def.c_str(),
                                              0,
