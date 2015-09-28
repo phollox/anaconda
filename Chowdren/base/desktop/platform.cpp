@@ -1890,7 +1890,6 @@ bool platform_file_open_dialog(const std::string & title,
 {
     SAVE_CWD();
     std::string def = convert_path(in_def);
-    std::cout << "default open path: " << def << std::endl;
     const char * ret = tinyfd_openFileDialog(title.c_str(),
                                              def.c_str(),
                                              0,
@@ -1927,6 +1926,7 @@ bool platform_show_dialog(const std::string & title,
                           const std::string & message,
                           DialogType type)
 {
+#ifdef __APPLE__
     SDL_MessageBoxData data;
     data.flags = SDL_MESSAGEBOX_INFORMATION;
     data.window = global_window;
@@ -1975,6 +1975,23 @@ bool platform_show_dialog(const std::string & title,
     if (good == -1)
         return true;
     return hit == good;
+#else
+    const char * dialog_type = "ok";
+    switch (type) {
+        case DIALOG_OK:
+            dialog_type = "ok";
+            break;
+        case DIALOG_OKCANCEL:
+            dialog_type = "okcancel";
+            break;
+        case DIALOG_YESNO:
+            dialog_type = "yesno";
+            break;
+    }
+    int ret = tinyfd_messageBox(title.c_str(), message.c_str(), dialog_type,
+                                "info", 1);
+    return ret == 1;
+#endif
 }
 
 // debug

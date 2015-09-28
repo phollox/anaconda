@@ -1306,6 +1306,17 @@ bool Frame::is_mouse_pressed_once_frame(int button)
     return true;
 #endif
 }
+
+bool Frame::is_mouse_pressed_frame(int button)
+{
+    if (!is_mouse_pressed(button))
+        return false;
+#ifdef CHOWDREN_USE_SUBAPP
+    return !SubApplication::test_pos(this);
+#else
+    return true;
+#endif
+}
 #endif
 
 CollisionBase * Frame::test_background_collision(int x, int y)

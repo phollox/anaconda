@@ -50,6 +50,14 @@ char const * tinyfd_openFileDialog (
 	/* in case of multiple files, the separator is | */
 	/* returns NULL on cancel */
 
+int tinyfd_messageBox (
+    char const * const aTitle , /* "" */
+    char const * const aMessage , /* "" may contain \n and \t */
+    char const * const aDialogType , /* "ok" "okcancel" "yesno" */
+    char const * const aIconType , /* "info" "warning" "error" "question" */
+    int const aDefaultButton ) ; /* 0 for cancel/no , 1 for ok/yes */
+  /* returns 0 for cancel/no , 1 for ok/yes */
+
 #ifdef	__cplusplus
 }
 #endif /* __cplusplus */

@@ -217,7 +217,12 @@ public:
 
 #ifdef CHOWDREN_SUBAPP_FRAMES
     bool is_mouse_pressed_once_frame(int button);
+    bool is_mouse_pressed_frame(int button);
     int display_width, display_height;
+#else
+    // inline methods? these are very unique names anyway
+    #define is_mouse_pressed_frame is_mouse_pressed
+    #define is_mouse_pressed_once_frame is_mouse_pressed_once
 #endif
 
     FrameObject * col_instance_1;

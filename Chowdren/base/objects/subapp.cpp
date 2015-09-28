@@ -100,7 +100,7 @@ void SubApplication::update()
 {
 #ifdef CHOWDREN_USE_GWEN
     subapp_frame.gwen.frame_base->SetHidden(done || starting);
-    if (done && gwen_close) {
+    if (done) {
         destroy();
         return;
     }

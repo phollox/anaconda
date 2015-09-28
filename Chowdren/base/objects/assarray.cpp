@@ -330,8 +330,6 @@ void AssociateArray::sub_value(int index, const std::string & key, int value)
 void AssociateArray::set_string(int index, const std::string & key,
                                 const std::string & value)
 {
-    if (value == "perks")
-        std::cout << "set perks" << std::endl;
     AssociateArrayItem * item = store[index];
     if (item == NULL) {
         item = &((*map)[key]);

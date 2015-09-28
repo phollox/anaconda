@@ -492,6 +492,69 @@ static char const * openFileDialogWinGui (
 	}
 }
 
+static int messageBoxWinGui (
+    char const * const aTitle , /* NULL or "" */
+    char const * const aMessage , /* NULL or ""  may contain \n and \t */
+    char const * const aDialogType , /* "ok" "okcancel" "yesno" */
+    char const * const aIconType , /* "info" "warning" "error" "question" */
+    int const aDefaultButton ) /* 0 for cancel/no , 1 for ok/yes */
+{
+	int lBoxReturnValue;
+    UINT aCode ;
+	
+	if ( aIconType && ! strcmp( "warning" , aIconType ) )
+	{
+		aCode = MB_ICONWARNING ;
+	}
+	else if ( aIconType && ! strcmp("error", aIconType))
+	{
+		aCode = MB_ICONERROR ;
+	}
+	else if ( aIconType && ! strcmp("question", aIconType))
+	{
+		aCode = MB_ICONQUESTION ;
+	}
+	else
+	{
+		aCode = MB_ICONINFORMATION ;
+	}
+
+	if ( aDialogType && ! strcmp( "okcancel" , aDialogType ) )
+	{
+		aCode += MB_OKCANCEL ;
+		if ( ! aDefaultButton )
+		{
+			aCode += MB_DEFBUTTON2 ;
+		}
+	}
+	else if ( aDialogType && ! strcmp( "yesno" , aDialogType ) )
+	{
+		aCode += MB_YESNO ;
+		if ( ! aDefaultButton )
+		{
+			aCode += MB_DEFBUTTON2 ;
+		}
+	}
+	else
+	{
+		aCode += MB_OK ;
+	}
+
+	lBoxReturnValue = MessageBox(NULL, aMessage, aTitle, aCode);
+	if ( ( ( aDialogType
+		  && strcmp("okcancel", aDialogType)
+		  && strcmp("yesno", aDialogType) ) )
+		|| (lBoxReturnValue == IDOK)
+		|| (lBoxReturnValue == IDYES) )
+	{
+		return 1 ;
+	}
+	else
+	{
+		return 0 ;
+	}
+}
+
 static int dialogPresent ( )
 {
 	static int lDialogPresent = -1 ;
@@ -522,6 +585,18 @@ static int dialogPresent ( )
 		}
 	}
 	return lDialogPresent ;
+}
+
+/* returns 0 for cancel/no , 1 for ok/yes */
+int tinyfd_messageBox (
+    char const * const aTitle , /* NULL or "" */
+    char const * const aMessage , /* NULL or ""  may contain \n and \t */
+    char const * const aDialogType , /* "ok" "okcancel" "yesno" */
+    char const * const aIconType , /* "info" "warning" "error" "question" */
+    int const aDefaultButton ) /* 0 for cancel/no , 1 for ok/yes */
+{
+	return messageBoxWinGui(
+				aTitle,aMessage,aDialogType,aIconType,aDefaultButton);
 }
 
 char const * tinyfd_saveFileDialog (
@@ -1064,6 +1139,547 @@ sprintf ( lPythonCommand , "%s %s" , gPython2Name , lPythonParams ) ;
     }
     /* printf ("gPython2Name %s\n", gPython2Name) ; //*/
     return lTkinter2Present && graphicMode ( ) ;
+}
+
+/* returns 0 for cancel/no , 1 for ok/yes */
+int tinyfd_messageBox (
+    char const * const aTitle , /* NULL or "" */
+    char const * const aMessage , /* NULL or ""  may contain \n and \t */
+    char const * const aDialogType , /* "ok" "okcancel" "yesno"*/
+    char const * const aIconType , /* "info" "warning" "error" "question" */
+    int const aDefaultButton ) /* 0 for cancel/no , 1 for ok/yes */
+{
+    char lBuff [ MAX_PATH_OR_CMD ] ;
+    char lDialogString [ MAX_PATH_OR_CMD ] ;
+    FILE * lIn ;
+	int lWasGraphicDialog = 0 ;
+	int lWasXterm = 0 ;
+    int lResult ;
+	char lChar ;
+	struct termios infoOri;
+	struct termios info;
+    lBuff[0]='\0';
+
+	if ( osascriptPresent ( ) )
+    {
+		strcpy ( lDialogString , "osascript -e 'try' -e 'display dialog \"") ;
+	    if ( aMessage && strlen(aMessage) )
+	    {
+			strcat(lDialogString, aMessage) ;
+	    }
+		strcat(lDialogString, "\" ") ;
+	    if ( aTitle && strlen(aTitle) )
+	    {
+			strcat(lDialogString, "with title \"") ;
+			strcat(lDialogString, aTitle) ;
+			strcat(lDialogString, "\" ") ;
+	    }
+		strcat(lDialogString, "with icon ") ;
+		if ( aIconType && ! strcmp( "error" , aIconType ) )
+		{
+			strcat(lDialogString, "stop " ) ;
+		}
+		else if ( aIconType && ! strcmp( "warning" , aIconType ) )
+		{
+			strcat(lDialogString, "caution " ) ;
+		}
+		else /* question or info */
+		{
+			strcat(lDialogString, "note " ) ;
+		}
+		if ( aDialogType && ! strcmp( "okcancel" , aDialogType ) )
+		{
+			if ( ! aDefaultButton )
+			{
+				strcat ( lDialogString ,"default button \"Cancel\" " ) ;
+			}
+		}
+		else if ( aDialogType && ! strcmp( "yesno" , aDialogType ) )
+		{
+			strcat ( lDialogString ,"buttons {\"No\", \"Yes\"} " ) ;
+			if (aDefaultButton) 
+			{
+				strcat ( lDialogString ,"default button \"Yes\" " ) ;
+			}
+			else
+			{
+				strcat ( lDialogString ,"default button \"No\" " ) ;
+			}
+			strcat ( lDialogString ,"cancel button \"No\"" ) ;
+		}
+		else
+		{
+			strcat ( lDialogString ,"buttons {\"OK\"} " ) ;
+			strcat ( lDialogString ,"default button \"OK\" " ) ;
+
+		}
+		strcat(lDialogString, "' ") ;
+		strcat(lDialogString, "-e '1' " );
+		strcat(lDialogString, "-e 'on error number -128' " ) ;
+		strcat(lDialogString, "-e '0' " );
+		strcat(lDialogString, "-e 'end try'") ;
+	}
+    else if ( zenityPresent() )
+    {
+        strcpy ( lDialogString , "zenity --" ) ;
+        if ( aDialogType && ! strcmp( "okcancel" , aDialogType ) )
+        {
+            strcat ( lDialogString ,
+            		"question --ok-label=Ok --cancel-label=Cancel" ) ;
+        }
+        else if ( aDialogType && ! strcmp( "yesno" , aDialogType ) )
+        {
+            strcat ( lDialogString , "question" ) ;
+        }
+        else if ( aIconType && ! strcmp( "error" , aIconType ) )
+		{
+            strcat ( lDialogString , "error" ) ;
+        }
+        else if ( aIconType && ! strcmp( "warning" , aIconType ) )
+		{
+            strcat ( lDialogString , "warning" ) ;
+        }
+        else
+		{
+            strcat ( lDialogString , "info" ) ;
+        }
+		if ( aTitle && strlen(aTitle) ) 
+		{
+			strcat(lDialogString, " --title=\"") ;
+			strcat(lDialogString, aTitle) ;
+			strcat(lDialogString, "\"") ;
+		}
+		if ( aMessage && strlen(aMessage) ) 
+		{
+			strcat(lDialogString, " --text=\"") ;
+			strcat(lDialogString, aMessage) ;
+			strcat(lDialogString, "\"") ;
+		}
+		if ( zenity3Present ( ) )
+		{
+			strcat ( lDialogString , " --icon-name=dialog-" ) ;
+			if ( aIconType && (! strcmp( "question" , aIconType )
+			  || ! strcmp( "error" , aIconType )
+			  || ! strcmp( "warning" , aIconType ) ) )
+			{
+				strcat ( lDialogString , aIconType ) ;
+			}
+			else
+			{
+				strcat ( lDialogString , "info" ) ;
+			}
+		}
+        strcat ( lDialogString , ";if [ $? = 0 ];then echo 1;else echo 0;fi");
+    }
+	else if ( kdialogPresent() )
+	{
+		strcpy ( lDialogString , "kdialog --" ) ;
+		if ( aDialogType && ( ! strcmp( "okcancel" , aDialogType )
+		  || ! strcmp( "yesno" , aDialogType ) ) )
+		{
+			if ( aIconType && ( ! strcmp( "warning" , aIconType )
+			  || ! strcmp( "error" , aIconType ) ) )
+			{
+				strcat ( lDialogString , "warning" ) ;
+			}
+			strcat ( lDialogString , "yesno" ) ;
+		}
+		else if ( aIconType && ! strcmp( "error" , aIconType ) )
+		{
+			strcat ( lDialogString , "error" ) ;
+		}
+		else if ( aIconType && ! strcmp( "warning" , aIconType ) )
+		{
+			strcat ( lDialogString , "sorry" ) ;
+		}
+		else
+		{
+			strcat ( lDialogString , "msgbox" ) ;
+		}
+		strcat ( lDialogString , " \"" ) ;
+		if ( aMessage )
+		{
+			strcat ( lDialogString , aMessage ) ;
+		}
+		strcat ( lDialogString , "\"" ) ;
+		if ( aDialogType && ! strcmp( "okcancel" , aDialogType ) )
+		{
+			strcat ( lDialogString ,
+				" --yes-label Ok --no-label Cancel" ) ;
+		}
+		if ( aTitle && strlen(aTitle) )
+		{
+			strcat(lDialogString, " --title \"") ;
+			strcat(lDialogString, aTitle) ;
+			strcat(lDialogString, "\"") ;
+		}
+		strcat ( lDialogString , ";if [ $? = 0 ];then echo 1;else echo 0;fi");
+	}
+    else if ( ! xdialogPresent() && tkinter2Present ( ) )
+    {
+        strcpy ( lDialogString , gPython2Name ) ;
+        if ( ! isatty ( 1 ) && isDarwin ( ) )
+        {
+           	strcat ( lDialogString , " -i" ) ;  /* for osx without console */
+        }
+		
+		strcat ( lDialogString ,
+" -c \"import Tkinter,tkMessageBox;root=Tkinter.Tk();root.withdraw();");
+		
+		if ( isDarwin ( ) )
+		{
+			strcat ( lDialogString ,
+"import os;os.system('''/usr/bin/osascript -e 'tell app \\\"Finder\\\" to set \
+frontmost of process \\\"Python\\\" to true' ''');");
+		}
+
+		strcat ( lDialogString ,"res=tkMessageBox." ) ;
+        if ( aDialogType && ! strcmp( "okcancel" , aDialogType ) )
+        {
+            strcat ( lDialogString , "askokcancel(" ) ;
+            if ( aDefaultButton )
+			{
+				strcat ( lDialogString , "default=tkMessageBox.OK," ) ;
+			}
+			else
+			{
+				strcat ( lDialogString , "default=tkMessageBox.CANCEL," ) ;
+			}
+        }
+        else if ( aDialogType && ! strcmp( "yesno" , aDialogType ) )
+        {
+            strcat ( lDialogString , "askyesno(" ) ;
+            if ( aDefaultButton )
+			{
+				strcat ( lDialogString , "default=tkMessageBox.YES," ) ;
+			}
+			else
+			{
+				strcat ( lDialogString , "default=tkMessageBox.NO," ) ;
+			}
+        }
+        else
+        {
+            strcat ( lDialogString , "showinfo(" ) ;
+        }
+        strcat ( lDialogString , "icon='" ) ;
+        if ( aIconType && (! strcmp( "question" , aIconType )
+          || ! strcmp( "error" , aIconType )
+          || ! strcmp( "warning" , aIconType ) ) )
+        {
+            strcat ( lDialogString , aIconType ) ;
+        }
+        else
+        {
+            strcat ( lDialogString , "info" ) ;
+        }
+		strcat(lDialogString, "',") ;
+	    if ( aTitle && strlen(aTitle) )
+	    {
+			strcat(lDialogString, "title='") ;
+			strcat(lDialogString, aTitle) ;
+			strcat(lDialogString, "',") ;
+	    }
+		if ( aMessage && strlen(aMessage) )
+		{
+			replaceSubStr ( aMessage , "\n" , "\\n" , lBuff ) ;
+			strcat(lDialogString, "message='") ;
+			strcat(lDialogString, lBuff) ;
+			strcat(lDialogString, "'") ;
+			lBuff[0]='\0';
+		}
+		strcat(lDialogString, ");\n\
+if res==False :\n\tprint 0\n\
+else :\n\tprint 1\n\"" ) ;
+    }
+	else if (!xdialogPresent() && !gdialogPresent() && gxmessagePresent() )
+	{
+		strcpy ( lDialogString , "gxmessage");
+		if ( aDialogType && ! strcmp("okcancel" , aDialogType) )
+		{
+			strcpy ( lDialogString , " -buttons Ok:1,Cancel:0");
+		}
+		else if ( aDialogType && ! strcmp("yesno" , aDialogType) )
+		{
+			strcpy ( lDialogString , " -buttons Yes:1,No:0");
+		}
+	
+		strcpy ( lDialogString , " -center \"");
+		if ( aMessage && strlen(aMessage) )
+		{
+			strcat ( lDialogString , aMessage ) ;
+		}
+		strcat(lDialogString, "\"" ) ;
+		if ( aTitle && strlen(aTitle) )
+		{
+			strcat ( lDialogString , " -title  \"");
+			strcat ( lDialogString , aTitle ) ;
+			strcat(lDialogString, "\"" ) ;
+		}
+	}
+	else if (!xdialogPresent() && !gdialogPresent() && notifysendPresent()
+			 && strcmp("okcancel" , aDialogType)
+			 && strcmp("yesno" , aDialogType) )
+	{
+		strcpy ( lDialogString , "notify-send \"" ) ;
+		if ( aTitle && strlen(aTitle) )
+		{
+			strcat(lDialogString, aTitle) ;
+			strcat ( lDialogString , " | " ) ;
+		}
+		if ( aMessage && strlen(aMessage) )
+		{
+			strcat(lDialogString, aMessage) ;
+		}
+		strcat ( lDialogString , "\"" ) ;
+	}
+	else if (!xdialogPresent() && !gdialogPresent() && xmessagePresent() 
+		&& strcmp("okcancel" , aDialogType)
+		&& strcmp("yesno" , aDialogType) )
+	{
+		strcpy ( lDialogString , "xmessage -center \"");
+		if ( aTitle && strlen(aTitle) )
+		{
+			strcat(lDialogString, aTitle) ;
+			strcat(lDialogString, "\n\n" ) ;
+		}
+		if ( aMessage && strlen(aMessage) )
+		{
+			strcat(lDialogString, aMessage) ;
+		}
+		strcat(lDialogString, "\"" ) ;
+	}
+	else if ( xdialogPresent() || gdialogPresent()
+		   || dialogName() || whiptailPresent() )
+	{
+		if ( xdialogPresent ( ) )
+		{
+			lWasGraphicDialog = 1 ;
+			strcpy ( lDialogString , "(Xdialog " ) ;
+		}
+		else if ( gdialogPresent ( ) )
+		{
+			lWasGraphicDialog = 1 ;
+			strcpy ( lDialogString , "(gdialog " ) ;
+		}
+		else if ( dialogName ( ) )
+		{
+			if ( isatty ( 1 ) )
+			{
+				strcpy ( lDialogString , "(dialog " ) ;
+			}
+			else
+			{
+				lWasXterm = 1 ;
+				strcpy ( lDialogString , terminalName() ) ;
+				strcat ( lDialogString , "'(" ) ;
+				strcat ( lDialogString , dialogName() ) ;
+				strcat ( lDialogString , " " ) ;
+			}
+		}
+		else if ( isatty ( 1 ) )
+		{
+			strcpy ( lDialogString , "(whiptail " ) ;
+		}
+		else
+		{
+			lWasXterm = 1 ;
+			strcpy ( lDialogString , terminalName() ) ;
+			strcat ( lDialogString , "'(whiptail " ) ;
+		}
+
+ 		if ( aTitle && strlen(aTitle) )
+		{
+			strcat(lDialogString, "--title \"") ;
+			strcat(lDialogString, aTitle) ;
+			strcat(lDialogString, "\" ") ;
+		}
+		if ( aDialogType && ! strcmp( "okcancel" , aDialogType ) )
+		{
+			if ( ! aDefaultButton )
+			{
+				strcat ( lDialogString , "--defaultno " ) ;
+			}
+			strcat ( lDialogString ,
+					"--yes-label \"Ok\" --no-label \"Cancel\" --yesno " ) ;
+		}
+		else if ( aDialogType && ! strcmp( "yesno" , aDialogType ) )
+		{
+			if ( ! aDefaultButton )
+			{
+				strcat ( lDialogString , "--defaultno " ) ;
+			}
+			strcat ( lDialogString , "--yesno " ) ;
+		}
+		else
+		{
+			strcat ( lDialogString , "--msgbox " ) ;
+
+		}
+		strcat ( lDialogString , "\"" ) ;
+		if ( aMessage && strlen(aMessage) )
+		{
+			strcat(lDialogString, aMessage) ;
+		}
+
+		if ( lWasGraphicDialog )
+		{
+			strcat(lDialogString,
+				   "\" 10 60 ) 2>&1;if [ $? = 0 ];then echo 1;else echo 0;fi");
+		}
+		else
+		{
+			strcat(lDialogString, "\" 10 60 >/dev/tty) 2>&1;if [ $? = 0 ];");
+			if ( lWasXterm )
+			{
+				strcat ( lDialogString ,
+					"then\n\techo 1\nelse\n\techo 0\nfi >/tmp/tinyfd.txt';\
+cat /tmp/tinyfd.txt;rm /tmp/tinyfd.txt");
+			}
+			else
+			{
+			   strcat(lDialogString,
+					  "then echo 1;else echo 0;fi;clear >/dev/tty");
+			}
+		}
+	}
+	else if ( ! isatty ( 1 ) && terminalName() )
+	{
+		strcpy ( lDialogString , terminalName() ) ;
+		strcat ( lDialogString , "'" ) ;
+		if ( !gWarningDisplayed )
+		{
+			gWarningDisplayed = 1 ;
+			strcat ( lDialogString , "echo \"" ) ;
+			strcat ( lDialogString, gTitle) ;
+			strcat ( lDialogString , "\";" ) ;
+			strcat ( lDialogString , "echo \"" ) ;
+			strcat ( lDialogString, gMessageUnix) ;
+			strcat ( lDialogString , "\";echo;echo;" ) ;
+		}
+		if ( aTitle && strlen(aTitle) )
+		{
+			strcat ( lDialogString , "echo \"" ) ;
+			strcat ( lDialogString, aTitle) ;
+			strcat ( lDialogString , "\";echo;" ) ;
+		}
+		if ( aMessage && strlen(aMessage) )
+		{
+			strcat ( lDialogString , "echo \"" ) ;
+			strcat ( lDialogString, aMessage) ;
+			strcat ( lDialogString , "\"; " ) ;
+		}
+		if ( aDialogType && !strcmp("yesno",aDialogType) )
+		{
+			strcat ( lDialogString , "echo -n \"y/n: \"; " ) ;
+			strcat ( lDialogString , "stty raw -echo;" ) ;
+			strcat ( lDialogString ,
+				"answer=$( while ! head -c 1 | grep -i [ny];do true ;done);");
+			strcat ( lDialogString ,
+				"if echo \"$answer\" | grep -iq \"^y\";then\n");
+			strcat ( lDialogString , "\techo 1\nelse\n\techo 0\nfi" ) ;
+		}
+		else if ( aDialogType && !strcmp("okcancel",aDialogType) )
+		{
+			strcat ( lDialogString , "echo -n \"[O]kay/[C]ancel: \"; " ) ;
+			strcat ( lDialogString , "stty raw -echo;" ) ;
+			strcat ( lDialogString ,
+				"answer=$( while ! head -c 1 | grep -i [oc];do true ;done);");
+			strcat ( lDialogString ,
+				"if echo \"$answer\" | grep -iq \"^o\";then\n");
+			strcat ( lDialogString , "\techo 1\nelse\n\techo 0\nfi" ) ;
+		}
+		else
+		{
+			strcat(lDialogString , "echo -n \"press any key to continue \"; ");
+			strcat ( lDialogString , "stty raw -echo;" ) ;
+			strcat ( lDialogString ,
+				"answer=$( while ! head -c 1;do true ;done);echo 1");
+		}
+		strcat ( lDialogString ,
+			" >/tmp/tinyfd.txt';cat /tmp/tinyfd.txt;rm /tmp/tinyfd.txt");
+	}
+	else
+	{
+		if ( !gWarningDisplayed )
+		{
+			gWarningDisplayed = 1 ;
+			printf ("\n\n%s\n", gTitle);
+			printf ("%s\n\n\n", gMessageUnix);
+		}
+ 		if ( aTitle && strlen(aTitle) )
+		{
+			printf ("%s\n\n", aTitle);
+		}
+
+		tcgetattr(0, &infoOri);
+		tcgetattr(0, &info);
+		info.c_lflag &= ~ICANON;
+		info.c_cc[VMIN] = 1;
+		info.c_cc[VTIME] = 0;
+		tcsetattr(0, TCSANOW, &info);
+		if ( aDialogType && !strcmp("yesno",aDialogType) )
+		{
+			do
+			{
+				if ( aMessage && strlen(aMessage) )
+				{
+					printf("%s\n",aMessage);
+				}
+				printf("y/n: ");
+				lChar = tolower ( getchar() ) ;
+				printf("\n\n");
+			}
+			while ( lChar != 'y' && lChar != 'n' );
+			lResult = lChar == 'y' ? 1 : 0 ;
+		}
+		else if ( aDialogType && !strcmp("okcancel",aDialogType) )
+		{
+			do
+			{
+				if ( aMessage && strlen(aMessage) )
+				{
+					printf("%s\n",aMessage);
+				}
+				printf("[O]kay/[C]ancel: ");
+				lChar = tolower ( getchar() ) ;
+				printf("\n\n");
+			}
+			while ( lChar != 'o' && lChar != 'c' );
+			lResult = lChar == 'o' ? 1 : 0 ;
+		}
+		else
+		{
+			if ( aMessage && strlen(aMessage) )
+			{
+				printf("%s\n\n",aMessage);
+			}
+			printf("press any key to continue ");
+			getchar() ;
+			printf("\n\n");
+			lResult = 1 ;
+		}
+		tcsetattr(0, TCSANOW, &infoOri);
+		return lResult ;
+	}
+
+	/* printf ( "lDialogString: %s\n" , lDialogString ) ; //*/
+    if ( ! ( lIn = popen ( lDialogString , "r" ) ) )
+    {
+        return 0 ;
+    }
+	while ( fgets ( lBuff , sizeof ( lBuff ) , lIn ) != NULL )
+	{}
+	pclose ( lIn ) ;
+	/* printf ( "lBuff: %s len: %lu \n" , lBuff , strlen(lBuff) ) ; //*/
+    if ( lBuff[ strlen ( lBuff ) -1 ] == '\n' )
+    {
+    	lBuff[ strlen ( lBuff ) -1 ] = '\0' ;
+    }
+	/* printf ( "lBuff1: %s len: %lu \n" , lBuff , strlen(lBuff) ) ; //*/
+    lResult =  strcmp ( lBuff , "1" ) ? 0 : 1 ;
+	/* printf ( "lResult: %d\n" , lResult ) ; //*/
+    return lResult ;
 }
 
 /* returns NULL on cancel */

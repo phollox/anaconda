@@ -332,12 +332,12 @@ class SystemObject(ObjectWriter):
 
         test_click = []
         for click in clicks:
-            test_click.append('is_mouse_pressed_once(%s)' % click)
+            test_click.append('is_mouse_pressed_once_frame(%s)' % click)
         test_click = '!(%s)' % ' || '.join(test_click)
         writer.putlnc('if (%s) return;', test_click)
 
         for (obj, mouse_key, func) in obj_funcs:
-            writer.putlnc('if (is_mouse_pressed_once(%s)) {', mouse_key)
+            writer.putlnc('if (is_mouse_pressed_once_frame(%s)) {', mouse_key)
             writer.indent()
 
             converter.start_flat_iteration(obj, writer)
@@ -639,11 +639,7 @@ class MouseClicked(ConditionWriter):
     pre_event = True
 
     def write(self, writer):
-        if self.converter.config.use_subapp_frames():
-            writer.putc('is_mouse_pressed_once_frame(%s)',
-                        self.convert_index(0))
-        else:
-            writer.put('is_mouse_pressed_once(%s)' % self.convert_index(0))
+        writer.put('is_mouse_pressed_once_frame(%s)' % self.convert_index(0))
 
 class ObjectClicked(ConditionWriter):
     # is_always = True
@@ -656,7 +652,7 @@ class ObjectClicked(ConditionWriter):
 
     def write(self, writer):
         writer.put('mouse_over() && '
-                   'is_mouse_pressed_once(%s)' % self.convert_index(0))
+                   'is_mouse_pressed_once_frame(%s)' % self.convert_index(0))
 
 KEY_FLAGS = BitDict(
     'Up',
@@ -2367,7 +2363,7 @@ conditions = make_table(ConditionMethodWriter, {
     'OnCollision' : OnCollision,
     'ObjectVisible' : 'get_visible',
     'ObjectInvisible' : ObjectInvisible,
-    'WhileMousePressed' : 'is_mouse_pressed',
+    'WhileMousePressed' : 'is_mouse_pressed_frame',
     'MouseOnObject' : MouseOnObject,
     'Always' : Always,
     'MouseClicked' : MouseClicked,
