@@ -1422,7 +1422,6 @@ frontmost of process \\\"Python\\\" to true' ''');");
 		if ( !gWarningDisplayed )
 		{
 			gWarningDisplayed = 1 ;
-			tinyfd_messageBox ( gTitle , gMessageUnix , "ok", "error" , 1 ) ;
 		}
 		return NULL ;
 	}
