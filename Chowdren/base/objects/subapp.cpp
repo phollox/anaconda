@@ -23,8 +23,8 @@ static vector<SubApplication*> frames;
         current_x += start_x + 6;\
         current_y += start_y + 28;\
     } else {\
-        current_x += x + layer->off_x - frame->off_x;\
-        current_y += y + layer->off_y - frame->off_y;\
+        current_x += x;\
+        current_y += y;\
     }
 
 #define SET_APP_RENDER() \
@@ -135,7 +135,7 @@ void SubApplication::update()
             current_x -= off_x;
         }
         if (current_y + height >= display_height) {
-            int off_y = (current_x + height) - display_height;
+            int off_y = (current_y + height) - display_height;
             change_y -= off_y;
             current_y -= off_y;
         }
@@ -217,9 +217,9 @@ void SubApplication::init_frame()
 {
     Gwen::Controls::Canvas * canvas = manager.main_frame->gwen.canvas;
     subapp_frame.gwen.frame_base->SetParent(canvas);
-    flags &= ~SCROLL;
-    x += manager.frame->off_x;
-    y += manager.frame->off_y;
+    flags |= SCROLL;
+    // x += manager.frame->off_x;
+    // y += manager.frame->off_y;
 }
 #endif
 
@@ -235,8 +235,7 @@ void SubApplication::draw_subapp()
         window_control->SetSize(width+12, height+35);
         window_control->SetTitle(subapp_frame.gwen.title.c_str());
     } else {
-        subapp_frame.gwen.frame_base->SetPos(x + layer->off_x - frame->off_x,
-                                             y + layer->off_y - frame->off_y);
+        subapp_frame.gwen.frame_base->SetPos(x, y);
     }
     width = subapp_frame.width;
     height = subapp_frame.height;
