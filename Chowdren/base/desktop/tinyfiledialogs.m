@@ -37,27 +37,6 @@ static char g_errorstr[NFD_MAX_STRLEN] = {0};
 
 /* internal routines */
 
-void *NFDi_Malloc( size_t bytes )
-{
-    void *ptr = malloc(bytes);
-    if ( !ptr )
-        NFDi_SetError("NFDi_Malloc failed.");
-
-    return ptr;
-}
-
-void NFDi_Free( void *ptr )
-{
-    assert(ptr);
-    free(ptr);
-}
-
-void NFDi_SetError( const char *msg )
-{
-    int bTruncate = NFDi_SafeStrncpy( g_errorstr, msg, NFD_MAX_STRLEN );
-    assert( !bTruncate );  _NFD_UNUSED(bTruncate);
-}
-
 
 int NFDi_SafeStrncpy( char *dst, const char *src, size_t maxCopy )
 {
@@ -129,6 +108,27 @@ size_t NFDi_UTF8_Strlen( const nfdchar_t *str )
     }
 
     return character_count; 
+}
+
+void NFDi_SetError( const char *msg )
+{
+    int bTruncate = NFDi_SafeStrncpy( g_errorstr, msg, NFD_MAX_STRLEN );
+    assert( !bTruncate );  _NFD_UNUSED(bTruncate);
+}
+
+void *NFDi_Malloc( size_t bytes )
+{
+    void *ptr = malloc(bytes);
+    if ( !ptr )
+        NFDi_SetError("NFDi_Malloc failed.");
+
+    return ptr;
+}
+
+void NFDi_Free( void *ptr )
+{
+    assert(ptr);
+    free(ptr);
 }
 
 /* public routines */
