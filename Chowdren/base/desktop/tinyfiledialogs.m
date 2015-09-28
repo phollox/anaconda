@@ -218,7 +218,10 @@ static void SetDefaultPath( NSSavePanel *dialog, const nfdchar_t *defaultPath )
 
     NSString *defaultPathString = [NSString stringWithUTF8String: defaultPath];
     NSURL *url = [NSURL fileURLWithPath:defaultPathString isDirectory:YES];
-    [dialog setDirectoryURL:url];    
+    NSString *imageName = [defaultPathString lastPathComponent];
+    NSString *baseName = [imageName stringByDeletingPathExtension];
+    [dialog setDirectoryURL:url];
+    [dialog setNameFieldStringValue:baseName]
 }
 
 
