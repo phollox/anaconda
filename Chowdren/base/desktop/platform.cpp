@@ -1101,7 +1101,7 @@ void platform_swap_buffers()
 #else
     // http://steamcommunity.com/groups/steamworks/discussions/12/
     // 666828127036283052/
-    glUseProgramObjectARB(0);
+    glUseProgramObject(0);
     glVertexPointer(4, GL_FLOAT, 0, 0);
     glColorPointer(4, GL_FLOAT, 0, 0);
     glTexCoordPointer(4, GL_FLOAT, 0, 0);
