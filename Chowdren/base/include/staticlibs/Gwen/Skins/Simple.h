@@ -34,6 +34,7 @@ namespace Gwen
 				Gwen::Color m_colToolTipBackground;
 				Gwen::Color m_colToolTipBorder;
 				Gwen::Color m_colModal;
+				float m_normalMul, m_disabledMul;
 
 				Simple()
 				{
@@ -54,6 +55,9 @@ namespace Gwen
 					m_colModal = Gwen::Color( 25, 25, 25, 150 );
 					m_DefaultFont.facename	= L"Microsoft Sans Serif";
 					m_DefaultFont.size		= 11;
+
+					m_normalMul = 1.0f;
+					m_disabledMul = 0.6f;
 				}
 
 				virtual void DrawGenericPanel( Controls::Base* control )
@@ -148,9 +152,9 @@ namespace Gwen
 
 				virtual void DrawButton( int w, int h, bool bDepressed, bool bHovered, bool bSquared = false, bool bDisabled = false)
 				{
-					float mul = 1.0f;
+					float mul = m_normalMul;
 					if (bDisabled) {
-						mul = 0.6f;
+						mul = m_disabledMul;
 						bHovered = false;
 					}
 					if ( bDepressed )	{ m_Render->SetDrawColor( m_colControlDark * mul ); }
@@ -280,13 +284,20 @@ namespace Gwen
 				{
 					Gwen::Rect rect = control->GetRenderBounds();
 					bool bHasFocus = control->HasFocus();
+					bool bDisabled = control->IsDisabled();
+
+					float mul = m_normalMul;
+					if (bDisabled) {
+						bHasFocus = false;
+						mul = m_disabledMul;
+					}
 					// Box inside
-					m_Render->SetDrawColor( control->m_BackgroundColor );
+					m_Render->SetDrawColor( control->m_BackgroundColor * mul );
 					m_Render->DrawFilledRect( Gwen::Rect( 1, 1, rect.w - 2, rect.h - 2 ) );
-					m_Render->SetDrawColor( m_colControlOutlineLight );
+					m_Render->SetDrawColor( m_colControlOutlineLight * mul );
 					m_Render->DrawFilledRect( Gwen::Rect( rect.x + 1, rect.y, rect.w - 2, 1 ) );
 					m_Render->DrawFilledRect( Gwen::Rect( rect.x, rect.y + 1, 1, rect.h - 2 ) );
-					m_Render->SetDrawColor( m_colControlOutlineLighter );
+					m_Render->SetDrawColor( m_colControlOutlineLighter * mul );
 					m_Render->DrawFilledRect( Gwen::Rect( rect.x + 1, ( rect.y + rect.h ) - 1, rect.w - 2, 1 ) );
 					m_Render->DrawFilledRect( Gwen::Rect( ( rect.x + rect.w ) - 1, rect.y + 1, 1, rect.h - 2 ) );
 

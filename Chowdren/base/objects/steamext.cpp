@@ -18,6 +18,7 @@ static std::string steam_language("English");
 #ifdef CHOWDREN_ENABLE_STEAM
 #include "steam/steam_api.h"
 #include "steam/steamtypes.h"
+#include "fileop.h"
 
 class SteamGlobal
 {
@@ -246,17 +247,59 @@ struct SubCallback
     vector<PublishedFileId_t> ids;
     vector<Call> calls;
     vector<SteamUGCDetails_t> details;
+    bool subs;
+
+    CCallResult<SubCallback, SteamUGCQueryCompleted_t> content_call;
+
+    SubCallback()
+    {
+        subs = true;
+    }
 
     void start(Frame::EventFunction loop, Frame::EventFunction finish)
     {
         loop_callback = loop;
         finish_callback = finish;
-        // handle = SteamUGC()->CreateQueryUserUGCRequest(
-        //     SteamUser()->GetSteamID().GetAccountID(), k_EUserUGCList_Published,
-        //     k_EUGCMatchingUGCType_Items,
-        //     k_EUserUGCListSortOrder_CreationOrderDesc,
-        //     0, CHOWDREN_STEAM_APPID, 1);
-        // SteamAPICall_t call_handle = SteamUGC()->SendQueryUGCRequest(handle);
+
+        if (subs)
+            search_subs();
+        else
+            search_content();
+    }
+
+    void search_content()
+    {
+        handle = SteamUGC()->CreateQueryUserUGCRequest(
+            SteamUser()->GetSteamID().GetAccountID(), k_EUserUGCList_Published,
+            k_EUGCMatchingUGCType_Items,
+            k_EUserUGCListSortOrder_CreationOrderDesc,
+            0, CHOWDREN_STEAM_APPID, 1);
+        SteamAPICall_t call_handle = SteamUGC()->SendQueryUGCRequest(handle);
+        content_call.Set(call_handle, this, &SubCallback::on_content_callback);
+    }
+
+    void on_content_callback(SteamUGCQueryCompleted_t * result, bool fail)
+    {
+        if (fail || result->m_eResult != k_EResultOK) {
+            (manager.frame->*finish_callback)();
+            return;
+        }
+
+        received = 0;
+        ids.resize(result->m_unNumResultsReturned);
+        details.resize(result->m_unNumResultsReturned);
+
+        for (int i = 0; i < int(result->m_unNumResultsReturned); ++i) {
+            SteamUGC()->GetQueryUGCResult(handle, i, &details[i]);
+            ids[i] = details[i].m_nPublishedFileId;
+        }
+
+       SteamUGC()->ReleaseQueryUGCRequest(handle);
+       finish();
+    }
+
+    void search_subs()
+    {
         int count = std::min<int>(50, SteamUGC()->GetNumSubscribedItems());
         if (count <= 0) {
             (manager.frame->*finish_callback)();
@@ -306,6 +349,7 @@ struct SubCallback
 			SteamUGCDetails_t & d = details[i];
             r.index = i;
             r.cloud_path = d.m_pchFileName;
+            r.title = d.m_rgchTitle;
             r.publish_id = i;
             (manager.frame->*loop_callback)();
         }
@@ -314,14 +358,333 @@ struct SubCallback
     }
 };
 
-static SubCallback ugc_callback;
+inline std::string trim_spaces(const std::string & value)
+{
+    int i;
+    for (i = 0; i < int(value.size()); ++i) {
+        if (value[i] != ' ')
+            break;
+    }
+    int ii;
+    for (ii = int(value.size())-1; ii >= 0; --ii) {
+        if (value[ii] != ' ')
+            break;
+    }
+    return value.substr(i, ii-i);
+}
+
+#ifdef _WIN32
+#include <direct.h>
+#define getcwd _getcwd
+#define PATH_MAX 4096
+#else
+#include <limits.h>
 #endif
 
-bool SteamObject::get_subs(Frame::EventFunction loop,
-                           Frame::EventFunction finish)
+struct UploadCallback
+{
+    bool has_id;
+    PublishedFileId_t current_id;
+    std::string file;
+    std::string cloud_file;
+    std::string preview;
+    std::string preview_cloud_file;
+    unsigned int appid;
+    std::string title;
+    std::string description;
+    int visibility;
+
+    enum {
+        SET_TITLE = 1 << 0,
+        SET_FILE = 1 << 1,
+        SET_PREVIEW = 1 << 2,
+        SET_DESCRIPTION = 1 << 3,
+        SET_VISIBILITY = 1 << 4,
+        SET_TAGS = 1 << 5
+    };
+
+    unsigned int flags;
+
+    bool uploading;
+
+    CCallResult<UploadCallback,
+                RemoteStorageUpdatePublishedFileResult_t> update_call;
+    CCallResult<UploadCallback, RemoteStoragePublishFileResult_t> new_call;
+    CCallResult<UploadCallback, RemoteStorageFileShareResult_t> share_call;
+    CCallResult<UploadCallback, RemoteStorageFileShareResult_t> preview_call;
+
+	Frame::EventFunction done_callback, fail_callback;
+
+    std::string error;
+
+    vector<std::string> tags;
+    vector<const char*> tags_c;
+
+    SteamParamStringArray_t steam_tags;
+
+    UploadCallback()
+    {
+        has_id = false;
+        appid = CHOWDREN_STEAM_APPID;
+        visibility = 0;
+        uploading = false;
+
+        done_callback = NULL;
+        fail_callback = NULL;
+
+        flags = 0;
+    }
+
+    void set_callbacks(Frame::EventFunction done, Frame::EventFunction fail)
+    {
+        done_callback = done;
+        fail_callback = fail;
+    }
+
+    void set_title(const std::string & value)
+    {
+        flags |= SET_TITLE;
+        title = value;
+    }
+
+    void set_file(const std::string & value)
+    {
+        flags |= SET_FILE;
+        file = value;
+        cloud_file = get_path_filename(file);
+    }
+
+    void set_preview(const std::string & value)
+    {
+        flags |= SET_PREVIEW;
+        preview = value;
+        preview_cloud_file = "preview" + number_to_string(current_id)
+                             + "." + get_path_ext(preview);
+    }
+
+    void set_visibility(int value)
+    {
+        flags |= SET_VISIBILITY;
+        visibility = value;
+    }
+
+    void set_tags(const std::string & value)
+    {
+        flags |= SET_TAGS;
+        tags.clear();
+
+        split_string(value, ',', tags);
+        tags_c.resize(tags.size());
+        int i = 0;
+        vector<std::string>::iterator it;
+        for (it = tags.begin(); it != tags.end(); ++it) {
+            *it = trim_spaces(*it);
+            tags_c[i] = (*it).c_str();
+            i++;
+        }
+
+        steam_tags.m_ppStrings = &tags_c[0];
+        steam_tags.m_nNumStrings = tags_c.size();
+    }
+
+	void set_description(const std::string & value)
+	{
+		flags |= SET_DESCRIPTION;
+		description = value;
+	}
+
+    void share_callback(RemoteStorageFileShareResult_t * result, bool fail)
+    {
+        if (result && (result->m_eResult != k_EResultOK || fail)) {
+            uploading = false;
+            error = "Error: " + number_to_string(result->m_eResult);
+            call_fail();
+            return;
+        }
+
+        if (!(flags & SET_PREVIEW)) {
+            preview_callback(NULL, false);
+            return;
+        }
+
+        std::string data;
+        if (!read_file(preview.c_str(), data)) {
+            error = "File not found";
+            call_fail();
+            return;
+        }
+        SteamRemoteStorage()->FileWrite(preview_cloud_file.c_str(),
+                                        &data[0], data.size());
+        SteamAPICall_t call_handle;
+        call_handle = SteamRemoteStorage()->FileShare(
+            preview_cloud_file.c_str());
+        preview_call.Set(call_handle, this, &UploadCallback::preview_callback);
+    }
+
+    void preview_callback(RemoteStorageFileShareResult_t * result, bool fail)
+    {
+        if (result && (result->m_eResult != k_EResultOK || fail)) {
+            uploading = false;
+            error = "Error: " + number_to_string(result->m_eResult);
+            call_fail();
+            return;
+        }
+
+        if (has_id) {
+            do_update();
+            return;
+        }
+
+        ERemoteStoragePublishedFileVisibility vis =
+            (ERemoteStoragePublishedFileVisibility)visibility;
+        SteamAPICall_t call_handle;
+        call_handle = SteamRemoteStorage()->PublishWorkshopFile(
+            cloud_file.c_str(), preview_cloud_file.c_str(), appid,
+            title.c_str(), description.c_str(), vis, &steam_tags,
+            k_EWorkshopFileTypeCommunity);
+        new_call.Set(call_handle, this, &UploadCallback::new_callback);
+    }
+
+    void new_callback(RemoteStoragePublishFileResult_t * result, bool fail)
+    {
+        uploading = false;
+        if (result->m_eResult != k_EResultOK || fail) {
+            error = "Error: " + number_to_string(result->m_eResult);
+            call_fail();
+            return;
+        }
+
+        call_done();
+    }
+
+    void call_fail()
+    {
+        flags = 0;
+        if (fail_callback)
+            (manager.frame->*fail_callback)();
+    }
+
+    void call_done()
+    {
+        flags = 0;
+        if (done_callback)
+            (manager.frame->*done_callback)();
+    }
+
+    void on_create_callback(CreateItemResult_t * result, bool fail)
+    {
+        if (result->m_eResult != k_EResultOK || fail) {
+            uploading = false;
+            error = "Error: " + number_to_string(result->m_eResult);
+            call_fail();
+            return;
+        }
+
+        has_id = true;
+        current_id = result->m_nPublishedFileId;
+        start();
+    }
+
+    void start()
+    {
+        uploading = true;
+
+        if (!(flags & SET_FILE)) {
+            share_callback(NULL, false);
+            return;
+        }
+
+        std::string data;
+        if (!read_file(file.c_str(), data)) {
+            error = "File not found";
+            call_fail();
+            return;
+        }
+        SteamRemoteStorage()->FileWrite(cloud_file.c_str(),
+                                        &data[0], data.size());
+        SteamAPICall_t call_handle;
+        call_handle = SteamRemoteStorage()->FileShare(cloud_file.c_str());
+        share_call.Set(call_handle, this, &UploadCallback::share_callback);
+    }
+
+    void do_update()
+    {
+        PublishedFileUpdateHandle_t handle;
+        handle = SteamRemoteStorage()->CreatePublishedFileUpdateRequest(
+            current_id);
+        if (flags & SET_TITLE) {
+            if (!SteamRemoteStorage()->UpdatePublishedFileTitle(
+                    handle, title.c_str()))
+                std::cout << "Could not set item title" << std::endl;
+        }
+        if (flags & SET_DESCRIPTION) {
+            if (!SteamRemoteStorage()->UpdatePublishedFileDescription(
+                    handle, description.c_str()))
+                std::cout << "Could not set item description" << std::endl;
+        }
+
+        if (flags & SET_PREVIEW) {
+            if (!SteamRemoteStorage()->UpdatePublishedFilePreviewFile(
+                    handle, preview_cloud_file.c_str()))
+                std::cout << "Could not set item preview" << std::endl;
+        }
+
+        if (flags & SET_FILE) {
+			if (!SteamRemoteStorage()->UpdatePublishedFileFile(
+                    handle, cloud_file.c_str()))
+                std::cout << "Could not set item content" << std::endl;
+        }
+
+        if (flags & SET_TAGS) {
+            if (!SteamRemoteStorage()->UpdatePublishedFileTags(
+                    handle, &steam_tags))
+                std::cout << "Could not set item tags" << std::endl;
+        }
+
+        if (flags & SET_VISIBILITY) {
+            ERemoteStoragePublishedFileVisibility vis =
+                (ERemoteStoragePublishedFileVisibility)visibility;
+            if (!SteamRemoteStorage()->UpdatePublishedFileVisibility(
+                    handle, vis))
+                std::cout << "Could not set item visibility" << std::endl;
+        }
+
+        flags = 0;
+        uploading = true;
+        SteamAPICall_t call_handle;
+        call_handle = SteamRemoteStorage()->CommitPublishedFileUpdate(handle);
+        update_call.Set(call_handle, this,
+                        &UploadCallback::on_update_callback);
+    }
+
+    void on_update_callback(RemoteStorageUpdatePublishedFileResult_t * result,
+                            bool fail)
+    {
+        uploading = false;
+        if (result->m_eResult != k_EResultOK || fail) {
+            error = "Error: " + number_to_string(result->m_eResult);
+            call_fail();
+            return;
+        }
+
+        call_done();
+    }
+};
+
+static SubCallback ugc_list_callback;
+static UploadCallback ugc_upload;
+#endif
+
+void SteamObject::set_search(bool subs)
+{
+    ugc_list_callback.subs = subs;
+}
+
+bool SteamObject::get_content(Frame::EventFunction loop,
+                              Frame::EventFunction finish)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
-    ugc_callback.start(loop, finish);
+    ugc_list_callback.start(loop, finish);
     return true;
 #else
     return false;
@@ -438,7 +801,7 @@ void SteamObject::download(const std::string & name, int priority,
     global_steam_obj.download_fail = fail;
     std::string filename = convert_path(name);
     SteamAPICall_t handle;
-    UGCHandle_t id = ugc_callback.details[content_id].m_hFile;
+    UGCHandle_t id = ugc_list_callback.details[content_id].m_hFile;
     handle = SteamRemoteStorage()->UGCDownloadToLocation(id, filename.c_str(),
                                                          priority);
     DownloadCall * call = new DownloadCall();
@@ -491,14 +854,22 @@ bool SteamObject::is_activated()
 
 bool SteamObject::is_active(const std::string & session_id)
 {
-    std::cout << "is_active not implemented" << std::endl;
+#ifdef CHOWDREN_ENABLE_STEAM
+    return ugc_upload.uploading;
+#else
     return false;
+#endif
 }
 
 bool SteamObject::is_connected()
 {
-    std::cout << "is_connected not implemented" << std::endl;
+#ifdef CHOWDREN_ENABLE_STEAM
+    if (!global_steam_obj.initialized)
+        return false;
+    return true;
+#else
     return false;
+#endif
 }
 
 void SteamObject::reset_uncommited_changes()
@@ -525,56 +896,71 @@ void SteamObject::set_preview_latest(const std::string & local_path,
                                      const std::string & cloud_path,
                                      bool overwrite)
 {
-    std::cout << "Set preview image to latest file not implemented"
-        << std::endl;
+    std::cout << "Set preview: " << local_path << std::endl;
+    ugc_upload.set_preview(local_path);
 }
 
-void SteamObject::upload_changes()
+void SteamObject::upload_changes(Frame::EventFunction done,
+                                 Frame::EventFunction fail)
 {
-    std::cout << "upload_changes not implemented" << std::endl;
+    ugc_upload.set_callbacks(done, fail);
+    ugc_upload.start();
+}
+
+const std::string & SteamObject::get_error()
+{
+    return ugc_upload.error;
 }
 
 void SteamObject::set_tags(const std::string & tags)
 {
-    std::cout << "set_tags not implemented: " << tags << std::endl;
+    ugc_upload.set_tags(tags);
+    std::cout << "Set tags: " << tags << std::endl;
 }
 
 void SteamObject::set_description(const std::string & value)
 {
-    std::cout << "set_description not implemented: " << value << std::endl;
+    ugc_upload.set_description(value);
+    std::cout << "Set description: " << value << std::endl;
 }
 
 void SteamObject::set_file(const std::string & local_path,
                            const std::string & cloud_path,
                            bool overwrite)
 {
-    std::cout << "set_file not implemented" << std::endl;
+    ugc_upload.set_file(local_path);
+    std::cout << "Set file: " << local_path << std::endl;
 }
 
 void SteamObject::set_content_title(const std::string & title)
 {
-    std::cout << "set_content_title not implemented" << std::endl;
+    ugc_upload.set_title(title);
+    std::cout << "Set content title: " << title << std::endl;
 }
 
 void SteamObject::set_content_appid(unsigned int value)
 {
-    std::cout << "set_content_appid not implemented" << std::endl;
+    ugc_upload.appid = value;
 }
 
 void SteamObject::set_content_visibility(int value)
 {
-    std::cout << "set_content_visibility not implemented" << std::endl;
+    ugc_upload.set_visibility(value);
+    std::cout << "Set visibility: " << value << std::endl;
 }
 
 void SteamObject::start_content_change(unsigned int content_id,
                                        const std::string & session_id)
 {
-    std::cout << "start_content_change not implemented" << std::endl;
+    PublishedFileId_t id;
+    id = ugc_list_callback.details[content_id].m_nPublishedFileId;
+    ugc_upload.has_id = true;
+    ugc_upload.current_id = id;
 }
 
 void SteamObject::start_publish(const std::string & session_id)
 {
-    std::cout << "start_publish not implemented" << std::endl;
+    ugc_upload.has_id = false;
 }
 
 #if !defined(CHOWDREN_ENABLE_STEAM) && defined(CHOWDREN_IS_FP)

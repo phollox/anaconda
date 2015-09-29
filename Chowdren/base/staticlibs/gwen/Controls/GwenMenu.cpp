@@ -80,6 +80,9 @@ int Menu::GetIndex(MenuItem * ptr)
 	for ( Base::List::iterator it = children.begin(); it != children.end(); ++it )
 	{
 		Base* pChild = *it;
+		MenuItem* pItem = gwen_cast<MenuItem> ( pChild );
+		if (pItem && pItem->m_bRemoving)
+			continue;
 		if (ptr == pChild)
 			return i;
 		i++;
@@ -112,8 +115,11 @@ void Menu::ClearItems()
 	for ( Base::List::iterator it = m_InnerPanel->Children.begin(); it != m_InnerPanel->Children.end(); ++it )
 	{
 		Base* pChild = *it;
+		MenuItem* pItem = gwen_cast<MenuItem> ( pChild );
 
 		if ( !pChild ) { continue; }
+
+		pItem->m_bRemoving = true;
 
 		pChild->DelayedDelete();
 	}

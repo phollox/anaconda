@@ -63,6 +63,7 @@ namespace Gwen
 				Gwen::Event::Caller	onChecked;
 				Gwen::Event::Caller	onUnChecked;
 				Gwen::Event::Caller	onCheckChange;
+				bool    m_bRemoving;
 
 			private:
 

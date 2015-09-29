@@ -1099,6 +1099,12 @@ void platform_swap_buffers()
         d3d_reset(true);
     }
 #else
+    // http://steamcommunity.com/groups/steamworks/discussions/12/
+    // 666828127036283052/
+    glUseProgramObjectARB(0);
+    glVertexPointer(4, GL_FLOAT, 0, 0);
+    glColorPointer(4, GL_FLOAT, 0, 0);
+    glTexCoordPointer(4, GL_FLOAT, 0, 0);
     SDL_GL_SwapWindow(global_window);
 #endif
 }

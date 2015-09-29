@@ -91,12 +91,12 @@ std::string ComboBox::get_current_line()
 
 void ComboBox::highlight()
 {
-    std::cout << "ComboBox::highlight not implemented" << std::endl;
+    combo_box->SetDisabled(false);
 }
 
 void ComboBox::dehighlight()
 {
-    std::cout << "ComboBox::dehighlight not implemented" << std::endl;
+    combo_box->SetDisabled(true);
 }
 
 void ComboBox::lose_focus()
@@ -106,6 +106,11 @@ void ComboBox::lose_focus()
 
 void ComboBox::reset()
 {
+    // this is stupid and slow
+    // bool disabled = combo_box->IsDisabled();
+    // combo_box->DelayedDelete();
+    // init_control();
+    // combo_box->SetDisabled(disabled);
     combo_box->ClearItems();
 }
 

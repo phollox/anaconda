@@ -116,6 +116,7 @@ void ComboBox::ClearItems()
 	{
 		m_Menu->ClearItems();
 	}
+	m_SelectedItem = NULL;
 }
 
 void ComboBox::SelectItem( MenuItem* pItem, bool bFireChangeEvents )
@@ -152,6 +153,10 @@ void ComboBox::SelectItemByName( const Gwen::String & name, bool bFireChangeEven
 	while ( it != children.end() )
 	{
 		MenuItem* pChild = gwen_cast<MenuItem> ( *it );
+		if (pChild->m_bRemoving) {
+			++it;
+			continue;
+		}
 
 		if ( pChild->GetName() == name )
 		{
@@ -171,6 +176,10 @@ int ComboBox::GetItemIndex( const Gwen::String & name)
 	while ( it != children.end() )
 	{
 		MenuItem* pChild = gwen_cast<MenuItem> ( *it );
+		if (pChild->m_bRemoving) {
+			++it;
+			continue;
+		}
 
 		if ( pChild->GetText() == name )
 		{
@@ -192,6 +201,10 @@ void ComboBox::SelectItemByIndex(int index, bool bFireChangeEvents )
 	while ( it != children.end() && index >= 0 )
 	{
 		MenuItem* pChild = gwen_cast<MenuItem> ( *it );
+		if (pChild->m_bRemoving) {
+			++it;
+			continue;
+		}
 
 		if (index == 0)
 		{
@@ -211,6 +224,10 @@ MenuItem * ComboBox::GetItemByIndex(int index)
 	while ( it != children.end() && index >= 0 )
 	{
 		MenuItem* pChild = gwen_cast<MenuItem> ( *it );
+		if (pChild->m_bRemoving) {
+			++it;
+			continue;
+		}
 
 		if (index == 0)
 		{

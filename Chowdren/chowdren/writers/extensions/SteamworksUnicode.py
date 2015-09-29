@@ -23,6 +23,8 @@ def get_search_success_name(converter):
 ON_CONNECT = 0
 DOWNLOAD_SUCCESS = 83
 DOWNLOAD_FAIL = 84
+PUBLISH_DONE = 52
+PUBLISH_FAIL = 53
 SEARCH_SUCCESS = 55
 ON_LOOP = 57
 ON_LOOP_FINISH = 58
@@ -33,7 +35,9 @@ GROUPS = (
     (ON_LOOP, 'on_loop'),
     (ON_LOOP_FINISH, 'on_loop_finish'),
     (SEARCH_SUCCESS, 'search_success'),
-    (ON_CONNECT, 'on_connect')
+    (ON_CONNECT, 'on_connect'),
+    (PUBLISH_DONE, 'on_publish_done'),
+    (PUBLISH_FAIL, 'on_publish_fail')
 )
 
 class SteamObject(ObjectWriter):
@@ -77,6 +81,14 @@ class SteamObject(ObjectWriter):
     def on_connect_name(self):
         return 'steam_on_connect_%s' % self.converter.current_frame_index
 
+    @property
+    def on_publish_done_name(self):
+        return 'steam_on_publish_done_%s' % self.converter.current_frame_index
+
+    @property
+    def on_publish_fail_name(self):
+        return 'steam_on_publish_fail_%s' % self.converter.current_frame_index
+
     def write_init(self, writer):
         pass
 
@@ -91,6 +103,7 @@ class SearchSubscribedItems(ActionMethodWriter):
         steam = self.converter.get_object_writer(obj)
         with self.converter.iterate_object(obj, writer, copy=False):
             obj = self.converter.get_object(obj)
+            writer.putlnc('%s->set_search(true);', obj)
             writer.putlnc('%s();', steam.search_success_name)
 
 class SearchContentItems(ActionMethodWriter):
@@ -101,6 +114,7 @@ class SearchContentItems(ActionMethodWriter):
         steam = self.converter.get_object_writer(obj)
         with self.converter.iterate_object(obj, writer, copy=False):
             obj = self.converter.get_object(obj)
+            writer.putlnc('%s->set_search(false);', obj)
             writer.putlnc('%s();', steam.search_success_name)
 
 class LoopResults(ActionMethodWriter):
@@ -111,7 +125,7 @@ class LoopResults(ActionMethodWriter):
         steam = self.converter.get_object_writer(obj)
         with self.converter.iterate_object(obj, writer, copy=False):
             obj = self.converter.get_object(obj)
-            writer.putlnc('%s->get_subs((EventFunction)&Frames::%s, '
+            writer.putlnc('%s->get_content((EventFunction)&Frames::%s, '
                           '(EventFunction)&Frames::%s);', obj,
                           steam.on_loop_name, steam.on_loop_finish_name)
 
@@ -131,6 +145,20 @@ class DownloadUGC(ActionMethodWriter):
                           self.convert_index(2),
                           steam.download_success_name,
                           steam.download_fail_name)
+
+class UploadChanges(ActionMethodWriter):
+    custom = True
+
+    def write(self, writer):
+        obj = self.get_object()
+        steam = self.converter.get_object_writer(obj)
+        with self.converter.iterate_object(obj, writer, copy=False):
+            obj = self.converter.get_object(obj)
+            writer.putlnc('%s->upload_changes('
+                          '(EventFunction)&Frames::%s, '
+                          '(EventFunction)&Frames::%s);', obj,
+                          steam.on_publish_done_name,
+                          steam.on_publish_fail_name)
 
 actions = make_table(ActionMethodWriter, {
     15 : 'request_user_data',
@@ -152,7 +180,7 @@ actions = make_table(ActionMethodWriter, {
     66 : 'set_content_visibility',
     69 : 'set_tags',
     74 : 'reset_changes',
-    75 : 'upload_changes',
+    75 : UploadChanges,
     116 : LoopResults,
     158 : SearchSubscribedItems,
     162 : DownloadUGC
@@ -189,6 +217,7 @@ expressions = make_table(ExpressionMethodWriter, {
     1 : 'get_user_id()',
     7 : 'get_int',
     12 : 'get_unlocked',
+    26 : 'get_error()',
     57 : get_sub_expression('index'),
     58 : get_sub_expression('publish_id'),
     59 : get_sub_expression('title'),

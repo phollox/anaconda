@@ -33,6 +33,7 @@ GWEN_CONTROL_CONSTRUCTOR( MenuItem )
 	m_bOnStrip = false;
 	m_SubmenuArrow = NULL;
 	m_Accelerator = NULL;
+	m_bRemoving = false;
 	SetTabable( false );
 	SetCheckable( false );
 	SetChecked( false );

@@ -55,6 +55,8 @@ class EditObject(ObjectWriter):
             writer.putlnc('edit_flags |= MULTILINE;')
         if flags['ReadOnly']:
             writer.putlnc('edit_flags |= READ_ONLY;')
+        if flags['HideOnStart']:
+            writer.putlnc('set_visible(false);')
 
         if self.converter.config.use_gwen():
             writer.putlnc('init_control();')

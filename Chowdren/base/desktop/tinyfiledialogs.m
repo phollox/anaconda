@@ -401,8 +401,10 @@ char const * tinyfd_saveFileDialog(
     char const * const * const aFilterPatterns,
     char const * const aSingleFilterDescription)
 {
-    if (static_out_path != NULL)
+    if (static_out_path != NULL) {
         NFDi_Free(static_out_path);
+        static_out_path = NULL;
+    }
     nfdresult_t res = NFD_SaveDialog(NULL, aDefaultPathAndFile,
                                      &static_out_path);
     if (res != NFD_OKAY)
@@ -418,8 +420,10 @@ char const * tinyfd_openFileDialog (
     char const * const aSingleFilterDescription ,
     int const aAllowMultipleSelects )
 {
-    if (static_out_path != NULL)
+    if (static_out_path != NULL) {
         NFDi_Free(static_out_path);
+        static_out_path = NULL;
+    }
     // XXX only allow single selects for now
     nfdresult_t res = NFD_OpenDialog(NULL, aDefaultPathAndFile,
                                      &static_out_path);

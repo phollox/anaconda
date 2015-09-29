@@ -38,9 +38,8 @@ public:
 
     static SubResult sub_result;
 
-    bool get_subs(Frame::EventFunction loop, Frame::EventFunction finish);
-    int get_sub_count();
-    void get_sub(int index);
+    bool get_content(Frame::EventFunction loop, Frame::EventFunction finish);
+    void set_search(bool subs);
 
     void set_int(const std::string & name, int value);
     int get_int(const std::string & name);
@@ -60,7 +59,7 @@ public:
     void set_preview_latest(const std::string & local_path,
                             const std::string & cloud_path,
                             bool overwrite);
-    void upload_changes();
+    void upload_changes(Frame::EventFunction done, Frame::EventFunction fail);
     void set_tags(const std::string & tags);
     void set_description(const std::string & value);
     void set_file(const std::string & local_path,
@@ -72,6 +71,7 @@ public:
     void start_content_change(unsigned int content_id,
                               const std::string & session_id);
     void start_publish(const std::string & session_id);
+    const std::string & get_error();
 
 #ifdef CHOWDREN_IS_FP
     void find_board(int char_id, int stage_id);
