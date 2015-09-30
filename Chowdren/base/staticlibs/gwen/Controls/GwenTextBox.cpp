@@ -511,7 +511,7 @@ void TextBoxMultiline::Render( Skin::Base* skin )
 		int iFirstChar = 0;
 		int iLastChar = 0;
 		skin->GetRender()->SetDrawColor( Gwen::Color( 50, 170, 255, 200 ) );
-		m_rectSelectionBounds.h = m_Text->GetFont()->size + 2;
+		m_rectSelectionBounds.h = m_Text->GetFont()->size + 6;
 
 		for(int iLine = iSelectionStartLine; iLine <= iSelectionEndLine; ++iLine)
 		{

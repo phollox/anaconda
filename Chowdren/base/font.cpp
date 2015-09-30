@@ -931,7 +931,7 @@ inline void FTSimpleLayout::WrapTextI(const T *buf, const int len,
                     break;
             }
 
-            OutputWrapped(lineStart.getBufferFromHere(), breakCharCount,
+            OutputWrapped(lineStart.getBufferFromHere(), breakCharCount+1,
                           position, remainingWidth, bounds);
             lines++;
 
@@ -1019,6 +1019,14 @@ inline void FTSimpleLayout::OutputWrappedI(const T *buf, const int len,
     // If we have bounds expand them by the line's bounds, otherwise render
     // the line.
     if (bounds) {
+        // if (sizeof(T) == sizeof(wchar_t)) {
+        //     std::wstring data;
+        //     if (len == -1)
+        //         data = std::wstring((wchar_t*)buf);
+        //     else
+        //         data = std::wstring((wchar_t*)buf, len);
+        //     std::wcout << L"output: '" << data << L"'" << std::endl;
+        // }
         FTBBox temp = currentFont->BBox(buf, len);
 
         // Add the extra space to the upper x dimension

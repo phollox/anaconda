@@ -1784,7 +1784,7 @@ void open_url(const std::string & name)
 {
     std::string cmd("xdg-open '");
     cmd += name;
-    cmd += "'";
+    cmd += "' &";
     system(cmd.c_str());
 }
 
