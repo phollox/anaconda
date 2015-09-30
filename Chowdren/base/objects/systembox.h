@@ -36,6 +36,7 @@ public:
 
 #ifdef CHOWDREN_USE_GWEN
     Gwen::Controls::Button * button;
+    int margin[4];
     int clicked;
     void update();
     void init_button();

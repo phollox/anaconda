@@ -189,6 +189,10 @@ class SystemBox(ObjectWriter):
         hyperlink_color = read_system_color(data)
 
         if self.converter.config.use_gwen():
+            writer.putlnc('margin[0] = %s;', margin_left)
+            writer.putlnc('margin[1] = %s;', margin_top)
+            writer.putlnc('margin[2] = %s;', margin_right)
+            writer.putlnc('margin[3] = %s;', margin_bottom)
             if flags['Button']:
                 writer.putlnc('init_button();')
 

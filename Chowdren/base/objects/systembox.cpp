@@ -78,7 +78,11 @@ void SystemBox::draw()
             layout->SetFont(font);
             layout->SetAlignment(
                 (TextAlignment)(box_flags & ALIGN_FLAGS_MASK));
+#ifdef CHOWDREN_USE_GWEN
+            layout->SetLineLength(width - margin[0] - margin[2]);
+#else
             layout->SetLineLength(width);
+#endif
         } else {
             font = get_font(12);
         }
@@ -87,10 +91,17 @@ void SystemBox::draw()
 
         FTBBox bb = layout->BBoxL(text.c_str(), -1);
         double box_h = bb.Upper().Y() - bb.Lower().Y(); 
+#ifdef CHOWDREN_USE_GWEN
+        off_y += ((height - margin[1] - margin[3]) - box_h) * 0.5;
+        off_y += margin[1];
+        int off_x = x + margin[0];
+#else
         off_y += (height - box_h) * 0.5;
+        int off_x = x;
+#endif
 
         FTTextureFont::color = blend_color;
-        layout->Render(text.c_str(), -1, FTPoint(x, int(off_y)));
+        layout->Render(text.c_str(), -1, FTPoint(off_x, int(off_y)));
         // std::cout << "Draw system text: " << text << " " << name << std::endl;
         return;
     }
