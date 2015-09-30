@@ -458,7 +458,7 @@ struct UploadCallback
     {
         flags |= SET_PREVIEW;
         preview = value;
-        preview_cloud_file = "preview" + number_to_string(current_id)
+        preview_cloud_file = "preview" + number_to_string((uint64_t)current_id)
                              + "." + get_path_ext(preview);
     }
 
