@@ -1169,6 +1169,9 @@ Frame::Frame()
   last_key(-1), next_frame(-1), loop_count(0), frame_time(0.0),
   index(-1)
 {
+#ifdef CHOWDREN_SUBAPP_FRAMES
+    display_width = display_height = -1;
+#endif
 }
 
 void Frame::pause()
@@ -1205,13 +1208,22 @@ void Frame::set_display_center(int x, int y)
        we need to emulate that bug here. */
     if (x != -1) {
         x = int_max(0, x - WINDOW_WIDTH / 2);
+#ifdef CHOWDREN_SUBAPP_FRAMES
+        x = int_min(x, virtual_width - std::min(virtual_width, WINDOW_WIDTH));
+#else
         x = int_min(x, virtual_width - WINDOW_WIDTH);
+#endif
         if (x != off_x)
             new_off_x = x;
     }
     if (y != -1) {
         y = int_max(0, y - WINDOW_HEIGHT / 2);
+#ifdef CHOWDREN_SUBAPP_FRAMES
+        y = int_min(y, virtual_height
+                       - std::min(virtual_height, WINDOW_HEIGHT));
+#else
         y = int_min(y, virtual_height - WINDOW_HEIGHT);
+#endif
         if (y != off_y)
             new_off_y = y;
     }
@@ -1242,12 +1254,43 @@ void Frame::update_display_center()
 
 void Frame::set_width(int w, bool adjust)
 {
+#ifdef CHOWDREN_SUBAPP_FRAMES
+    if (!adjust && this == manager.main_frame) {
+        int off_x = new_off_x;
+        int off_y = new_off_y;
+        set_display_center(0, 0);
+        update_display_center();
+        display_width = w;
+        off_x = -1;
+        off_y = -1;
+        new_off_x = off_x;
+        new_off_y = off_y;
+        update_display_center();
+        return;
+    }
+
+#endif
     virtual_width = width = w;
     std::cout << "Set frame width: " << width << " " << adjust << std::endl;
 }
 
 void Frame::set_height(int h, bool adjust)
 {
+#ifdef CHOWDREN_SUBAPP_FRAMES
+    if (!adjust && this == manager.main_frame) {
+        int off_x = new_off_x;
+        int off_y = new_off_y;
+        off_x = off_y = -1;
+        new_off_x = new_off_y = 0;
+        update_display_center();
+        display_height = h;
+        off_x = off_y = -1;
+        new_off_x = off_x;
+        new_off_y = off_y;
+        update_display_center();
+        return;
+    }
+#endif
     virtual_height = height = h;
     std::cout << "Set frame height: " << height << " " << adjust << std::endl;
 }
@@ -1463,7 +1506,7 @@ void Frame::draw(int remote)
 #ifdef CHOWDREN_SUBAPP_FRAMES
     // XXX hack hack hack
     int h = SubApplication::current_y + display_height;
-    Render::set_view(0, WINDOW_HEIGHT - h,
+    Render::set_view(0, WINDOW_TOTAL_HEIGHT - h,
                      SubApplication::current_x + display_width, h);
 #else
     Render::set_view(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -1503,13 +1546,16 @@ void Frame::draw(int remote)
 #ifdef CHOWDREN_IS_TE
         static Framebuffer layer_fbo;
         if (layer.blend_color.a < 255) {
+            bool reset_fbo = layer_fbo.w != WINDOW_WIDTH ||
+                             layer_fbo.h != WINDOW_HEIGHT;
+            if (reset_fbo && layer_fbo.tex != 0)
+                layer_fbo.destroy();
             if (layer_fbo.tex == 0)
                 layer_fbo.init(WINDOW_WIDTH, WINDOW_HEIGHT);
             layer_fbo.bind();
             Render::clear(255, 255, 255, 0);
         }
 #endif
-
         layer.draw(off_x, off_y);
 
 #ifdef CHOWDREN_IS_TE
@@ -2975,6 +3021,38 @@ void start_joystick_rumble(int n, const std::string & name, int times)
     RumbleEffect & effect = rumble_effects[name];
     joystick_vibrate(n, effect.l, effect.r, effect.duration);
 }
+
+#ifdef CHOWDREN_SUBAPP_FRAMES
+
+int get_display_width()
+{
+    if (manager.frame == NULL)
+        return WINDOW_START_WIDTH;
+    return manager.frame->display_width;
+}
+
+int get_display_height()
+{
+    if (manager.frame == NULL)
+        return WINDOW_START_HEIGHT;
+    return manager.frame->display_height;
+}
+
+int get_total_display_width()
+{
+    int w, h;
+    platform_get_size(&w, &h);
+    return w;
+}
+
+int get_total_display_height()
+{
+    int w, h;
+    platform_get_size(&w, &h);
+    return h;
+}
+
+#endif
 
 #ifdef CHOWDREN_EMULATE_MENU
 

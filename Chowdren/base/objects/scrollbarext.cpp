@@ -8,7 +8,6 @@
 ScrollbarObject::ScrollbarObject(int x, int y, int type_id)
 : FrameObject(x, y, type_id), scrollbar(NULL)
 {
-    // flags &= ~SCROLL;
     collision = new InstanceBox(this);
 }
 
@@ -20,6 +19,7 @@ ScrollbarObject::~ScrollbarObject()
 
 void ScrollbarObject::init_scrollbar(int value)
 {
+    flags &= ~SCROLL;
     GwenData & gwen = manager.frame->gwen;
     if (vertical)
         scrollbar = new Gwen::Controls::VerticalScrollBar(gwen.canvas);
@@ -73,11 +73,11 @@ int ScrollbarObject::get_value()
 void ScrollbarObject::update()
 {
     scrollbar->SetHidden(!get_visible());
-    scrollbar->SetPos(x, y);
+    scrollbar->SetPos(x - frame->off_x, y - frame->off_y);
 }
 
 void ScrollbarObject::draw()
 {
     scrollbar->SetHidden(!get_visible());
-    scrollbar->SetPos(x, y);
+    scrollbar->SetPos(x - frame->off_x, y - frame->off_y);
 }

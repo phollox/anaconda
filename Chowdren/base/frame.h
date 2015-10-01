@@ -285,11 +285,7 @@ public:
 
     int frame_right()
     {
-#ifdef CHOWDREN_SUBAPP_FRAMES
-        return new_off_x + display_width;
-#else
         return new_off_x + WINDOW_WIDTH;
-#endif
     }
 
     int frame_top()
@@ -299,11 +295,7 @@ public:
 
     int frame_bottom()
     {
-#ifdef CHOWDREN_SUBAPP_FRAMES
-        return new_off_y + display_height;
-#else
         return new_off_y + WINDOW_HEIGHT;
-#endif
     }
 
     void event_callback(int id)

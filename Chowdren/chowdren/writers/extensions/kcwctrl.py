@@ -23,6 +23,10 @@ class WindowName(ExpressionMethodWriter):
     has_object = False
     method = '.NAME'
 
+class SetFrameHeight(ActionMethodWriter):
+    has_object = False
+    method = 'set_height(%s, %s == 1)'
+
 class SetFrameWidth(ActionMethodWriter):
     has_object = False
     method = 'set_width(%s, %s == 1)'
@@ -38,12 +42,12 @@ actions = make_table(StaticActionWriter, {
     10 : 'set_visible(false)',
     11 : 'minimize',
     17 : 'set_position',
-    28 : SetFrameWidth,
     12 : 'maximize',
     13 : 'restore',
     18 : 'set_title',
     21 : 'set_focus(true)',
-    29 : 'set_frame_height'
+    28 : SetFrameWidth,
+    29 : SetFrameHeight
 })
 
 conditions = make_table(StaticConditionWriter, {

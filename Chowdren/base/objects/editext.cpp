@@ -80,6 +80,10 @@ void EditObject::init_control()
         scroller = NULL;
         base_control = text_box;
     }
+
+    if (edit_flags & READ_ONLY)
+        text_box->SetEditable(false);
+
     text_box->SetCursor(Gwen::CursorType::Beam);
 }
 #endif
@@ -210,6 +214,7 @@ void EditObject::disable()
 {
 #ifdef CHOWDREN_USE_GWEN
     text_box->SetDisabled(true);
+    text_box->SetEditable(false);
 #else
     std::cout << "EditObject::disable not implemented" << std::endl;
 #endif

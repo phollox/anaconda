@@ -94,8 +94,8 @@ void GameManager::init()
     frame = &static_frames;
 
 #ifdef CHOWDREN_SUBAPP_FRAMES
-    frame->display_width = WINDOW_WIDTH;
-    frame->display_height = WINDOW_HEIGHT;
+    frame->display_width = WINDOW_START_WIDTH;
+    frame->display_height = WINDOW_START_HEIGHT;
     main_frame = frame;
 #endif
 
@@ -232,6 +232,14 @@ int GameManager::update_frame()
 //         std::cout << last_events << " " << last_draw << std::endl;
 //     }
 // #endif
+
+
+#ifdef CHOWDREN_SUBAPP_FRAMES
+    int w, h;
+    platform_get_size(&w, &h);
+    frame->display_width = w;
+    frame->display_height = h;
+#endif
 
     if (fade_dir != 0.0f) {
         fade_value += fade_dir * (float)dt;

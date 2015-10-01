@@ -1091,16 +1091,28 @@ class Converter(object):
         config_file.putdefine('ABOUT', game.aboutText)
         config_file.putdefine('AUTHOR', game.author)
 
-        config_file.putdefine('WINDOW_WIDTH', header.windowWidth)
-        config_file.putdefine('WINDOW_HEIGHT', header.windowHeight)
+        config_file.putdefine('WINDOW_START_WIDTH', header.windowWidth)
+        config_file.putdefine('WINDOW_START_HEIGHT', header.windowHeight)
         if self.config.use_subapp_frames():
-            config_file.putlnc('#define DISPLAY_WIDTH %s',
-                               'manager.frame->display_width')
-            config_file.putlnc('#define DISPLAY_HEIGHT %s',
-                               'manager.frame->display_height')
+            config_file.putlnc('int get_display_width();')
+            config_file.putlnc('int get_display_height();')
+            config_file.putlnc('int get_total_display_width();')
+            config_file.putlnc('int get_total_display_height();')
+            config_file.putlnc('#define WINDOW_WIDTH %s',
+                               'get_display_width()')
+            config_file.putlnc('#define WINDOW_HEIGHT %s',
+                               'get_display_height()')
+            config_file.putlnc('#define WINDOW_TOTAL_WIDTH %s',
+                               'get_total_display_width()')
+            config_file.putlnc('#define WINDOW_TOTAL_HEIGHT %s',
+                               'get_total_display_height()')
         else:
-            config_file.putdefine('DISPLAY_WIDTH', header.windowWidth)
-            config_file.putdefine('DISPLAY_HEIGHT', header.windowHeight)
+            config_file.putdefine('WINDOW_WIDTH', header.windowWidth)
+            config_file.putdefine('WINDOW_HEIGHT', header.windowHeight)
+            config_file.putdefine('WINDOW_TOTAL_WIDTH', header.windowWidth)
+            config_file.putdefine('WINDOW_TOTAL_HEIGHT', header.windowHeight)
+            # config_file.putdefine('DISPLAY_WIDTH', header.windowWidth)
+            # config_file.putdefine('DISPLAY_HEIGHT', header.windowHeight)
 
         config_file.putdefine('FRAMERATE', header.frameRate)
         config_file.putdefine('MAX_OBJECT_ID', self.max_type_id)

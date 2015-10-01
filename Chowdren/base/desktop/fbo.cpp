@@ -26,6 +26,11 @@ Framebuffer::Framebuffer()
 
 Framebuffer::~Framebuffer()
 {
+    destroy();
+}
+
+void Framebuffer::destroy()
+{
     if (tex == 0)
         return;
 #ifdef CHOWDREN_USE_D3D
@@ -34,18 +39,21 @@ Framebuffer::~Framebuffer()
     TextureData & t = render_data.textures[tex];
     if (t.texture != NULL)
         t.texture->Release();
+    fbo_index = -1;
 #else
+    if (render_data.last_tex == tex)
+        render_data.last_tex = 0;
     glDeleteTextures(1, &tex);
     glDeleteFramebuffers(1, &fbo);
 #endif
+    tex = 0;
 }
 
 void Framebuffer::init(int w, int h)
 {
-#ifdef CHOWDREN_USE_D3D
     this->w = w;
     this->h = h;
-
+#ifdef CHOWDREN_USE_D3D
     if (fbo_index == -1) {    
         for (fbo_index = 0; fbo_index < 32; ++fbo_index) {
             if (fbos[fbo_index] != NULL)

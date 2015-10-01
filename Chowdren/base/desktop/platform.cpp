@@ -1008,6 +1008,20 @@ void platform_begin_draw()
 #else
     set_gl_state();
 #endif
+
+#ifdef CHOWDREN_SUBAPP_FRAMES
+    static int old_width = WINDOW_START_WIDTH;
+    static int old_height = WINDOW_START_HEIGHT;
+    int w, h;
+    platform_get_size(&w, &h);
+    if (w != old_width || h != old_height) {
+        old_width = w;
+        old_height = h;
+        screen_fbo.destroy();
+        screen_fbo.init(w, h);
+        std::cout << "new fbo: " << w << " " << h << std::endl;
+    }
+#endif
     screen_fbo.bind();
 }
 

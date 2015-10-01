@@ -10,10 +10,11 @@ extern Framebuffer * current_fbo;
 class Framebuffer
 {
 public:
+    int w, h;
     Texture tex;
 #ifdef CHOWDREN_USE_D3D
     IDirect3DSurface9 * fbo;
-    int fbo_index, w, h;
+    int fbo_index;
     static Framebuffer * fbos[32];
 #else
     GLuint fbo;
@@ -24,6 +25,7 @@ public:
     Framebuffer();
     ~Framebuffer();
     void init(int w, int h);
+    void destroy();
     void bind();
     void unbind();
     Texture get_tex();

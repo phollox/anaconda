@@ -566,7 +566,7 @@ inline Texture Render::copy_rect(int x1, int y1, int x2, int y2)
     int width = x2 - x1;
     int height = y2 - y1;
 
-    int y = WINDOW_HEIGHT - y2;
+    int y = WINDOW_TOTAL_HEIGHT - y2;
     set_tex(render_data.back_tex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height,
                  0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
@@ -597,14 +597,14 @@ inline void Render::disable_blend()
 inline void Render::enable_scissor(int x, int y, int w, int h)
 {
     int w_x1 = int(x + offset[0]);
-    int w_y2 = int(WINDOW_HEIGHT - y - offset[1]);
+    int w_y2 = int(WINDOW_TOTAL_HEIGHT - y - offset[1]);
     int w_x2 = w_x1 + w;
     int w_y1 = w_y2 - h;
 
-    w_x1 = int_max(0, int_min(w_x1, WINDOW_WIDTH));
-    w_y1 = int_max(0, int_min(w_y1, WINDOW_HEIGHT));
-    w_x2 = int_max(0, int_min(w_x2, WINDOW_WIDTH));
-    w_y2 = int_max(0, int_min(w_y2, WINDOW_HEIGHT));
+    w_x1 = int_max(0, int_min(w_x1, WINDOW_TOTAL_WIDTH));
+    w_y1 = int_max(0, int_min(w_y1, WINDOW_TOTAL_HEIGHT));
+    w_x2 = int_max(0, int_min(w_x2, WINDOW_TOTAL_WIDTH));
+    w_y2 = int_max(0, int_min(w_y2, WINDOW_TOTAL_HEIGHT));
 
 #ifdef CHOWDREN_USE_D3D
     RECT r;
