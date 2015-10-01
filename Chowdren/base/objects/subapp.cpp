@@ -139,7 +139,7 @@ void SubApplication::update()
             change_y -= off_y;
             current_y -= off_y;
         }
-        set_position(change_x, change_y);
+        set_position(std::max(0, change_x), std::max(0, change_y));
     }
 #endif
 
