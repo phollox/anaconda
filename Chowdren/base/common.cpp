@@ -1261,8 +1261,7 @@ void Frame::set_width(int w, bool adjust)
         set_display_center(0, 0);
         update_display_center();
         display_width = w;
-        off_x = -1;
-        off_y = -1;
+        off_x = off_y = -1;
         new_off_x = off_x;
         new_off_y = off_y;
         update_display_center();
