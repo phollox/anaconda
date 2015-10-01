@@ -62,6 +62,7 @@ ButtonObject::~ButtonObject()
 void ButtonObject::init_button(unsigned int flags)
 {
 #ifdef CHOWDREN_USE_GWEN
+    flags &= ~SCROLL;
     button_flags = flags;
     if (flags & IS_CHECKBOX) {
         button = new CheckBox(manager.frame->gwen.frame_base);
@@ -89,7 +90,7 @@ void ButtonObject::draw()
 {
 #ifdef CHOWDREN_USE_GWEN
     button->SetHidden(!get_visible());
-    button->SetPos(x, y);
+    button->SetPos(x - frame->off_x, y - frame->off_y);
     button->SetSize(width, height);
 #endif
 }

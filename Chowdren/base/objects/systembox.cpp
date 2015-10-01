@@ -19,7 +19,6 @@ public:
 
     void OnPress()
     {
-        std::cout << "On press" << std::endl;
         parent->clicked = 2;
         Gwen::Controls::Button::OnPress();
     }
@@ -51,7 +50,7 @@ void SystemBox::draw()
 #ifdef CHOWDREN_USE_GWEN
     if (button != NULL) {
         button->SetHidden(!get_visible());
-        button->SetPos(x, y);
+        button->SetPos(x - frame->off_x, y - frame->off_y);
         button->SetSize(width, height);
         return;
     }
@@ -238,6 +237,7 @@ void SystemBox::update()
 
 void SystemBox::init_button()
 {
+    flags &= ~SCROLL;
     button = new BoxButton(manager.frame->gwen.frame_base);
     ((BoxButton*)button)->parent = this;
 }

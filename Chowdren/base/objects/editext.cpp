@@ -65,6 +65,7 @@ public:
 
 void EditObject::init_control()
 {
+    flags &= ~SCROLL;
     Gwen::Controls::Base * base = manager.frame->gwen.frame_base;
     if ((edit_flags & (MULTILINE | READ_ONLY)) == (MULTILINE | READ_ONLY)) {
         scroller = new Gwen::Controls::ScrollControl(base);
@@ -102,7 +103,7 @@ void EditObject::update()
 {
 #ifdef CHOWDREN_USE_GWEN
     base_control->SetHidden(!get_visible());
-    base_control->SetPos(x, y);
+    base_control->SetPos(x - frame->off_x, y - frame->off_y);
     base_control->SetSize(width, height);
     if (scroller) {    
         text_box->SizeToContents();

@@ -19,6 +19,7 @@ ComboBox::ComboBox(int x, int y, int type_id)
 
 void ComboBox::init_control()
 {
+    flags &= ~SCROLL;
     combo_box = new GwenCombo(manager.frame->gwen.frame_base);
 }
 
@@ -31,7 +32,7 @@ ComboBox::~ComboBox()
 void ComboBox::update()
 {
     combo_box->SetHidden(!get_visible());
-    combo_box->SetPos(x, y);
+    combo_box->SetPos(x - frame->off_x, y - frame->off_y);
     combo_box->SetWidth(width);
     int new_index = get_current_line_number();
     if (old_index != new_index) {
@@ -49,7 +50,7 @@ bool ComboBox::is_selection_changed()
 void ComboBox::draw()
 {
     combo_box->SetHidden(!get_visible());
-    combo_box->SetPos(x, y);
+    combo_box->SetPos(x - frame->off_x, y - frame->off_y);
     combo_box->SetWidth(width);
 }
 
