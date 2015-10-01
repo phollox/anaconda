@@ -1796,7 +1796,17 @@ void open_url(const std::string & name)
 
 void open_url(const std::string & name)
 {
-    std::string cmd("xdg-open '");
+    std::string cmd;
+#ifdef CHOWDREN_ENABLE_STEAM
+    // http://steamcommunity.com/groups/steamworks/discussions/13/
+    // 618463738391189582/
+#define ESCAPE_STEAM_RUNTIME ("STEAM_RUNTIME=0 "\
+                              "LD_LIBRARY_PATH=\"$SYSTEM_LD_LIBRARY_PATH\" "\
+                              "PATH=\"$SYSTEM_PATH\" ")
+    if (getenv("STEAM_RUNTIME") != NULL)
+        cmd += ESCAPE_STEAM_RUNTIME;
+#endif
+    cmd += "xdg-open '";
     cmd += name;
     cmd += "' &";
     system(cmd.c_str());
