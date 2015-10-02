@@ -73,6 +73,8 @@ public:
     void start_publish(const std::string & session_id);
     const std::string & get_error();
 
+    bool is_enabled();
+
 #ifdef CHOWDREN_IS_FP
     void find_board(int char_id, int stage_id);
     void upload_crystal(int value);

@@ -19,6 +19,7 @@
 [
     [0, "Is achievement unlocked"]
     [1, "Is ready"]
+    [2, "Is enabled"]
 ]
 
 "ExpressionMenu":
@@ -50,6 +51,13 @@
     }
     {
         "Title": "%o : Is ready"
+        "Triggered": false
+
+        "Parameters":
+        []
+    }
+    {
+        "Title": "%o : Is enabled"
         "Triggered": false
 
         "Parameters":

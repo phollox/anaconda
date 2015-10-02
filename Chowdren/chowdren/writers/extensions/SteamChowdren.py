@@ -22,7 +22,8 @@ actions = make_table(ActionMethodWriter, {
 
 conditions = make_table(ConditionMethodWriter, {
     0 : 'is_achievement_unlocked',
-    1 : 'is_ready'
+    1 : 'is_ready',
+    2 : 'is_enabled'
 })
 
 expressions = make_table(ExpressionMethodWriter, {

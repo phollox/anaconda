@@ -986,6 +986,15 @@ void SteamObject::start_publish(const std::string & session_id)
 #endif
 }
 
+bool SteamObject::is_enabled()
+{
+#ifdef CHOWDREN_ENABLE_STEAM
+    return true;
+#else
+    return false;
+#endif
+}
+
 #if !defined(CHOWDREN_ENABLE_STEAM) && defined(CHOWDREN_IS_FP)
 void SteamObject::find_board(int char_id, int stage_id)
 {
