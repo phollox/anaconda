@@ -674,7 +674,9 @@ static UploadCallback ugc_upload;
 
 void SteamObject::set_search(bool subs)
 {
+#ifdef CHOWDREN_ENABLE_STEAM
     ugc_list_callback.subs = subs;
+#endif
 }
 
 bool SteamObject::get_content(Frame::EventFunction loop,
@@ -893,71 +895,95 @@ void SteamObject::set_preview_latest(const std::string & local_path,
                                      const std::string & cloud_path,
                                      bool overwrite)
 {
+#ifdef CHOWDREN_ENABLE_STEAM
     std::cout << "Set preview: " << local_path << std::endl;
     ugc_upload.set_preview(local_path);
+#endif
 }
 
 void SteamObject::upload_changes(Frame::EventFunction done,
                                  Frame::EventFunction fail)
 {
+#ifdef CHOWDREN_ENABLE_STEAM
     ugc_upload.set_callbacks(done, fail);
     ugc_upload.start();
+#endif
 }
 
 const std::string & SteamObject::get_error()
 {
+#ifdef CHOWDREN_ENABLE_STEAM
     return ugc_upload.error;
+#else
+    return empty_string;
+#endif
 }
 
 void SteamObject::set_tags(const std::string & tags)
 {
+#ifdef CHOWDREN_ENABLE_STEAM
     ugc_upload.set_tags(tags);
     std::cout << "Set tags: " << tags << std::endl;
+#endif
 }
 
 void SteamObject::set_description(const std::string & value)
 {
+#ifdef CHOWDREN_ENABLE_STEAM
     ugc_upload.set_description(value);
     std::cout << "Set description: " << value << std::endl;
+#endif
 }
 
 void SteamObject::set_file(const std::string & local_path,
                            const std::string & cloud_path,
                            bool overwrite)
 {
+#ifdef CHOWDREN_ENABLE_STEAM
     ugc_upload.set_file(local_path);
     std::cout << "Set file: " << local_path << std::endl;
+#endif
 }
 
 void SteamObject::set_content_title(const std::string & title)
 {
+#ifdef CHOWDREN_ENABLE_STEAM
     ugc_upload.set_title(title);
     std::cout << "Set content title: " << title << std::endl;
+#endif
 }
 
 void SteamObject::set_content_appid(unsigned int value)
 {
+#ifdef CHOWDREN_ENABLE_STEAM
     ugc_upload.appid = value;
+#endif
 }
 
 void SteamObject::set_content_visibility(int value)
 {
+#ifdef CHOWDREN_ENABLE_STEAM
     ugc_upload.set_visibility(value);
     std::cout << "Set visibility: " << value << std::endl;
+#endif
 }
 
 void SteamObject::start_content_change(unsigned int content_id,
                                        const std::string & session_id)
 {
+#ifdef CHOWDREN_ENABLE_STEAM
     PublishedFileId_t id;
     id = ugc_list_callback.details[content_id].m_nPublishedFileId;
     ugc_upload.has_id = true;
     ugc_upload.current_id = id;
+#endif
 }
 
 void SteamObject::start_publish(const std::string & session_id)
 {
+#ifdef CHOWDREN_ENABLE_STEAM
     ugc_upload.has_id = false;
+#endif
 }
 
 #if !defined(CHOWDREN_ENABLE_STEAM) && defined(CHOWDREN_IS_FP)

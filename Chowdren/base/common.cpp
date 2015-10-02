@@ -1502,7 +1502,7 @@ void Frame::draw(int remote)
 {
     PROFILE_BEGIN(frame_draw_start);
 
-#ifdef CHOWDREN_SUBAPP_FRAMES
+#if defined(CHOWDREN_USE_SUBAPP) && defined(CHOWDREN_SUBAPP_FRAMES)
     // XXX hack hack hack
     int h = SubApplication::current_y + display_height;
     Render::set_view(0, WINDOW_TOTAL_HEIGHT - h,
