@@ -1801,7 +1801,7 @@ void open_url(const std::string & name)
                               "LD_LIBRARY_PATH=\"$SYSTEM_LD_LIBRARY_PATH\" "\
                               "PATH=\"$SYSTEM_PATH\" ")
 
-static char * transform_temp[1024];
+static char transform_temp[1024];
 inline char * transform_command(const char * data)
 {
     transform_temp[0] = '\0';
