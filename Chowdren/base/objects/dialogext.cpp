@@ -8,6 +8,7 @@ static std::string title;
 static std::string text;
 
 static std::string path;
+static std::string default_path;
 
 static Frame * file_dialog_frame = NULL;
 static unsigned int file_dialog_loop_count = 0;
@@ -67,7 +68,7 @@ void DialogObject::set_default_filename(const std::string & filename)
 {
     std::cout << "DialogObject::set_default_filename not implemented"
         << filename << std::endl;
-    path = filename;
+    default_path = filename;
 }
 
 void DialogObject::set_default_extension(const std::string & ext)
@@ -86,6 +87,7 @@ void DialogObject::open_load_selector(const std::string & dir)
 {
     vector<std::string> names;
     file_dialog_frame = NULL;
+    path.clear();
     if (!platform_file_open_dialog(title, "", dir, false, names))
         return;
     file_dialog_loop_count = manager.frame->loop_count;
@@ -95,6 +97,7 @@ void DialogObject::open_load_selector(const std::string & dir)
 
 void DialogObject::open_save_selector(const std::string & dir)
 {
+    path.clear();
     if (!platform_file_save_dialog(title, "", dir, path))
         return;
     file_dialog_loop_count = manager.frame->loop_count;
