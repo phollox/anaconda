@@ -185,6 +185,8 @@ void ActivePicture::set_offset_y(int value)
 {
 #ifdef CHOWDREN_PICTURE_OFFSET
     offset_y = value;
+    sprite_col.flags |= BOX_COLLISION;
+    sprite_col.type = SPRITE_BOX;
 #endif
 }
 

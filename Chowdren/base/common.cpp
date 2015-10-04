@@ -1267,7 +1267,6 @@ void Frame::set_width(int w, bool adjust)
         update_display_center();
         return;
     }
-
 #endif
     virtual_width = width = w;
     std::cout << "Set frame width: " << width << " " << adjust << std::endl;

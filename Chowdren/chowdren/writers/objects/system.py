@@ -618,12 +618,17 @@ class SubApplication(ObjectWriter):
             dock = data.getDockedPosition()
             if dock == 'Top':
                 writer.putlnc('set_position(0, 0);')
+                writer.putlnc('width = 4096;')
+                writer.putlnc('subapp_flags |= IS_DOCKED;')
 
         if self.converter.config.use_gwen():
             if flags['Popup'] and flags['Caption']:
                 writer.putlnc('init_window();')
             else:
                 writer.putlnc('init_frame();')
+
+            if flags['Popup']:
+                writer.putlnc('subapp_flags |= IS_POPUP;')
 
         writer.putlnc('restart(%s);', start_frame)
 

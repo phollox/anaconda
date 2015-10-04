@@ -821,6 +821,12 @@ public:
 
 // audio device implementation
 
+enum DevFmtChannels
+{
+    DevFmtMono = 0x1500,
+    DevFmtStereo = 0x1501
+};
+
 void AudioDevice::open()
 {
     closing = false;
@@ -860,6 +866,18 @@ void AudioDevice::open()
     if (sub_buffer_data_ext) {
         alBufferSubDataSOFT = (PFNALBUFFERSUBDATASOFTPROC)alGetProcAddress(
             "alBufferSubDataSOFT");
+    }
+    if (direct_channels_ext) {
+        // XXX hack hack hack
+        // search the first 20 bytes of the ALCdevice_struct.
+        // this will have the FmtChans attribute.
+        unsigned int * dev = (unsigned int*)device;
+		for (int i = 0; i < 16; ++i) {
+            if (dev[i] == DevFmtMono) {
+                direct_channels_ext = false;
+                std::cout << "Detected mono device" << std::endl;
+            }
+        }
     }
 #endif
 

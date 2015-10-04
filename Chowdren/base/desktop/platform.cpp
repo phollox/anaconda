@@ -1794,22 +1794,46 @@ void open_url(const std::string & name)
 
 #elif __linux
 
-void open_url(const std::string & name)
-{
-    std::string cmd;
 #ifdef CHOWDREN_ENABLE_STEAM
-    // http://steamcommunity.com/groups/steamworks/discussions/13/
-    // 618463738391189582/
+// http://steamcommunity.com/groups/steamworks/discussions/13/
+// 618463738391189582/
 #define ESCAPE_STEAM_RUNTIME ("STEAM_RUNTIME=0 "\
                               "LD_LIBRARY_PATH=\"$SYSTEM_LD_LIBRARY_PATH\" "\
                               "PATH=\"$SYSTEM_PATH\" ")
+inline char * transform_command(const char * data)
+{
+    int cmd_size = strlen(cmd);
+    int size = strlen(ESCAPE_STEAM_RUNTIME) + strlen(cmd);
+    char * new_data = new char[size];
+    strcpy
+}
+#else
+
+
+
+#endif
+
+
+void chow_system(const char * cmd)
+{
+    system(transform_command(cmd));
+    int size = strlen(ESCAPE_STEAM_RUNTIME) + strlen(cmd);
     if (getenv("STEAM_RUNTIME") != NULL)
         cmd += ESCAPE_STEAM_RUNTIME;
-#endif
+}
+
+void chow_popen(const char * cmd)
+{
+
+}
+
+void open_url(const std::string & name)
+{
+    std::string cmd;
     cmd += "xdg-open '";
     cmd += name;
     cmd += "' &";
-    system(cmd.c_str());
+    chow_system(cmd.c_str());
 }
 
 #endif

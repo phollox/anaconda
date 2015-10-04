@@ -1078,7 +1078,7 @@ inline void FTSimpleLayout::RenderSpaceI(const T *string, const int len,
 
         // Count the number of space blocks in the input
         FTUnicodeStringItr<T> prevItr(string), itr(string);
-        for(int i = 0; ((len < 0) && *itr) || ((len >= 0) && (i <= len));
+        for(int i = 0; ((len < 0) && *itr) || ((len >= 0) && (i < len));
             ++i, prevItr = itr++)
         {
             // If this is the end of a space block, increment the counter
@@ -1093,7 +1093,7 @@ inline void FTSimpleLayout::RenderSpaceI(const T *string, const int len,
 
     // Output all characters of the string
     FTUnicodeStringItr<T> prevItr(string), itr(string);
-    for(int i = 0; ((len < 0) && *itr) || ((len >= 0) && (i <= len));
+    for(int i = 0; ((len < 0) && *itr) || ((len >= 0) && (i < len));
         ++i, prevItr = itr++)
     {
         // If this is the end of a space block, distribute the extra space

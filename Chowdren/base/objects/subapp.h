@@ -22,9 +22,17 @@ public:
     bool old_ignore_controls;
 
 #ifdef CHOWDREN_USE_GWEN
+    enum Flags {
+        IS_POPUP = 1 << 0,
+        IS_DOCKED = 1 << 1
+    };
+
     bool gwen_close;
+    int subapp_flags;
     int start_x, start_y;
     Gwen::Controls::WindowControl * window_control;
+    int get_render_x();
+    int get_render_y();
     void init_window();
     void init_frame();
 #endif

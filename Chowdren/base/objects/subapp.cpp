@@ -23,11 +23,9 @@ static vector<SubApplication*> frames;
         current_x += start_x + 6;\
         current_y += start_y + 28;\
     } else {\
-        current_x += x;\
-        current_y += y;\
+        current_x += get_render_x();\
+        current_y += get_render_y();\
     }
-
-#define SET_APP_RENDER() \
 
 #define RESTORE_APP() \
     manager.frame = old_frame;\
@@ -44,12 +42,12 @@ SubApplication::SubApplication(int x, int y, int id)
     collision = new InstanceBox(this);
     start_x = x;
     start_y = y;
-    flags &= SCROLL;
 #endif
 
 #ifdef CHOWDREN_USE_GWEN
     window_control = NULL;
     gwen_close = false;
+    subapp_flags = 0;
 #endif
 }
 
@@ -127,8 +125,8 @@ void SubApplication::update()
     if (window_control == NULL) {
         int display_width = manager.main_frame->display_width - 32;
         int display_height = manager.main_frame->display_height - 32;
-        int change_x = get_x();
-        int change_y = get_y();
+        int change_x = get_render_x();
+        int change_y = get_render_y();
         if (current_x + width >= display_width) {
             int off_x = (current_x + width) - display_width;
             change_x -= off_x;
@@ -201,6 +199,24 @@ public:
     }
 };
 
+int SubApplication::get_render_x()
+{
+    if (subapp_flags & IS_POPUP)
+        return x;
+    if (subapp_flags & IS_DOCKED)
+        return 0;
+    return x + layer->off_x - frame->off_x;
+}
+
+int SubApplication::get_render_y()
+{
+    if (subapp_flags & IS_POPUP)
+        return y;
+    if (subapp_flags & IS_DOCKED)
+        return 0;
+    return y + layer->off_y - frame->off_y;
+}
+
 void SubApplication::init_window()
 {
     Gwen::Controls::Canvas * canvas = manager.main_frame->gwen.canvas;
@@ -217,9 +233,6 @@ void SubApplication::init_frame()
 {
     Gwen::Controls::Canvas * canvas = manager.main_frame->gwen.canvas;
     subapp_frame.gwen.frame_base->SetParent(canvas);
-    flags |= SCROLL;
-    // x += manager.frame->off_x;
-    // y += manager.frame->off_y;
 }
 #endif
 
@@ -235,7 +248,7 @@ void SubApplication::draw_subapp()
         window_control->SetSize(width+12, height+35);
         window_control->SetTitle(subapp_frame.gwen.title.c_str());
     } else {
-        subapp_frame.gwen.frame_base->SetPos(x, y);
+        subapp_frame.gwen.frame_base->SetPos(get_render_x(), get_render_y());
     }
     width = subapp_frame.width;
     height = subapp_frame.height;

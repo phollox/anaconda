@@ -31,6 +31,7 @@ misrepresented as being the original software.
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "chowconfig.h"
 
 #include "tinyfiledialogs.h"
 
@@ -53,6 +54,9 @@ misrepresented as being the original software.
  #include <sys/utsname.h>
  #define SLASH "/"
 #endif /* _WIN32 */
+
+#ifdef CHOWDREN_ENABLE_STEAM
+#endif
 
 #define MAX_PATH_OR_CMD 1024 /* _MAX_PATH or MAX_PATH */
 #define MAX_MULTIPLE 32
