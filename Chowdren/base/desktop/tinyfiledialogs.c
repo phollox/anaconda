@@ -55,7 +55,9 @@ misrepresented as being the original software.
  #define SLASH "/"
 #endif /* _WIN32 */
 
-#ifdef CHOWDREN_ENABLE_STEAM
+#if defined(CHOWDREN_ENABLE_STEAM) && !defined(_WIN32)
+extern FILE * chow_popen(const char * cmd, const char * mode);
+#define popen chow_popen
 #endif
 
 #define MAX_PATH_OR_CMD 1024 /* _MAX_PATH or MAX_PATH */
