@@ -1819,12 +1819,12 @@ inline char * transform_command(const char * data)
 #endif
 
 
-void chow_system(const char * cmd)
+extern "C" int chow_system(const char * cmd)
 {
-    system(transform_command(cmd));
+    return system(transform_command(cmd));
 }
 
-FILE * chow_popen(const char * cmd, const char * mode)
+extern "C" FILE * chow_popen(const char * cmd, const char * mode)
 {
     return popen(transform_command(cmd), mode);
 }
