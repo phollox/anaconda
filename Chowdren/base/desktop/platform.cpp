@@ -1804,6 +1804,8 @@ void open_url(const std::string & name)
 static char transform_temp[1024];
 inline char * transform_command(const char * data)
 {
+    if (getenv("STEAM_RUNTIME") == NULL)
+        return data;
     transform_temp[0] = '\0';
     strcat(transform_temp, ESCAPE_STEAM_RUNTIME);
     strcat(transform_temp, data);
