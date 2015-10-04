@@ -1802,7 +1802,7 @@ void open_url(const std::string & name)
                               "PATH=\"$SYSTEM_PATH\" ")
 
 static char transform_temp[1024];
-inline char * transform_command(const char * data)
+inline const char * transform_command(const char * data)
 {
     if (getenv("STEAM_RUNTIME") == NULL)
         return data;
