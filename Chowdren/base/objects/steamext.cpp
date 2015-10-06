@@ -144,91 +144,6 @@ void SteamGlobal::download_callback(RemoteStorageDownloadUGCResult_t * res)
 
 #endif
 
-// SteamObject
-
-SteamObject::SteamObject(int x, int y, int type_id)
-: FrameObject(x, y, type_id)
-{
-}
-
-bool SteamObject::is_ready()
-{
-#ifdef CHOWDREN_ENABLE_STEAM
-    return global_steam_obj.is_ready();
-#else
-    return true;
-#endif
-}
-
-void SteamObject::update()
-{
-#ifdef CHOWDREN_ENABLE_STEAM
-    if (!global_steam_obj.initialized)
-        return;
-    SteamAPI_RunCallbacks();
-#endif
-}
-
-int SteamObject::get_int(const std::string & name)
-{
-#ifdef CHOWDREN_ENABLE_STEAM
-    if (!global_steam_obj.initialized)
-        return 0;
-    int32 ret;
-    if (!SteamUserStats()->GetStat(name.c_str(), &ret))
-        return 0;
-    return ret;
-#else
-    return 0;
-#endif
-}
-
-void SteamObject::set_int(const std::string & name, int value)
-{
-#ifdef CHOWDREN_ENABLE_STEAM
-    if (!global_steam_obj.initialized)
-        return;
-    int32 v = value;
-    SteamUserStats()->SetStat(name.c_str(), v);
-#endif
-}
-
-void SteamObject::unlock_achievement(const std::string & name)
-{
-#ifndef NDEBUG
-    std::cout << "Unlock achievement: " << name << std::endl;
-#endif
-
-#ifdef CHOWDREN_ENABLE_STEAM
-    if (!global_steam_obj.initialized)
-        return;
-    SteamUserStats()->SetAchievement(name.c_str());
-    SteamUserStats()->StoreStats();
-#endif
-
-#ifndef CHOWDREN_IS_DESKTOP
-    platform_unlock_achievement(name);
-#endif
-}
-
-void SteamObject::request_user_data()
-{
-#ifdef CHOWDREN_ENABLE_STEAM
-    if (!global_steam_obj.initialized)
-        return;
-    SteamUserStats()->RequestCurrentStats();
-#endif
-}
-
-void SteamObject::store_user_data()
-{
-#ifdef CHOWDREN_ENABLE_STEAM
-    if (!global_steam_obj.initialized)
-        return;
-    SteamUserStats()->StoreStats();
-#endif
-}
-
 #ifdef CHOWDREN_ENABLE_STEAM
 
 struct SubCallback
@@ -317,33 +232,33 @@ struct SubCallback
         }
     }
 
-	void on_callback(SteamUGCRequestUGCDetailsResult_t * result, bool fail)
-	{
+    void on_callback(SteamUGCRequestUGCDetailsResult_t * result, bool fail)
+    {
         std::cout << "Callback received!" << std::endl;
-		if (fail) {
-			std::cout << "Failed callback" << std::endl;
-			return;
-		}
-		SteamUGCDetails_t & d = result->m_details;
-		int index;
-		for (index = 0; index < int(ids.size()); ++index) {
-			if (ids[index] == d.m_nPublishedFileId)
-				break;
-		}
+        if (fail) {
+            std::cout << "Failed callback" << std::endl;
+            return;
+        }
+        SteamUGCDetails_t & d = result->m_details;
+        int index;
+        for (index = 0; index < int(ids.size()); ++index) {
+            if (ids[index] == d.m_nPublishedFileId)
+                break;
+        }
 
-		details[index] = d;
-		received++;
-		if (received < int(ids.size()))
-			return;
+        details[index] = d;
+        received++;
+        if (received < int(ids.size()))
+            return;
 
-		finish();
-	}
+        finish();
+    }
 
-	void finish()
-	{
+    void finish()
+    {
         SteamObject::SubResult & r = SteamObject::sub_result;
         for (int i = 0; i < int(ids.size()); ++i) {
-			SteamUGCDetails_t & d = details[i];
+            SteamUGCDetails_t & d = details[i];
             r.index = i;
             r.cloud_path = d.m_pchFileName;
             r.title = d.m_rgchTitle;
@@ -367,16 +282,8 @@ inline std::string trim_spaces(const std::string & value)
         if (value[ii] != ' ')
             break;
     }
-    return value.substr(i, ii-i);
+    return value.substr(i, (ii-i) + 1);
 }
-
-#ifdef _WIN32
-#include <direct.h>
-#define getcwd _getcwd
-#define PATH_MAX 4096
-#else
-#include <limits.h>
-#endif
 
 struct UploadCallback
 {
@@ -410,7 +317,7 @@ struct UploadCallback
     CCallResult<UploadCallback, RemoteStorageFileShareResult_t> share_call;
     CCallResult<UploadCallback, RemoteStorageFileShareResult_t> preview_call;
 
-	Frame::EventFunction done_callback, fail_callback;
+    Frame::EventFunction done_callback, fail_callback;
 
     std::string error;
 
@@ -418,6 +325,7 @@ struct UploadCallback
     vector<const char*> tags_c;
 
     SteamParamStringArray_t steam_tags;
+    int run_callbacks;
 
     UploadCallback()
     {
@@ -430,6 +338,7 @@ struct UploadCallback
         fail_callback = NULL;
 
         flags = 0;
+        run_callbacks = 0;
     }
 
     void set_callbacks(Frame::EventFunction done, Frame::EventFunction fail)
@@ -453,6 +362,8 @@ struct UploadCallback
 
     void set_preview(const std::string & value)
     {
+        if (value.empty())
+            return;
         flags |= SET_PREVIEW;
         preview = value;
         preview_cloud_file = "preview" + number_to_string((uint64_t)current_id)
@@ -477,6 +388,7 @@ struct UploadCallback
         for (it = tags.begin(); it != tags.end(); ++it) {
             *it = trim_spaces(*it);
             tags_c[i] = (*it).c_str();
+            std::cout << "Tag: '" << (*it) << "'" << std::endl;
             i++;
         }
 
@@ -484,16 +396,15 @@ struct UploadCallback
         steam_tags.m_nNumStrings = tags_c.size();
     }
 
-	void set_description(const std::string & value)
-	{
-		flags |= SET_DESCRIPTION;
-		description = value;
-	}
+    void set_description(const std::string & value)
+    {
+        flags |= SET_DESCRIPTION;
+        description = value;
+    }
 
     void share_callback(RemoteStorageFileShareResult_t * result, bool fail)
     {
         if (result && (result->m_eResult != k_EResultOK || fail)) {
-            uploading = false;
             error = "Error: " + number_to_string(result->m_eResult);
             call_fail();
             return;
@@ -521,7 +432,6 @@ struct UploadCallback
     void preview_callback(RemoteStorageFileShareResult_t * result, bool fail)
     {
         if (result && (result->m_eResult != k_EResultOK || fail)) {
-            uploading = false;
             error = "Error: " + number_to_string(result->m_eResult);
             call_fail();
             return;
@@ -544,7 +454,6 @@ struct UploadCallback
 
     void new_callback(RemoteStoragePublishFileResult_t * result, bool fail)
     {
-        uploading = false;
         if (result->m_eResult != k_EResultOK || fail) {
             error = "Error: " + number_to_string(result->m_eResult);
             call_fail();
@@ -556,16 +465,27 @@ struct UploadCallback
 
     void call_fail()
     {
+        uploading = false;
         flags = 0;
-        if (fail_callback)
-            (manager.frame->*fail_callback)();
+        run_callbacks = 2;
     }
 
     void call_done()
     {
+        uploading = false;
         flags = 0;
-        if (done_callback)
+        run_callbacks = 1;
+    }
+
+    void check_callbacks()
+    {
+        if (run_callbacks == 0)
+            return;
+        if (run_callbacks == 1 && done_callback)
             (manager.frame->*done_callback)();
+        else if (run_callbacks == 2 && fail_callback)
+            (manager.frame->*fail_callback)();
+        run_callbacks = 0;
     }
 
     void on_create_callback(CreateItemResult_t * result, bool fail)
@@ -627,7 +547,7 @@ struct UploadCallback
         }
 
         if (flags & SET_FILE) {
-			if (!SteamRemoteStorage()->UpdatePublishedFileFile(
+            if (!SteamRemoteStorage()->UpdatePublishedFileFile(
                     handle, cloud_file.c_str()))
                 std::cout << "Could not set item content" << std::endl;
         }
@@ -657,7 +577,6 @@ struct UploadCallback
     void on_update_callback(RemoteStorageUpdatePublishedFileResult_t * result,
                             bool fail)
     {
-        uploading = false;
         if (result->m_eResult != k_EResultOK || fail) {
             error = "Error: " + number_to_string(result->m_eResult);
             call_fail();
@@ -671,6 +590,92 @@ struct UploadCallback
 static SubCallback ugc_list_callback;
 static UploadCallback ugc_upload;
 #endif
+
+// SteamObject
+
+SteamObject::SteamObject(int x, int y, int type_id)
+: FrameObject(x, y, type_id)
+{
+}
+
+bool SteamObject::is_ready()
+{
+#ifdef CHOWDREN_ENABLE_STEAM
+    return global_steam_obj.is_ready();
+#else
+    return true;
+#endif
+}
+
+void SteamObject::update()
+{
+#ifdef CHOWDREN_ENABLE_STEAM
+    if (!global_steam_obj.initialized)
+        return;
+    SteamAPI_RunCallbacks();
+    ugc_upload.check_callbacks();
+#endif
+}
+
+int SteamObject::get_int(const std::string & name)
+{
+#ifdef CHOWDREN_ENABLE_STEAM
+    if (!global_steam_obj.initialized)
+        return 0;
+    int32 ret;
+    if (!SteamUserStats()->GetStat(name.c_str(), &ret))
+        return 0;
+    return ret;
+#else
+    return 0;
+#endif
+}
+
+void SteamObject::set_int(const std::string & name, int value)
+{
+#ifdef CHOWDREN_ENABLE_STEAM
+    if (!global_steam_obj.initialized)
+        return;
+    int32 v = value;
+    SteamUserStats()->SetStat(name.c_str(), v);
+#endif
+}
+
+void SteamObject::unlock_achievement(const std::string & name)
+{
+#ifndef NDEBUG
+    std::cout << "Unlock achievement: " << name << std::endl;
+#endif
+
+#ifdef CHOWDREN_ENABLE_STEAM
+    if (!global_steam_obj.initialized)
+        return;
+    SteamUserStats()->SetAchievement(name.c_str());
+    SteamUserStats()->StoreStats();
+#endif
+
+#ifndef CHOWDREN_IS_DESKTOP
+    platform_unlock_achievement(name);
+#endif
+}
+
+void SteamObject::request_user_data()
+{
+#ifdef CHOWDREN_ENABLE_STEAM
+    if (!global_steam_obj.initialized)
+        return;
+    SteamUserStats()->RequestCurrentStats();
+#endif
+}
+
+void SteamObject::store_user_data()
+{
+#ifdef CHOWDREN_ENABLE_STEAM
+    if (!global_steam_obj.initialized)
+        return;
+    SteamUserStats()->StoreStats();
+#endif
+}
 
 void SteamObject::set_search(bool subs)
 {

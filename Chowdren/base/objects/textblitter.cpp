@@ -351,8 +351,13 @@ void TextBlitter::draw()
 
     int img_width = (image_width / char_width) * char_width;
 
+    int screen_y1 = 0 - (layer->off_y - frame->off_y);
+    int screen_y2 = screen_y1 + WINDOW_HEIGHT;
+
     for (int line_index = 0; line_index < int(lines.size()); ++line_index) {
-        if (yy <= y - y_add || yy >= bottom_y) {
+        if (yy <= y - y_add || yy >= bottom_y ||
+            yy + y_add <= screen_y1 || yy >= screen_y2)
+        {
             yy += y_add;
             continue;
         }
