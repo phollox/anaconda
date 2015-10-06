@@ -141,5 +141,8 @@ def init_array_set_value(converter, event_writer):
 def get_missing_image(converter, image):
     raise NotImplementedError('invalid image: %s' % repr(image))
 
+def get_images(converter):
+    return {}
+
 def write_loop(converter, loop_name, event_writer, writer):
     pass

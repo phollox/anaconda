@@ -1209,6 +1209,12 @@ class Converter(object):
         print 'EXPRESSIONS'
         print default_writers['expressions'].checked.most_common()
 
+    def find_frameitem(self, name):
+        for frameitem in self.game.frameItems.itemDict.itervalues():
+            if frameitem.name != name:
+                continue
+            return frameitem
+
     def add_define(self, name, value=None):
         self.defines.add((name, value))
 
@@ -1218,13 +1224,19 @@ class Converter(object):
         image_hashes = {}
         new_entries = []
         maxrects_images = []
+
         image_index = 0
         for game_index, game in enumerate(self.games):
             if not game.images:
                 continue
+            self.game_index = game_index
+
+            custom_images = self.config.get_images()
             for image in game.images.itemDict.itervalues():
-                pil_image = Image.fromstring('RGBA', (image.width,
-                    image.height), image.getImageData())
+                pil_image = custom_images.get(image.handle, None)
+                if pil_image is None:
+                    pil_image = Image.fromstring('RGBA', (image.width,
+                        image.height), image.getImageData())
 
                 handle = (image.handle, game_index)
                 colors = pil_image.getcolors(1)
@@ -1305,6 +1317,7 @@ class Converter(object):
             arg = (image.width, image.height,
                    image.xHotspot, image.yHotspot,
                    image.actionX, image.actionY, temp)
+
             self.assets.add_image(*arg)
 
         self.image_count = image_index

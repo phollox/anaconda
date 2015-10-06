@@ -256,6 +256,37 @@ def get_missing_image(converter, image):
     print converter.current_write_object.name
     return converter.image_indexes.itervalues().next()
 
+from PIL import Image
+
+def get_images(converter):
+    images = {}
+    # if not converter.platform_name == 'wiiu':
+    #     return images
+    obj = converter.find_frameitem("GUI_ScoreTimeRings")
+    data = obj.properties.loader.animations.loadedAnimations
+
+    path = os.path.join(os.path.dirname(__file__), 'fp')
+
+    for name, anim in (('Stopped', 0), ('Jumping', 7)):
+        for i in xrange(10):
+            handle = data[anim].loadedDirections[4].frames[i]
+            image_name = 'GUI_ScoreTimeRings %s %s.png' % (name, i)
+            image_path = os.path.join(path, image_name)
+            images[handle] = Image.open(image_path).convert('RGBA')
+
+    obj = converter.find_frameitem("GUI_WeaponSlot")
+    data = obj.properties.loader.animations.loadedAnimations
+    image_path = os.path.join(path, 'GUI_WeaponSlot Jumping.png')
+    handle = data[7].loadedDirections[0].frames[0]
+    images[handle] = Image.open(image_path).convert('RGBA')
+
+    obj = converter.find_frameitem("PL_SignUp 2")
+    image_path = os.path.join(path, 'PL_SignUp 2.png')
+    handle = obj.properties.loader.image
+    images[handle] = Image.open(image_path).convert('RGBA')
+
+    return images
+
 def init_array_set_value(converter, event_writer):
     if event_writer.get_object_writer().data.name != 'MapData':
         return
