@@ -1813,7 +1813,7 @@ inline const char * transform_command(const char * data)
 }
 #else
 
-inline char * transform_command(const char * data)
+inline const char * transform_command(const char * data)
 {
     return data;
 }
