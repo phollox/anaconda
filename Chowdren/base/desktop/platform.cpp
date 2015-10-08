@@ -255,8 +255,7 @@ static void sdl_log(void *userdata, int category, SDL_LogPriority priority,
 
 void platform_init()
 {
-    unsigned int flags = SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER |
-                         SDL_INIT_HAPTIC | SDL_INIT_NOPARACHUTE;
+    unsigned int flags = SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE;
     if (SDL_Init(flags) < 0) {
         std::cout << "SDL could not be initialized: " << SDL_GetError()
             << std::endl;
@@ -1624,18 +1623,40 @@ void remove_joystick(int instance)
     }
 }
 
+// verbatim from SDL_gamecontroller.c
+static void
+SDL_GameControllerLoadHints()
+{
+    const char *hint = SDL_GetHint(SDL_HINT_GAMECONTROLLERCONFIG);
+    if (hint && hint[0]) {
+        size_t nchHints = SDL_strlen(hint);
+        char *pUserMappings = SDL_malloc(nchHints + 1);
+        char *pTempMappings = pUserMappings;
+        SDL_memcpy(pUserMappings, hint, nchHints);
+        pUserMappings[nchHints] = '\0';
+        while (pUserMappings) {
+            char *pchNewLine = NULL;
+
+            pchNewLine = SDL_strchr(pUserMappings, '\n');
+            if (pchNewLine)
+                *pchNewLine = '\0';
+
+            SDL_GameControllerAddMapping(pUserMappings);
+
+            if (pchNewLine) {
+                pUserMappings = pchNewLine + 1;
+            } else {
+                pUserMappings = NULL;
+            }
+        }
+        SDL_free(pTempMappings);
+    }
+}
+
 void init_joystick()
 {
     SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
-
-    // Reload mappings passed through the environment (by Steam, etc)
-    // so that the ones in gamecontrollerdb.txt don't override them:
-    const char *hint = SDL_GetHint(SDL_HINT_GAMECONTROLLERCONFIG);
-    if (hint && hint[0]) {
-        const size_t hintlen = SDL_strlen(hint);
-        SDL_RWops *hint_rwops = SDL_RWFromConstMem(hint, hintlen+1);
-        SDL_GameControllerAddMappingsFromRW(hint_rwops, 1);
-    }
+    SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
 
     rumble_effect.type = SDL_HAPTIC_LEFTRIGHT;
     rumble_effect.leftright.length = 0;
