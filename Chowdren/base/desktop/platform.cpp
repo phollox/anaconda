@@ -1657,6 +1657,7 @@ void init_joystick()
 {
     SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
+    SDL_GameControllerAddMappingsFromFile("gamecontrollerdb-override.txt");
 
     rumble_effect.type = SDL_HAPTIC_LEFTRIGHT;
     rumble_effect.leftright.length = 0;
