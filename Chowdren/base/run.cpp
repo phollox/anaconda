@@ -26,7 +26,7 @@ GameManager manager;
 #include "crashdump.cpp"
 #include "transition.cpp"
 
-#if defined(CHOWDREN_IS_DESKTOP)
+#if defined(CHOWDREN_IS_DESKTOP) || defined(CHOWDREN_IS_ANDROID)
 #include "SDL.h"
 #endif
 

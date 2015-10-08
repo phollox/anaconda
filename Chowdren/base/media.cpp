@@ -1,5 +1,5 @@
 #ifdef CHOWDREN_IS_DESKTOP
-#if 0
+#if 1
 #include "desktop/audiosdl.h"
 #else
 #include "desktop/audio.h"

@@ -48,7 +48,10 @@ public:
     Gwen::Controls::TextBox * text_box;
     Gwen::Controls::ScrollControl * scroller;
     Gwen::Controls::Base * base_control;
+    std::string new_text;
+
     void init_control();
+    void update_text();
 #endif
 
     ~EditObject();

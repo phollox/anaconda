@@ -1,7 +1,7 @@
 #ifndef CHOWDREN_KEYDEF_H
 #define CHOWDREN_KEYDEF_H
 
-#ifdef CHOWDREN_IS_DESKTOP
+#if defined(CHOWDREN_IS_DESKTOP) || defined(CHOWDREN_IS_ANDROID)
 
 #include "SDL_keycode.h"
 #include "SDL_mouse.h"

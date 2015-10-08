@@ -70,6 +70,7 @@ void set_gl_state()
     glEnable(GL_BLEND);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 
+#ifdef CHOWDREN_USE_GL
     glVertexPointer(2, GL_FLOAT, 0,
                     (void*)&render_data.positions[0]);
     glColorPointer(4, GL_UNSIGNED_BYTE, 0, (void*)&render_data.colors[0]);
@@ -85,6 +86,20 @@ void set_gl_state()
     glTexCoordPointer(2, GL_FLOAT, 0, (void*)&render_texcoords2[0]);
 
     glClientActiveTexture(GL_TEXTURE0);
+#else
+    glVertexAttribPointer(POSITION_ATTRIB_IDX, 2, GL_FLOAT, GL_FALSE, 0,
+                          (void*)&render_data.positions[0]);
+    glVertexAttribPointer(COLOR_ATTRIB_IDX, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0,
+                          (void*)&render_data.colors[0]);
+    glVertexAttribPointer(TEXCOORD1_ATTRIB_IDX, 2, GL_FLOAT, GL_FALSE, 0,
+                          (void*)&render_data.texcoord1[0]); 
+    glVertexAttribPointer(TEXCOORD2_ATTRIB_IDX, 2, GL_FLOAT, GL_FALSE, 0,
+                          (void*)&render_texcoords2[0]);
+    glEnableVertexAttribArray(POSITION_ATTRIB_IDX);
+    glEnableVertexAttribArray(COLOR_ATTRIB_IDX);
+    glEnableVertexAttribArray(TEXCOORD1_ATTRIB_IDX);
+    glEnableVertexAttribArray(TEXCOORD2_ATTRIB_IDX);
+#endif
 
     BaseShader::current = NULL;
 }

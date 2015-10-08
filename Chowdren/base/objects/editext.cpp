@@ -87,6 +87,12 @@ void EditObject::init_control()
 
     text_box->SetCursor(Gwen::CursorType::Beam);
 }
+
+void EditObject::update_text()
+{
+    new_text = text_box->GetText().Get();
+    replace_substring(new_text, unix_newline_character, newline_character);
+}
 #endif
 
 EditObject::~EditObject()
@@ -110,6 +116,7 @@ void EditObject::update()
         text_box->SetSize(std::max(text_box->Width(), width),
                           std::max(text_box->Height(), height));
     }
+    update_text();
 #else
     if (is_mouse_pressed_once(SDL_BUTTON_LEFT)) {
         int mx, my;
@@ -173,6 +180,7 @@ void EditObject::set_text(const std::string & value)
 {
 #ifdef CHOWDREN_USE_GWEN
     text_box->SetText(Gwen::TextObject(value), false);
+    update_text();
 #else
     text = value;
 #endif
@@ -181,7 +189,7 @@ void EditObject::set_text(const std::string & value)
 const std::string & EditObject::get_text()
 {
 #ifdef CHOWDREN_USE_GWEN
-    return text_box->GetText().Get();
+    return new_text;
 #else
     return text;
 #endif

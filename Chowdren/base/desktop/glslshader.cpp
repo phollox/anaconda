@@ -26,6 +26,18 @@ BaseShader::BaseShader(unsigned int id, int flags,
 
 static AssetFile fp;
 
+#ifdef CHOWDREN_USE_GL
+#define GL_GET_SHADER glGetObjectParameteriv
+#define GL_GET_PROGRAM glGetObjectParameteriv
+#define GL_GET_SHADER_LOG glGetInfoLog
+#define GL_GET_PROGRAM_LOG glGetInfoLog
+#else
+#define GL_GET_SHADER glGetShaderiv
+#define GL_GET_PROGRAM glGetProgramiv
+#define GL_GET_SHADER_LOG glGetShaderInfoLog
+#define GL_GET_PROGRAM_LOG glGetProgramInfoLog
+#endif
+
 void BaseShader::initialize()
 {
     if (!fp.is_open())
@@ -73,13 +85,12 @@ void BaseShader::initialize()
     glLinkProgram(program);
 
     GLint status;
-    glGetObjectParameteriv(program, GL_OBJECT_LINK_STATUS_ARB, &status);
+    GL_GET_PROGRAM(program, GL_OBJECT_LINK_STATUS_ARB, &status);
     if (status == GL_FALSE) {
         GLint info_len;
-        glGetObjectParameteriv(program, GL_OBJECT_INFO_LOG_LENGTH_ARB,
-                               &info_len);
+        GL_GET_PROGRAM(program, GL_OBJECT_INFO_LOG_LENGTH_ARB, &info_len);
         GLchar * info_log = new GLchar[info_len + 1];
-        glGetInfoLog(program, info_len, NULL, info_log);
+        GL_GET_PROGRAM_LOG(program, info_len, NULL, info_log);
         std::cout << "Linker failure: " << info_log << std::endl;
         delete[] info_log;
     }
@@ -127,13 +138,12 @@ GLhandleARB BaseShader::attach_source(FSFile & fp, GLenum type)
     glCompileShader(shader);
 
     GLint status;
-    glGetObjectParameteriv(shader, GL_OBJECT_COMPILE_STATUS_ARB, &status);
+    GL_GET_SHADER(shader, GL_OBJECT_COMPILE_STATUS_ARB, &status);
     if (status == GL_FALSE) {
         GLint info_len;
-        glGetObjectParameteriv(shader, GL_OBJECT_INFO_LOG_LENGTH_ARB,
-                               &info_len);
+        GL_GET_SHADER(shader, GL_OBJECT_INFO_LOG_LENGTH_ARB, &info_len);
         GLchar * info_log = new GLchar[info_len + 1];
-        glGetInfoLog(shader, info_len, NULL, info_log);
+        GL_GET_SHADER_LOG(shader, info_len, NULL, info_log);
         std::cout << "Compile error in " << type << ":" << std::endl <<
             info_log << std::endl;
         delete[] info_log;

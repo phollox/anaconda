@@ -1,8 +1,6 @@
 #ifndef CHOWDREN_SHADERCOMMON_H
 #define CHOWDREN_SHADERCOMMON_H
 
-#include <string>
-
 // GLES attrib indexes
 #define MAX_ATTRIB 4
 #define POSITION_ATTRIB_IDX 0

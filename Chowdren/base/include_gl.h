@@ -1,7 +1,7 @@
 #ifndef INCLUDE_GL_H
 #define INCLUDE_GL_H
 
-#ifdef CHOWDREN_IS_DESKTOP
+#if defined(CHOWDREN_IS_DESKTOP) || defined(CHOWDREN_IS_ANDROID)
 
 #ifdef CHOWDREN_USE_D3D
 
@@ -72,7 +72,22 @@ extern PFNGLGETUNIFORMLOCATIONARBPROC __glGetUniformLocationARB;
 #include <SDL_opengles.h>
 
 #elif CHOWDREN_USE_GLES2
+
 #include <SDL_opengles2.h>
+#include "shadercommon.h"
+
+#define glCreateProgramObject glCreateProgram
+#define glCreateShaderObject glCreateShader
+#define glGetInfoLog glGetShaderInfoLog
+#define GL_VERTEX_SHADER_ARB GL_VERTEX_SHADER
+#define GL_FRAGMENT_SHADER_ARB GL_FRAGMENT_SHADER
+#define GL_OBJECT_COMPILE_STATUS_ARB GL_COMPILE_STATUS
+#define GL_OBJECT_INFO_LOG_LENGTH_ARB GL_INFO_LOG_LENGTH
+#define GL_OBJECT_LINK_STATUS_ARB GL_LINK_STATUS
+#define glDetachObject glDetachShader
+#define glAttachObject glAttachShader
+#define glUseProgramObject glUseProgram
+#define GLhandleARB GLuint
 
 #endif // CHOWDREN_USE_GL
 

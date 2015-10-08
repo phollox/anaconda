@@ -36,7 +36,6 @@
 #include "intern.h"
 #include "overlap.h"
 
-extern std::string newline_character;
 // string helpers
 
 inline int string_find(const std::string & a, const std::string & b,

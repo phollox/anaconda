@@ -34,6 +34,7 @@ namespace boost
 }
 #endif
 
+std::string unix_newline_character("\n");
 std::string newline_character("\r\n");
 std::string empty_string("");
 

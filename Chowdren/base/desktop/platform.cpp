@@ -1113,6 +1113,7 @@ void platform_swap_buffers()
         d3d_reset(true);
     }
 #else
+#ifdef CHOWDREN_USE_GL
     // we need to unbind buffers and programs due to a bug in Steam overlay
     // and Geforce drivers.
     //
@@ -1126,6 +1127,7 @@ void platform_swap_buffers()
     glVertexPointer(4, GL_FLOAT, 0, 0);
     glColorPointer(4, GL_FLOAT, 0, 0);
     glTexCoordPointer(4, GL_FLOAT, 0, 0);
+#endif
     SDL_GL_SwapWindow(global_window);
 #endif
 }
@@ -1913,7 +1915,12 @@ bool platform_remove_directory(const std::string & dir)
 }
 
 #include "fileio.cpp"
+
+#ifdef CHOWDREN_IS_ANDROID
+#include "sdlfile.cpp"
+#else
 #include "stdiofile.cpp"
+#endif
 
 // path
 
@@ -1922,15 +1929,23 @@ std::string convert_path(const std::string & v)
     std::string value = v;
     if (value.compare(0, 3, "./\\") == 0)
         value = std::string("./", 2) + value.substr(3);
+
 #ifndef _WIN32
     std::replace(value.begin(), value.end(), '\\', '/');
 #else
     std::replace(value.begin(), value.end(), '/', '\\');
 #endif
+
+#ifdef CHOWDREN_IS_ANDROID
+    if (value.compare(0, 2, "./") == 0)
+        value = value.substr(2);
+#endif
     return value;
 }
 
 // dialog
+
+#ifdef CHOWDREN_IS_DESKTOP
 
 #include "tinyfiledialogs.h"
 
@@ -2058,6 +2073,31 @@ bool platform_show_dialog(const std::string & title,
     return ret == 1;
 #endif
 }
+
+#else
+
+bool platform_file_open_dialog(const std::string & title,
+                               const std::string & filter,
+                               const std::string & in_def,
+                               bool multiple,
+                               vector<std::string> & out)
+{
+}
+
+bool platform_file_save_dialog(const std::string & title,
+                               const std::string & filter,
+                               const std::string & in_def,
+                               std::string & out)
+{
+}
+
+bool platform_show_dialog(const std::string & title,
+                          const std::string & message,
+                          DialogType type)
+{
+}
+
+#endif
 
 // debug
 

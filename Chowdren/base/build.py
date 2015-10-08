@@ -164,6 +164,13 @@ class LinuxBuilder(Builder):
             return
         shutil.rmtree(self.temp)
 
+class AndroidBuilder(Builder):
+    def build(self):
+        
+
+    def finish(self):
+        pass
+
 class MacBuilder(Builder):
     pass
 

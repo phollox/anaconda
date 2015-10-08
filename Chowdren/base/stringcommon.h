@@ -16,6 +16,8 @@ std::string fast_lltoa(long long value);
 std::string fast_dtoa(double value);
 
 extern std::string empty_string;
+extern std::string newline_character;
+extern std::string unix_newline_character;
 
 inline double string_to_double(const std::string & in)
 {

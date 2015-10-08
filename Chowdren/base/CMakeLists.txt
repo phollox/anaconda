@@ -10,8 +10,7 @@ set(CMAKE_MODULE_PATH "${CHOWDREN_BASE_DIR}/cmake")
 
 if (NOT CMAKE_CROSSCOMPILING)
     include_directories("${CHOWDREN_BASE_DIR}/include/desktop")
-    set(CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include/desktop"
-        ${CMAKE_INCLUDE_PATH})
+    list(APPEND CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include/desktop")
     include_directories("${CHOWDREN_BASE_DIR}/desktop")
 
     if (EMSCRIPTEN)
@@ -21,17 +20,31 @@ if (NOT CMAKE_CROSSCOMPILING)
     endif()
 endif()
 
+if (ANDROID)
+    include_directories("${CHOWDREN_BASE_DIR}/include/android")
+    list(APPEND CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include/android")
+    include_directories("${CHOWDREN_BASE_DIR}/android")
+    set(PLATFORM_CPP ${CHOWDREN_BASE_DIR}/android/platform.cpp)
+    set(PLATFORM_SRCS
+        ${CHOWDREN_BASE_DIR}/android/glslshader.cpp
+        ${CHOWDREN_BASE_DIR}/android/fbo.cpp
+        ${PLATFORM_SRCS}
+    )
+endif()
+
 include_directories("${CHOWDREN_BASE_DIR}/include")
 include_directories("${CHOWDREN_BASE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}")
-set(CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include" ${CMAKE_INCLUDE_PATH})
+list(APPEND CMAKE_INCLUDE_PATH ${CHOWDREN_BASE_DIR}/include)
 
 option(USE_BOX2D "Use Box2D" OFF)
 option(USE_PYTHON "Use Python" OFF)
 option(USE_STEAM "Use Steam" OFF)
 option(EMULATE_WIIU "Emulate Wii U features" OFF)
 
-if (CMAKE_CROSSCOMPILING)
+if (ANDROID)
+    set(USE_GLES2 ON)
+elseif (CMAKE_CROSSCOMPILING)
     set(USE_GL OFF)
     set(USE_GLES2 OFF)
     set(USE_GLES1 OFF)
@@ -59,7 +72,9 @@ elseif (USE_GLES2)
     add_definitions(-DCHOWDREN_USE_GLES2)
 endif()
 
-if (NOT CMAKE_CROSSCOMPILING)
+if (ANDROID)
+    add_definitions(-DCHOWDREN_IS_ANDROID)
+elseif (NOT CMAKE_CROSSCOMPILING)
     add_definitions(-DCHOWDREN_IS_DESKTOP)
 endif()
 
@@ -256,20 +271,15 @@ if(WIN32)
         set(CMAKE_LIBRARY_PATH "${CHOWDREN_BASE_DIR}/lib/win32"
             ${CMAKE_LIBRARY_PATH})
     endif()
-    set(CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include/win32"
-        ${CMAKE_INCLUDE_PATH})
-    set(SRCS
-        ${SRCS}
-        resource.rc)
+    list(APPEND CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include/win32")
+    set(SRCS ${SRCS} resource.rc)
     set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES} winmm)
 elseif(APPLE)
     set(CMAKE_LIBRARY_PATH "${CHOWDREN_BASE_DIR}/lib/osx"
         ${CMAKE_LIBRARY_PATH})
-    set(CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include/osx"
-        ${CMAKE_INCLUDE_PATH})
+    list(APPEND CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include/osx")
     # for frameworks
-    set(CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/lib/osx"
-        ${CMAKE_INCLUDE_PATH})
+    list(APPEND CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/lib/osx")
     find_library(CARBON_LIBRARY Carbon)
     set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES} ${CARBON_LIBRARY})
 endif()
@@ -363,6 +373,51 @@ if (USE_WEBP)
     set(SRCS ${WEBP_C} ${SRCS})
 endif()
 
+if (ANDROID)
+    find_package(OpenGLES2 REQUIRED)
+
+    add_definitions(-DGL_GLEXT_PROTOTYPES -DSDL_RENDER_DISABLED)
+    set(SDL_ROOT ${CHOWDREN_BASE_DIR}/staticlibs/SDL2)
+    set(SDL2_INCLUDE_DIR ${SDL_ROOT}/include)
+    set(PLATFORM_LIBRARIES
+        dl
+        log
+        android
+        m
+        ${PLATFORM_LIBRARIES})
+    file(GLOB SDL_SRCS
+         ${SDL_ROOT}/src/*.c
+         ${SDL_ROOT}/src/audio/*.c
+         ${SDL_ROOT}/src/audio/android/*.c
+         ${SDL_ROOT}/src/audio/dummy/*.c
+         ${SDL_ROOT}/src/atomic/SDL_atomic.c
+         ${SDL_ROOT}/src/atomic/SDL_spinlock.c
+         ${SDL_ROOT}/src/core/android/*.c
+         ${SDL_ROOT}/src/cpuinfo/*.c
+         ${SDL_ROOT}/src/dynapi/*.c
+         ${SDL_ROOT}/src/events/*.c
+         ${SDL_ROOT}/src/file/*.c
+         ${SDL_ROOT}/src/haptic/*.c
+         ${SDL_ROOT}/src/haptic/dummy/*.c
+         ${SDL_ROOT}/src/joystick/*.c
+         ${SDL_ROOT}/src/joystick/android/*.c
+         ${SDL_ROOT}/src/loadso/dlopen/*.c
+         ${SDL_ROOT}/src/power/*.c
+         ${SDL_ROOT}/src/power/android/*.c
+         ${SDL_ROOT}/src/filesystem/dummy/*.c
+         ${SDL_ROOT}/src/render/*.c
+         ${SDL_ROOT}/src/stdlib/*.c
+         ${SDL_ROOT}/src/thread/*.c
+         ${SDL_ROOT}/src/thread/pthread/*.c
+         ${SDL_ROOT}/src/timer/*.c
+         ${SDL_ROOT}/src/timer/unix/*.c
+         ${SDL_ROOT}/src/video/*.c
+         ${SDL_ROOT}/src/video/android/*.c
+         ${SDL_ROOT}/src/main/android/SDL_android_main.c
+    )
+    set(SRCS ${SDL_SRCS} ${SRCS})
+endif()
+
 if (NOT CMAKE_CROSSCOMPILING)
     find_package(SDL2 REQUIRED)
     find_package(OpenALSoft REQUIRED)
@@ -374,13 +429,30 @@ if (NOT CMAKE_CROSSCOMPILING)
 endif()
 
 set(EXE_NAME "Chowdren")
-add_executable(${EXE_NAME} WIN32 MACOSX_BUNDLE ${SRCS})
 
-include_directories(${OPENALSOFT_INCLUDE_DIR} ${SDL2_INCLUDE_DIR}
-    ${VORBIS_INCLUDE_DIR} ${BOX2D_INCLUDE_DIR} ${WEBP_INCLUDE_DIR})
-target_link_libraries(${EXE_NAME} ${SDL2_LIBRARY} ${OPENGL_LIBRARY}
-    ${OPENALSOFT_LIBRARY} ${PYTHON_LIBRARIES} ${PLATFORM_LIBRARIES}
-    ${BOX2D_LIBRARY} ${OPENGLES2_LIBRARIES} ${EGL_LIBRARIES})
+if (ANDROID)
+    add_library(${EXE_NAME} SHARED ${SRCS})
+else()
+    add_executable(${EXE_NAME} WIN32 MACOSX_BUNDLE ${SRCS})
+endif()
+
+include_directories(
+    ${OPENALSOFT_INCLUDE_DIR}
+    ${SDL2_INCLUDE_DIR}
+    ${BOX2D_INCLUDE_DIR}
+    ${WEBP_INCLUDE_DIR}
+)
+
+target_link_libraries(
+    ${EXE_NAME}
+    ${SDL2_LIBRARY}
+    ${OPENGL_LIBRARY}
+    ${OPENALSOFT_LIBRARY}
+    ${PYTHON_LIBRARIES}
+    ${PLATFORM_LIBRARIES}
+    ${BOX2D_LIBRARY}
+    ${OPENGLES2_LIBRARIES}
+)
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
 
