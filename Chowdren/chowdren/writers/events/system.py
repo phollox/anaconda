@@ -5,7 +5,7 @@ from chowdren.writers.events import (ActionWriter, ConditionWriter,
     make_expression, make_comparison, EmptyAction, FalseCondition)
 from chowdren.common import (get_method_name, to_c, make_color,
                              parse_direction, get_flag_direction,
-                             TEMPORARY_GROUP_ID, is_qualifier, get_qualifier)
+                             is_qualifier, get_qualifier)
 from chowdren.writers.objects import ObjectWriter
 from chowdren import shader
 from collections import defaultdict
@@ -748,7 +748,7 @@ class TimerEvery(ConditionWriter):
         time = self.parameters[0].loader
         time = getattr(time, 'delay', None) or time.timer
         seconds = time / 1000.0
-        name = 'every_%s' % TEMPORARY_GROUP_ID
+        name = 'every_%s' % self.get_id(self)
         self.group.add_member('float %s' % name, '0.0f')
         event_break = self.converter.event_break
         writer.putln('%s += manager.dt;' % name)
@@ -810,7 +810,7 @@ class RestrictFor(ConditionWriter):
         self.group.add_member('float %s' % name, 'frame_time')
 
 def write_not_always(writer, ace):
-    name = 'not_always_%s' % TEMPORARY_GROUP_ID
+    name = 'not_always_%s' % ace.get_id(ace)
     ace.group.add_member('unsigned int %s' % name, 'loop_count')
     event_break = ace.converter.event_break
     writer.putln('if (%s > loop_count) {' % (name))
@@ -830,7 +830,7 @@ class OnceCondition(ConditionWriter):
     custom = True
     def write(self, writer):
         event_break = self.converter.event_break
-        name = 'once_condition_%s' % TEMPORARY_GROUP_ID
+        name = 'once_condition_%s' % self.get_id(self)
         self.group.add_member('bool %s' % name, 'false')
         writer.putlnc('if (%s) %s', name, event_break)
         writer.putlnc('%s = true;', name)
@@ -1471,7 +1471,7 @@ class SwapPosition(ActionWriter):
         config = self.group.config
         swap_name = config.get('swap_name', None)
         if swap_name is None:
-            swap_name = 'swap_%s' % TEMPORARY_GROUP_ID
+            swap_name = 'swap_%s' % self.get_id(self)
             config['swap_name'] = swap_name
             writer.putlnc('static FlatObjectList %s;', swap_name)
             writer.putlnc('%s.clear();', swap_name)

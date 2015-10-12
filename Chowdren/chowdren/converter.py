@@ -289,7 +289,7 @@ class EventGroup(object):
     precedence = 0
 
     def __init__(self, converter, conditions, actions, container, global_id,
-                 or_index, not_always, or_type):
+                 not_always, or_type):
         self.converter = converter
         self.conditions = fix_conditions(conditions)
         self.actions = actions
@@ -300,7 +300,6 @@ class EventGroup(object):
         self.config = {}
         self.global_id = global_id
         self.not_always = not_always
-        self.or_index = or_index
         self.or_type = or_type
         self.force_multiple = set()
         self.ids = {}
@@ -311,17 +310,22 @@ class EventGroup(object):
             return self.ids[key]
         except KeyError:
             pass
-        new_id = '%s_%s' % (TEMPORARY_GROUP_ID, len(self.ids))
+        new_id = '%s_%s' % (self.unique_id, len(self.ids))
         self.ids[key] = new_id
         return new_id
 
     def set_groups(self, converter, groups):
-        is_simple = converter.config.use_simple_or()
+        if self.or_type is not None:
+            # reassign action groups just in case
+            for action in self.actions:
+                action.group = self
+
         if len(groups) == 1:
             self.name = 'event_%s' % TEMPORARY_GROUP_ID
             self.unique_id = TEMPORARY_GROUP_ID
             return
-        self.unique_id = '%s_%s' % (TEMPORARY_GROUP_ID, self.or_index)
+        self.unique_id = '%s_%s' % (TEMPORARY_GROUP_ID, groups.index(self))
+        is_simple = converter.config.use_simple_or()
         if is_simple:
             self.name = 'event_or_%s' % self.unique_id
             return
@@ -357,8 +361,7 @@ class EventGroup(object):
         self.name = self.get_or_name()
         # self.or_exit = 'goto %s_end;' % last_group.get_or_name()
         self.or_result = 'or_result_%s' % TEMPORARY_GROUP_ID
-        self.or_temp_result = 'or_temp_result_%s_%s' % (TEMPORARY_GROUP_ID,
-                                                        self.or_index)
+        self.or_temp_result = 'or_temp_result_%s' % self.unique_id
 
     def get_or_name(self):
         return 'or_event_%s' % self.unique_id
@@ -1579,7 +1582,7 @@ class Converter(object):
             generated_group_index = None
             new_always_groups = []
             all_groups = []
-            for or_index, conditions in enumerate(condition_groups):
+            for conditions in condition_groups:
                 if not conditions:
                     continue
                 first_writer = conditions[0]
@@ -1602,7 +1605,7 @@ class Converter(object):
 
                 new_group = EventGroup(self, conditions, actions,
                     current_container, new_group_index,
-                    or_index, not_always, or_type)
+                    not_always, or_type)
                 all_groups.append(new_group)
                 name = self.get_condition_name(first_condition)
 
