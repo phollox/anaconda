@@ -382,9 +382,15 @@ void Background::paste(Image * img, int dest_x, int dest_y,
     int x2 = std::min(col_w, dest_x + src_width);
     int y2 = std::min(col_h, dest_y + src_height);
     if (collision_type == 0 && color.a == 255) {
-        for (int y = y1; y < y2; ++y)
-        for (int x = x1; x < x2; ++x) {
-            col.unset(y * col_w + x);
+        img->upload_texture(); // can't be bothered to handle both cases
+        BitArray & alpha = img->alpha;
+        for (int y = y1; y < y2; ++y) {
+            int img_y = (src_y + y - y1) * img->width;
+            int col_y = y * col_w;
+            for (int x = x1; x < x2; ++x) {
+                if (alpha.get(img_y + (src_x + x - x1)))
+                    col.unset(col_y + x);
+            }
         }
     } else if (collision_type == 1) {
         img->upload_texture(); // can't be bothered to handle both cases
@@ -395,8 +401,6 @@ void Background::paste(Image * img, int dest_x, int dest_y,
             for (int x = x1; x < x2; ++x) {
                 if (alpha.get(img_y + (src_x + x - x1)))
                     col.set(col_y + x);
-                else
-                    col.unset(col_y + x);
             }
         }
     }

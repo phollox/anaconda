@@ -648,7 +648,10 @@ void d3d_reset(bool last_failed)
         }
 
         while (FAILED(hr)) {
-            while (FAILED(render_data.device->TestCooperativeLevel())) {
+            while (true) {
+                HRESULT status = render_data.device->TestCooperativeLevel();
+                if (status == D3DERR_DEVICENOTRESET)
+                    break;
                 platform_sleep(0.2);
             }
             hr = render_data.device->Reset(&pparams);
@@ -1018,7 +1021,6 @@ void platform_begin_draw()
         old_height = h;
         screen_fbo.destroy();
         screen_fbo.init(w, h);
-        std::cout << "new fbo: " << w << " " << h << std::endl;
     }
 #endif
     screen_fbo.bind();
@@ -1037,9 +1039,13 @@ void platform_swap_buffers()
     bool resize = window_width != WINDOW_WIDTH ||
                   window_height != WINDOW_HEIGHT;
 
+#ifdef CHOWDREN_FORCE_FILL
+    int use_scale_type = EXACT_FIT;
+#else
     int use_scale_type = scale_type;
     if (!is_fullscreen)
         use_scale_type = BEST_FIT;
+#endif
 
     if (resize && use_scale_type == EXACT_FIT) {
         draw_x_size = window_width;
@@ -1620,36 +1626,6 @@ void remove_joystick(int instance)
         j.close();
         joysticks.erase(it);
         return;
-    }
-}
-
-// verbatim from SDL_gamecontroller.c
-static void
-SDL_GameControllerLoadHints()
-{
-    const char *hint = SDL_GetHint(SDL_HINT_GAMECONTROLLERCONFIG);
-    if (hint && hint[0]) {
-        size_t nchHints = SDL_strlen(hint);
-        char *pUserMappings = SDL_malloc(nchHints + 1);
-        char *pTempMappings = pUserMappings;
-        SDL_memcpy(pUserMappings, hint, nchHints);
-        pUserMappings[nchHints] = '\0';
-        while (pUserMappings) {
-            char *pchNewLine = NULL;
-
-            pchNewLine = SDL_strchr(pUserMappings, '\n');
-            if (pchNewLine)
-                *pchNewLine = '\0';
-
-            SDL_GameControllerAddMapping(pUserMappings);
-
-            if (pchNewLine) {
-                pUserMappings = pchNewLine + 1;
-            } else {
-                pUserMappings = NULL;
-            }
-        }
-        SDL_free(pTempMappings);
     }
 }
 

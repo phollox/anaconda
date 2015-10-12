@@ -57,7 +57,8 @@ class CompareDistance(ConditionMethodWriter):
         self.set_pos(pos1, 'obj1', 'x1', 'y1', writer)
         self.set_pos(pos2, 'obj2', 'x2', 'y2', writer)
 
-        check = 'get_distance(x1, y1, x2, y2) <= %s' % self.convert_index(2)
+        check = ('get_distance_int(x1, y1, x2, y2) <= %s'
+                 % self.convert_index(2))
         if not self.is_negated():
             check = '!(%s)' % check
 

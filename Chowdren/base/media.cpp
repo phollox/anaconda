@@ -1,5 +1,7 @@
+// #define TEST_SDL_AUDIO
+
 #ifdef CHOWDREN_IS_DESKTOP
-#if 0
+#if TEST_SDL_AUDIO
 #include "desktop/audiosdl.h"
 #else
 #include "desktop/audio.h"
@@ -279,11 +281,6 @@ void Media::init()
 void Media::stop()
 {
     stop_samples();
-
-    for (int i = 0; i < SOUND_COUNT; i++) {
-        delete sounds[i];
-    }
-
     ChowdrenAudio::close_audio();
 }
 

@@ -132,7 +132,7 @@ void Render::init()
 
     d3d_reset_state();
 
-    for (int i = 0; i < MAX_TEX; ++i) {
+    for (int i = 1; i < MAX_TEX; ++i) {
         if (render_data.textures[i].texture == NULL) {
             render_data.back_tex = i;
             break;
@@ -194,13 +194,16 @@ void Render::init()
 
     unsigned int white = 0xFFFFFFFF;
     render_data.white_tex = Render::create_tex(&white, RGBA, 1, 1);
+
 #ifdef CHOWDREN_USE_D3D
+
 #ifdef CHOWDREN_QUICK_SCALE
     bool linear = false;
 #else
     bool linear = true;
 #endif
     Render::set_filter(render_data.white_tex, linear);
+
 #endif
     render_data.last_tex = 0;
 }

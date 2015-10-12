@@ -62,7 +62,7 @@ void Framebuffer::init(int w, int h)
             break;
         }
 
-        for (tex = 0; tex < MAX_TEX; ++tex) {
+        for (tex = 1; tex < MAX_TEX; ++tex) {
             if (render_data.textures[tex].texture == NULL)
                 break;
         }

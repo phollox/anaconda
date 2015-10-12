@@ -61,20 +61,14 @@ void PathPlanner::add_obstacle(FrameObject * obj)
     InstanceCollision * c = obj->collision;
     if (c == NULL)
         return;
-
     int aabb[4];
-    int big_tile_size = tile_size;
-    aabb[0] = std::max(0, (c->aabb[0] / big_tile_size));
-    aabb[1] = std::max(0, (c->aabb[1] / big_tile_size));
-    aabb[2] = std::min(map_width, ((c->aabb[2]-1) / big_tile_size));
-    aabb[3] = std::min(map_height, ((c->aabb[3]-1) / big_tile_size));
-    if (aabb[2] == aabb[0])
-        aabb[2]++;
-    if (aabb[3] == aabb[1])
-        aabb[3]++;
+    aabb[0] = std::max(0, c->aabb[0] / tile_size);
+    aabb[1] = std::max(0, c->aabb[1] / tile_size);
+    aabb[2] = std::min(map_width, (c->aabb[2]-1) / tile_size);
+    aabb[3] = std::min(map_height, (c->aabb[3]-1) / tile_size);
 
-    for (int y = aabb[1]; y < aabb[3]; ++y)
-    for (int x = aabb[0]; x < aabb[2]; ++x) {
+    for (int y = aabb[1]; y <= aabb[3]; ++y)
+    for (int x = aabb[0]; x <= aabb[2]; ++x) {
         map.set(to_index(x, y));
     }
 }
