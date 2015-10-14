@@ -470,20 +470,7 @@ inline int reverse_color(int value)
     return color.get_int();
 }
 
-inline std::string get_platform()
-{
-#ifdef _WIN32
-    return "Chowdren Windows";
-#elif __APPLE__
-    return "Chowdren OS X";
-#elif __linux
-    return "Chowdren Linux";
-#elif CHOWDREN_IS_WIIU
-    return "Chowdren WiiU";
-#else
-    return "Chowdren ???";
-#endif
-}
+const std::string & get_platform();
 
 #ifdef CHOWDREN_EMULATE_MENU
 

@@ -74,7 +74,9 @@ def use_image_preload(converter):
     return converter.platform_name not in ('ps4',)
 
 def use_image_flush(converter, frame):
-    return False
+    if converter.platform_name != 'android':
+        return False
+    return True
 
 alterable_int_objects = [
     ('SCOREVARIABLES_', [9, 10]),
@@ -189,7 +191,10 @@ def get_string(converter, value):
     value = audio_re.sub(re.escape('\\Audio\\'), value)
     value = src_re.sub(re.escape('\\Src\\'), value)
     value = value.replace(bad_start, '.\\')
-    if converter.platform_name == 'ps4':
+    if converter.platform_name == 'android':
+        if value in save_paths:
+            return './Profile.ini'
+    elif converter.platform_name == 'ps4':
         if value in save_paths:
             return './save/Profile.INI'
         ps4_value = ps4_replacements.get(value, None)

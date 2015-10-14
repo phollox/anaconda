@@ -634,7 +634,7 @@ void preload_images()
 void preload_images()
 {
     double start_time = platform_get_time();
-#ifndef CHOWDREN_IS_DESKTOP
+#if !defined(CHOWDREN_IS_DESKTOP) && !defined(CHOWDREN_IS_ANDROID)
 #if defined(CHOWDREN_PRELOAD_IMAGES) || defined(CHOWDREN_PRELOAD_ALL)
     AssetFile fp;
     fp.open();

@@ -255,6 +255,9 @@ static void sdl_log(void *userdata, int category, SDL_LogPriority priority,
 
 void platform_init()
 {
+#ifdef CHOWDREN_IS_ANDROID
+    platform_init_android();
+#endif
     unsigned int flags = SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE;
     if (SDL_Init(flags) < 0) {
         std::cout << "SDL could not be initialized: " << SDL_GetError()
@@ -1229,6 +1232,8 @@ const std::string & platform_get_language()
 
 // filesystem stuff
 
+#ifndef CHOWDREN_IS_ANDROID
+
 #include <sys/stat.h>
 
 void platform_walk_folder(const std::string & in_path,
@@ -1407,6 +1412,8 @@ const std::string & platform_get_appdata_dir()
     }
     return dir;
 }
+
+#endif // CHOWDREN_IS_ANDROID
 
 // joystick
 
@@ -2180,3 +2187,9 @@ void platform_exit()
 
     SDL_Quit();
 }
+
+#ifndef CHOWDREN_IS_DESKTOP
+void platform_unlock_achievement(const std::string & name)
+{
+}
+#endif

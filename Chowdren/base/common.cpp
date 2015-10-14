@@ -3025,6 +3025,22 @@ void start_joystick_rumble(int n, const std::string & name, int times)
     joystick_vibrate(n, effect.l, effect.r, effect.duration);
 }
 
+const std::string & get_platform()
+{
+#ifdef _WIN32
+    static std::string name("Chowdren Windows");
+#elif __APPLE__
+    static std::string name("Chowdren OS X");
+#elif __linux
+    static std::string name("Chowdren Linux");
+#elif CHOWDREN_IS_WIIU
+    static std::string name("Chowdren WiiU");
+#else
+    static std::string name("Chowdren ???");
+#endif
+    return name;
+}
+
 #ifdef CHOWDREN_SUBAPP_FRAMES
 
 int get_display_width()

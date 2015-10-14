@@ -127,7 +127,7 @@ void GameManager::init()
     // values->set(12, 2);
 #elif defined(CHOWDREN_IS_NAH)
     platform_set_scale_type(2);
-    // start_frame = 3;
+    start_frame = 12;
     // set_local("fre");
     // values->set(13, 25);
     // strings->set(23, "OBJETS");
