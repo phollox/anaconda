@@ -148,7 +148,7 @@ static bool check_opengl_extensions()
 #endif
 
 #ifdef __APPLE__
-static bool has_ctrl = false;
+static bool has_cmd = false;
 #endif
 
 static void on_key(SDL_KeyboardEvent & e)
@@ -156,10 +156,10 @@ static void on_key(SDL_KeyboardEvent & e)
     if (e.repeat != 0)
         return;
 #ifdef __APPLE__
-    if (SDL_GetModState() & KMOD_CTRL)
-        has_ctrl = true;
+    if (SDL_GetModState() & (KMOD_LGUI | KMOD_RGUI))
+        has_cmd = true;
     else
-        has_ctrl = false;
+        has_cmd = false;
 #endif
     bool state = e.state == SDL_PRESSED;
     int key = e.keysym.sym;
@@ -191,7 +191,7 @@ static void on_mouse(SDL_MouseButtonEvent & e)
 {
     int button = e.button;
 #ifdef __APPLE__
-    if (has_ctrl && button == SDL_BUTTON_LEFT)
+    if (has_cmd && button == SDL_BUTTON_LEFT)
         button = SDL_BUTTON_RIGHT;
 #endif
     manager.on_mouse(button, e.state == SDL_PRESSED);
