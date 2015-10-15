@@ -518,15 +518,12 @@ public:
             frac += step * dst_size;
             unsigned read_samples = (frac >> FIXPOINT_FRAC_BITS) * channels;
             data_offset += read_samples;
-			if (data_offset > end) {
-				std::cout << "pointer moved past end!" << end << " " << data_offset << std::endl;
-			}
             frac &= FIXPOINT_FRAC_MASK;
 
-            if (data_offset != end)
+            if (data_offset < end)
                 continue;
             if (flags & LOOP && !has_end) {
-                data_offset = 0;
+                data_offset %= end;
             } else {
                 flags &= ~PLAY;
                 break;

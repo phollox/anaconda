@@ -28,14 +28,91 @@ public:
     }
 };
 
+#ifdef USE_ASSET_MANAGER
+#include <android/asset_manager.h>
+#include <jni.h>
+static jobject java_asset_manager;
+AAssetManager * global_asset_manager;
+static std::string internal_path;
+
+void init_asset_manager
+{
+    jmethodID mid;
+
+    JNIEnv *env = Android_JNI_GetEnv();
+    const int capacity = 16;
+    (*env)->PushLocalFrame(env, capacity);
+
+    jclass mActivityClass = (*env)->FindClass("org/libsdl/app/SDLActivity");
+
+    /* context = SDLActivity.getContext(); */
+    mid = (*env)->GetStaticMethodID(env, mActivityClass,
+            "getContext","()Landroid/content/Context;");
+    jobject context = (*env)->CallStaticObjectMethod(env, mActivityClass,
+                                                     mid);
+
+    /* assetManager = context.getAssets(); */
+    mid = (*env)->GetMethodID(env, (*env)->GetObjectClass(env, context),
+            "getAssets", "()Landroid/content/res/AssetManager;");
+    jobject asset_manager = (*env)->CallObjectMethod(env, context, mid);
+    java_asset_manager = (*env)->NewGlobalRef(env, asset_manager);
+    global_asset_manager = AAssetManager_fromJava(env, java_asset_manager);
+
+    (*env)->PopLocalFrame(env, NULL);
+
+    internal_path = SDL_AndroidGetInternalStoragePath();
+}
+#endif
+
 void platform_init_android()
 {
     static LogBuffer ob;
     std::streambuf * cout_sb = std::cout.rdbuf(&ob);
     std::streambuf * cerr_sb = std::cerr.rdbuf(&ob);
     __android_log_print(ANDROID_LOG_INFO, "SDL", "Initialized logbuffer");
+#ifdef USE_ASSET_MANAGER
+    init_asset_manager();
+#endif
 }
 
+#ifdef USE_ASSET_MANAGER
+
+void platform_walk_folder(const std::string & in_path,
+                          FolderCallback & callback)
+{
+}
+
+size_t platform_get_file_size(const char * filename)
+{
+    FSFile fp(filename, "r");
+    if (!fp.is_open())
+        return 0;
+    return fp.get_size();
+}
+
+bool platform_is_directory(const std::string & value)
+{
+    return false;
+}
+
+bool platform_is_file(const std::string & value)
+{
+    FSFile fp(value.c_str(), "r");
+    if (!fp.is_open())
+        return 0;
+    return fp.get_size();
+}
+
+bool platform_path_exists(const std::string & value)
+{
+    return platform_is_file(value);
+}
+
+void platform_create_directories(const std::string & value)
+{
+}
+
+#else
 void platform_walk_folder(const std::string & in_path,
                           FolderCallback & callback)
 {
@@ -76,6 +153,7 @@ bool platform_path_exists(const std::string & value)
 void platform_create_directories(const std::string & value)
 {
 }
+#endif
 
 const std::string & platform_get_appdata_dir()
 {

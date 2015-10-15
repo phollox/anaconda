@@ -15,7 +15,8 @@ public:
     enum FileFlags
     {
         CLOSED = 1 << 0,
-        WRITE = 1 << 1
+        WRITE = 1 << 1,
+        CUSTOM = 1 << 2
     };
 
     BaseFile();
