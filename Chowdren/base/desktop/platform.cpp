@@ -308,7 +308,7 @@ void check_slowdown()
 
     vsync_fail_time = 0.0;
 
-#ifdef CHOWDREN_SPECIAL_POINT_FILTER
+#if defined(CHOWDREN_SPECIAL_POINT_FILTER) && !defined(CHOWDREN_FORCE_FILTER)
     if (!disable_resize_shader) {
         std::cout << "Disable resize shader, too slow " << std::endl;
         disable_resize_shader = true;

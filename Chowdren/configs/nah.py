@@ -27,6 +27,10 @@ def init(converter):
     # converter.add_define('CHOWDREN_PASTE_BROADPHASE')
     converter.add_define('CHOWDREN_USE_STEAM_LANGUAGE')
 
+    if converter.platform_name == 'android':
+        converter.add_define('CHOWDREN_FORCE_FILTER')
+        converter.add_define('CHOWDREN_FORCE_FILL')
+
     strings = converter.game.globalStrings.items
     if converter.platform_name == 'ps4':
         converter.add_define('CHOWDREN_PRELOAD_ALL')

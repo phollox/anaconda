@@ -1,7 +1,7 @@
-#define TEST_SDL_AUDIO
+// #define TEST_SDL_AUDIO
 
 #ifdef CHOWDREN_IS_DESKTOP
-#ifdef TEST_SDL_AUDIO
+#if defined(CHOWDREN_IS_ANDROID) || defined(TEST_SDL_AUDIO)
 #include "desktop/audiosdl.h"
 #else
 #include "desktop/audio.h"

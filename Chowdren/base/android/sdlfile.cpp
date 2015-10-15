@@ -24,9 +24,9 @@ void BaseFile::open(const char * filename, const char * mode)
 
     std::string file_string = convert_path(filename);
     std::string new_path = internal_path + "/" + file_string;
-    FILE * fp = fopen(new_path.c_str());
+    FILE * fp = fopen(new_path.c_str(), new_mode);
     if (fp != NULL) {
-        handle = (void*)new_handle;
+        handle = (void*)fp;
         return;
     }
     AAsset * asset = AAssetManager_open(global_asset_manager,

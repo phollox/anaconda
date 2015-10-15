@@ -73,7 +73,7 @@ elseif (USE_GLES2)
 endif()
 
 if (ANDROID)
-    add_definitions(-DCHOWDREN_IS_ANDROID)
+    add_definitions(-DCHOWDREN_IS_ANDROID -DUSE_ASSET_MANAGER)
 elseif (NOT CMAKE_CROSSCOMPILING)
     add_definitions(-DCHOWDREN_IS_DESKTOP)
 endif()

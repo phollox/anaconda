@@ -29,13 +29,21 @@ public:
 };
 
 #ifdef USE_ASSET_MANAGER
-#include <android/asset_manager.h>
+extern "C" {
+#undef __cplusplus
 #include <jni.h>
+#define __cplusplus
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
+}
+#include <SDL_system.h>
 static jobject java_asset_manager;
 AAssetManager * global_asset_manager;
 static std::string internal_path;
 
-void init_asset_manager
+extern "C" JNIEnv *Android_JNI_GetEnv(void);
+
+void init_asset_manager()
 {
     jmethodID mid;
 
@@ -43,7 +51,8 @@ void init_asset_manager
     const int capacity = 16;
     (*env)->PushLocalFrame(env, capacity);
 
-    jclass mActivityClass = (*env)->FindClass("org/libsdl/app/SDLActivity");
+    jclass mActivityClass = (*env)->FindClass(env,
+                                              "org/libsdl/app/SDLActivity");
 
     /* context = SDLActivity.getContext(); */
     mid = (*env)->GetStaticMethodID(env, mActivityClass,
