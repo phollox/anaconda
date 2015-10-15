@@ -8,6 +8,7 @@ import urllib2
 import tarfile
 import stat
 import argparse
+import subprocess
 
 chroot_prefix = 'steamrt_scout_'
 chroots = '/var/chroots'
@@ -17,30 +18,46 @@ steamrt_archive = ('https://codeload.github.com/ValveSoftware/steam-runtime/'
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
 
+def makedirs(path):
+    try:
+        os.makedirs(path)
+    except OSError:
+        return
+
 class Builder(object):
-    def __init__(self, args):
-        self.args = args
+    def __init__(self):
         self.root_dir = os.getcwd()
+
+    def setup_parser(self, parser):
+        pass
+
+    def setup(self, args):
+        self.args = args
 
     def create_project(self):
         cwd = os.getcwd()
-        try:
-            os.makedirs(self.build_dir)
-        except OSError:
-            pass
+        makedirs(self.build_dir)
 
         os.chdir(self.build_dir)
 
         defs = ['-DCMAKE_BUILD_TYPE=Release']
         if self.args.steam:
             defs += ['-DUSE_STEAM=ON']
-        cmd = 'cmake .. ' + ' '.join(defs)
+        cmd = ['cmake',  '..'] + defs + self.get_cmake_args()
 
-        self.system(cmd)
+        self.call(cmd)
         os.chdir(cwd)
 
+    def get_cmake_args(self):
+        return []
+
     def system(self, command):
-        return os.system(command)
+        return self.call(command.split())
+
+    def call(self, args):
+        print ' '.join(args)
+        return subprocess.check_call(args, shell=True)
+
 
 class LinuxBuilder(Builder):
     temp = None
@@ -65,10 +82,10 @@ class LinuxBuilder(Builder):
         os.chdir(cwd)
         return chroot
 
-    def system(self, command):
+    def call(self, args):
         if self.chroot:
-            command = 'schroot --chroot %s -- %s' % (self.chroot, command)
-        return os.system(command)
+            args = ['schroot', '--chroot', self.chroot, '--'] + args
+        return Builder.call(self, args)
 
     def build_arch(self, arch):
         chroot = self.install_chroot(arch)
@@ -96,10 +113,7 @@ class LinuxBuilder(Builder):
         self.chroot = None
 
     def copy_dependencies(self, arch):
-        try:
-            os.makedirs(self.src_bin_dir)
-        except OSError:
-            pass
+        os.makedirs(self.src_bin_dir)
 
         if not self.args.steam:
             return
@@ -116,10 +130,7 @@ class LinuxBuilder(Builder):
                     os.path.join(self.src_bin_dir, 'libsteam_api.so'))
 
     def create_dist(self, arch):
-        try:
-            os.makedirs(self.dist_dir)
-        except OSError:
-            pass
+        os.makedirs(self.dist_dir)
 
         src_bin_dir = self.src_bin_dir
         dst_bin_dir = self.dst_bin_dir
@@ -164,9 +175,99 @@ class LinuxBuilder(Builder):
             return
         shutil.rmtree(self.temp)
 
+ARCHS = ('x86', 'armeabi')
+ANDROID_TARGET = 12
+BUILD_TOOLS_VERSION = '23.0.1'
+
+ANDROID_SDK = 'C:/Program Files (x86)/Android/android-sdk'
+PLATFORM_TOOLS = os.path.join(ANDROID_SDK, 'platform-tools')
+BUILD_TOOLS = os.path.join(ANDROID_SDK, 'build-tools', BUILD_TOOLS_VERSION)
+ADB = os.path.join(PLATFORM_TOOLS, 'adb.exe')
+AAPT = os.path.join(BUILD_TOOLS, 'aapt.exe')
+DX = os.path.join(BUILD_TOOLS, 'dx.bat')
+ZIPALIGN = os.path.join(BUILD_TOOLS, 'zipalign.exe')
+ANDROID_JAR = os.path.join(ANDROID_SDK, 'platforms',
+                           'android-%s' % ANDROID_TARGET, 'android.jar')
+ANDROID_PROJECT_SRC = os.path.join(base_dir, 'android', 'project')
+ANDROID_SRC = os.path.join(ANDROID_PROJECT_SRC, 'src')
+RES_DIR = os.path.join(ANDROID_PROJECT_SRC, 'res')
+ANDROID_MANIFEST = os.path.join(ANDROID_PROJECT_SRC, 'AndroidManifest.xml')
+
+R_JAVA = os.path.join('gen', 'org', 'libsdl', 'app', 'R.java')
+SDL_JAVA = os.path.join(ANDROID_SRC, 'org', 'libsdl', 'app',
+                        'SDLActivity.java')
+JAVA_SRCS = [R_JAVA, SDL_JAVA]
+
 class AndroidBuilder(Builder):
+    def setup_parser(self, parser):
+        parser.add_argument('--install', action='store_true',
+                            help='Install on Android device')
+
     def build(self):
-        pass        
+        makedirs('bin/lib')
+        archs = ('x86', 'armeabi')
+        for arch in archs:
+            self.build_arch(arch)
+        makedirs('gen')
+        makedirs('bin')
+        makedirs('obj')
+        makedirs('assets')
+        makedirs('apk')
+        shutil.copy('Assets.dat', os.path.join('assets', 'Assets.dat'))
+        self.call([AAPT, 'package', '-m', '-J', 'gen', '-A', 'assets', '-M',
+                   ANDROID_MANIFEST, '-S', RES_DIR, '-I', ANDROID_JAR])
+        self.call(['javac', '-source', '1.6', '-target', '1.6', '-classpath',
+                   ANDROID_JAR, '-d', 'obj',
+                   '-sourcepath', '%s;gen' % ANDROID_SRC] + JAVA_SRCS)
+        self.call([DX, '--dex', '--verbose', '--output=bin/classes.dex',
+                   'obj'])
+        self.call([DX, '--dex', '--verbose', '--output=bin/classes.dex',
+                   'obj'])
+        self.call([AAPT, 'package', '-f', '-A', 'assets', '-M',
+                   ANDROID_MANIFEST, '-S', RES_DIR, '-I', ANDROID_JAR,
+                   '-F', 'apk/unsigned.apk', 'bin'])
+        if not os.path.isfile('debug.keystore'):
+            self.create_keystore()
+        self.call(['jarsigner', '-verbose', '-keystore', 'debug.keystore',
+                   '-storepass', 'android', '-keypass', 'android',
+                   '-signedjar', 'apk/signed.apk', 'apk/unsigned.apk',
+                   'androiddebugkey'])
+        self.call([ZIPALIGN, '-f', '4', 'apk/signed.apk', 'apk/release.apk'])
+
+        if self.args.install:
+            self.install()
+
+    def install(self):
+        self.call([ADB, 'install', 'apk/release.apk'])
+
+    def create_keystore(self):
+        self.call(['keytool', '-genkey', '-v', '-keystore', 'debug.keystore',
+                   '-storepass', 'android', '-alias', 'androiddebugkey',
+                   '-keypass', 'android',
+                   '-dname', 'CN=Android Debug,O=Android,C=US'])
+
+    def build_arch(self, arch):
+        self.arch = arch
+        self.build_dir = 'build_%s' % arch
+        self.create_project()
+        self.build_project()
+
+        makedirs(os.path.join('bin', 'lib', arch))
+        shutil.copy(os.path.join(self.build_dir, 'libChowdren.so'),
+                    os.path.join('bin', 'lib', arch, 'libChowdren.so'))
+
+    def build_project(self):
+        cwd = os.getcwd()
+        os.chdir(self.build_dir)
+        self.system('cmake --build . -- -j6')
+        os.chdir(cwd)
+
+    def get_cmake_args(self):
+        toolchain = os.path.join(base_dir, 'cmake', 'android.toolchain.cmake')
+        return ['-GMinGW Makefiles',
+                '-DCMAKE_TOOLCHAIN_FILE=%s' % toolchain,
+                '-DANDROID_ABI=%s' % self.arch,
+                '-DANDROID_NATIVE_API_LEVEL=12']
 
     def finish(self):
         pass
@@ -174,21 +275,30 @@ class AndroidBuilder(Builder):
 class MacBuilder(Builder):
     pass
 
+BUILDERS = {
+    'android': AndroidBuilder
+}
+
 def main():
+    with open('config.py', 'rb') as fp:
+        config = eval(fp.read())
+    if config['platform'] == 'generic':
+        import platform
+        if platform.system() == 'Linux':
+            build_class = LinuxBuilder
+        else:
+            build_class = MacBuilder
+    else:
+        build_class = BUILDERS[config['platform']]
+
+    builder = build_class()
+
     parser = argparse.ArgumentParser(description='Chowdren builder')
+    builder.setup_parser(parser)
     parser.add_argument('--steam', action='store_true',
                         help='Performs a build with Steamworks')
-    args = parser.parse_args()
-
-    import platform
-    if platform.system() == 'Linux':
-        build_class = LinuxBuilder
-    else:
-        build_class = MacBuilder
-
-    builder = build_class(args)
+    builder.setup(parser.parse_args())
     builder.build()
-
     builder.finish()
 
 if __name__ == '__main__':
