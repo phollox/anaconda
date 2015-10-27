@@ -61,7 +61,7 @@ PROFILE_EVENTS = PROFILE and False
 PROFILE_OBJECTS = PROFILE and False
 
 # enabled for porting
-if getattr(sys, 'frozen', False):
+if getattr(sys, 'frozen', False) or platform.node() != 'matpow2':
     NATIVE_EXTENSIONS = False
 else:
     NATIVE_EXTENSIONS = True
