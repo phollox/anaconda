@@ -55,12 +55,9 @@ class Builder(object):
     def get_cmake_args(self):
         return []
 
-    def system(self, command):
-        return self.call(command.split())
-
     def call(self, args):
         print ' '.join(args)
-        return subprocess.check_call(args, shell=True)
+        return subprocess.check_call(args)
 
 
 class LinuxBuilder(Builder):
@@ -82,7 +79,7 @@ class LinuxBuilder(Builder):
             archive.extractall()
 
         os.chdir(os.path.join(self.temp, 'steam-runtime-master'))
-        self.system('./setup_chroot.sh --%s' % arch)
+        self.call(['./setup_chroot.sh',  '--%s' % arch])
         os.chdir(cwd)
         return chroot
 
@@ -165,8 +162,8 @@ class LinuxBuilder(Builder):
     def build_project(self):
         cwd = os.getcwd()
         os.chdir(self.build_dir)
-        self.system('make -j4')
-        self.system('make install')
+        self.call(['make',  '-j4'])
+        self.call(['make', 'install'])
         os.chdir(cwd)
 
     def build(self):
@@ -289,7 +286,7 @@ class AndroidBuilder(Builder):
     def build_project(self):
         cwd = os.getcwd()
         os.chdir(self.build_dir)
-        self.system('cmake --build . -- -j6')
+        self.call(['cmake', '--build', '.', '--', '-j6'])
         os.chdir(cwd)
 
     def get_cmake_args(self):
