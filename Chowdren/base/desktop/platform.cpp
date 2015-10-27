@@ -35,7 +35,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <sys/param.h> // For MAXPATHLEN
 #include <dirent.h>
-#elif __linux
+#elif defined(__linux) || defined(CHOWDREN_IS_EMSCRIPTEN)
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
@@ -359,15 +359,19 @@ void platform_poll_events()
                 on_controller_button(e.cbutton.which, e.cbutton.button,
                                      e.cbutton.state == SDL_PRESSED);
                 break;
-#if defined(CHOWDREN_USE_EDITOBJ) || defined(CHOWDREN_USE_GWEN)
-            case SDL_TEXTINPUT:
-                manager.input += e.text.text;
-                break;
-#endif
+
             case SDL_QUIT:
                 has_closed = true;
                 break;
-#ifdef CHOWDREN_USE_D3D
+
+            #if defined(CHOWDREN_USE_EDITOBJ) || defined(CHOWDREN_USE_GWEN)
+            case SDL_TEXTINPUT:
+                manager.input += e.text.text;
+                break;
+            #endif
+
+            // d3d-specific
+            #ifdef CHOWDREN_USE_D3D
             case SDL_WINDOWEVENT: {
                 if (e.window.windowID != global_window_id)
                     break;
@@ -389,8 +393,22 @@ void platform_poll_events()
                     int h = e.window.data2;
                     std::cout << "Resized: " << w << " " << h << std::endl;
                 }
+                break;
             }
-#endif
+            #endif
+
+            // android specific
+            #if defined(CHOWDREN_IS_ANDROID)
+            case SDL_APP_WILLENTERBACKGROUND:
+            case SDL_APP_DIDENTERBACKGROUND:
+                ChowdrenAudio::pause_audio();
+                break;
+            case SDL_APP_DIDENTERFOREGROUND:
+            case SDL_APP_WILLENTERFOREGROUND:
+                ChowdrenAudio::resume_audio();
+                break;
+            #endif
+
             default:
                 break;
         }
@@ -1615,6 +1633,7 @@ void add_joystick(int device)
     int index = joysticks.size();
     joysticks.resize(index+1);
     joysticks[index].init(c, joy, instance);
+    selected_joy_index = index;
     selected_joy = &joysticks[selected_joy_index];
 }
 
@@ -1638,6 +1657,7 @@ void remove_joystick(int instance)
 
 void init_joystick()
 {
+    SDL_SetHint(SDL_HINT_ACCELEROMETER_AS_JOYSTICK, "0");
     SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
     SDL_GameControllerAddMappingsFromFile("gamecontrollerdb-override.txt");
@@ -1698,12 +1718,12 @@ const std::string & get_joystick_name(int n)
         return empty_string;
     static std::string ret;
     JoystickData & joy = get_joy(n);
+#ifdef CHOWDREN_FORCE_X360
+    ret = "X360 Controller";
+#else
     if (joy.controller == NULL)
         ret = SDL_JoystickName(joy.joy);
     else
-#ifdef CHOWDREN_FORCE_X360
-        ret = "X360 Controller";
-#else
         ret = SDL_GameControllerName(joy.controller);
 #endif
     return ret;
@@ -1930,7 +1950,7 @@ bool platform_remove_directory(const std::string & dir)
 
 #include "fileio.cpp"
 
-#ifdef CHOWDREN_IS_ANDROID
+#if defined(CHOWDREN_IS_ANDROID) || defined(CHOWDREN_IS_EMSCRIPTEN)
 #include "sdlfile.cpp"
 #else
 #include "stdiofile.cpp"
@@ -2096,6 +2116,7 @@ bool platform_file_open_dialog(const std::string & title,
                                bool multiple,
                                vector<std::string> & out)
 {
+    return false;
 }
 
 bool platform_file_save_dialog(const std::string & title,
@@ -2103,12 +2124,14 @@ bool platform_file_save_dialog(const std::string & title,
                                const std::string & in_def,
                                std::string & out)
 {
+    return false;
 }
 
 bool platform_show_dialog(const std::string & title,
                           const std::string & message,
                           DialogType type)
 {
+    return false;
 }
 
 #endif

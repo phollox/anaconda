@@ -1025,6 +1025,20 @@ void AudioDevice::open()
                                         (void*)this);
 }
 
+void pause_audio()
+{
+    if (global_device.dev == 0)
+        return;
+    SDL_PauseAudioDevice(global_device.dev, 1);
+}
+
+void resume_audio()
+{
+    if (global_device.dev == 0)
+        return;
+    SDL_PauseAudioDevice(global_device.dev, 0);
+}
+
 void AudioDevice::close()
 {
     closing = true;
@@ -1040,6 +1054,10 @@ void AudioDevice::close()
 void AudioDevice::stream_update()
 {
     while (!closing) {
+        if (SDL_GetAudioDeviceStatus(dev) == SDL_AUDIO_PAUSED) {
+            platform_sleep(0.125);
+            continue;
+        }
         SDL_LockMutex(stream_mutex);
         vector<SoundStream*>::const_iterator it;
         for (int i = 0; i < MAX_SOUNDS; ++i) {

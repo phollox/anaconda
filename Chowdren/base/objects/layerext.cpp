@@ -8,9 +8,8 @@ bool LayerObject::sort_reverse;
 double LayerObject::def;
 
 LayerObject::LayerObject(int x, int y, int type_id)
-: FrameObject(x, y, type_id), current_layer(0)
+: FrameObject(x, y, type_id), current_layer(-1)
 {
-
 }
 
 void LayerObject::set_layer(int value)
@@ -74,23 +73,28 @@ double LayerObject::get_alterable(const FrameObject & instance)
     return instance.alterables->values.get(sort_index);
 }
 
-bool LayerObject::sort_func(const FrameObject & a, const FrameObject & b)
+bool LayerObject::sort_func_dec(const FrameObject & a, const FrameObject & b)
 {
     double value1 = get_alterable(a);
     double value2 = get_alterable(b);
-    if (sort_reverse)
-        return value1 < value2;
-    else
-        return value1 > value2;
+    return value1 < value2;
+}
+
+bool LayerObject::sort_func_inc(const FrameObject & a, const FrameObject & b)
+{
+    double value1 = get_alterable(a);
+    double value2 = get_alterable(b);
+    return value1 > value2;
 }
 
 void LayerObject::sort_alt_decreasing(int index, double def)
 {
     sort_index = index;
-    sort_reverse = true;
     this->def = def;
+    if (current_layer == -1)
+        current_layer = layer->index;
     Layer * layer = &frame->layers[current_layer];
-    layer->instances.sort(sort_func);
+    layer->instances.sort(sort_func_dec);
     layer->reset_depth();
 }
 

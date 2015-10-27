@@ -119,6 +119,7 @@ void GameManager::init()
     start_frame = 0;
 #elif defined(CHOWDREN_IS_HFA)
     start_frame = 0;
+    lives = 5;
 #elif defined(CHOWDREN_IS_FP)
     player_died = false;
     lives = 3;

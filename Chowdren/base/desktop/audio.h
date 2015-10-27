@@ -5,13 +5,14 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <emscripten/emscripten.h>
-#else // CHOWDREN_IS_EMSCRIPTEN
+#else
 #include <al.h>
 #include <alc.h>
+#endif
+
 #include <SDL_thread.h>
 #include <SDL_mutex.h>
 #include <SDL_messagebox.h>
-#endif // CHOWDREN_IS_EMSCRIPTEN
 
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -918,6 +919,13 @@ void AudioDevice::close()
     SDL_DestroyMutex(stream_mutex);
 }
 
+#ifdef CHOWDREN_IS_EMSCRIPTEN
+static void _emscripten_update(void * data)
+{
+    ((AudioDevice*)data)->stream_update();
+}
+#endif
+
 void AudioDevice::stream_update()
 {
 #ifdef CHOWDREN_IS_EMSCRIPTEN
@@ -926,7 +934,8 @@ void AudioDevice::stream_update()
     vector<SoundStream*>::const_iterator it;
     for (it = streams.begin(); it != streams.end(); it++)
         (*it)->update();
-    emscripten_async_call(_stream_update, (void*)this, 125);
+    emscripten_async_call(_emscripten_update,
+                          (void*)this, 125);
 #else
     while (!closing) {
         SDL_LockMutex(stream_mutex);

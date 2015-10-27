@@ -26,7 +26,8 @@ public:
     void set_position(int index, int x, int y);
     void set_alpha_coefficient(int index, int alpha);
     static double get_alterable(const FrameObject & instance);
-    static bool sort_func(const FrameObject & a, const FrameObject & b);
+    static bool sort_func_inc(const FrameObject & a, const FrameObject & b);
+    static bool sort_func_dec(const FrameObject & a, const FrameObject & b);
     void sort_alt_decreasing(int index, double def);
     void set_rgb(int index, Color color);
 };

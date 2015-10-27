@@ -4,6 +4,12 @@
 #include "platform.h"
 #include <SDL_rwops.h>
 
+namespace ChowdrenAudio
+{
+    void pause_audio();
+    void resume_audio();
+}
+
 static std::string current_log_line;
 
 class LogBuffer : public std::streambuf
@@ -18,7 +24,7 @@ public:
     virtual int_type overflow(int_type c = traits_type::eof())
     {
         if (c == '\n') {
-            __android_log_print(ANDROID_LOG_INFO, "SDL",
+            __android_log_print(ANDROID_LOG_INFO, "Chowdren",
                                 current_log_line.c_str());
             current_log_line.clear();
         } else {
@@ -78,7 +84,7 @@ void platform_init_android()
     static LogBuffer ob;
     std::streambuf * cout_sb = std::cout.rdbuf(&ob);
     std::streambuf * cerr_sb = std::cerr.rdbuf(&ob);
-    __android_log_print(ANDROID_LOG_INFO, "SDL", "Initialized logbuffer");
+    __android_log_print(ANDROID_LOG_INFO, "Chowdren", "Initialized logbuffer");
 #ifdef USE_ASSET_MANAGER
     init_asset_manager();
 #endif

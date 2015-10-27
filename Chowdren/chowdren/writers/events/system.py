@@ -1221,7 +1221,9 @@ class CreateBase(ActionWriter):
         return self.converter.filter_object_type((object_info, None))
 
     def get_details(self):
-        return self.convert_index(0)
+        details = self.convert_index(0)
+        details['is_shoot'] = self.is_shoot
+        return details
 
     def write_set(self, writer, set_index, parent_info, object_info,
                   create_set, multi):
@@ -1273,7 +1275,7 @@ class CreateBase(ActionWriter):
             parent = 'parent'
 
         for details in create_set:
-            is_shoot = self.is_shoot
+            is_shoot = details['is_shoot']
             x = str(details['x'])
             y = str(details['y'])
             direction = None

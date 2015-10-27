@@ -40,7 +40,11 @@ class Builder(object):
 
         os.chdir(self.build_dir)
 
-        defs = ['-DCMAKE_BUILD_TYPE=Release']
+        build_type = 'Release'
+        if self.args.build_type is not None:
+            build_type = self.args.build_type
+
+        defs = ['-DCMAKE_BUILD_TYPE=%s' % build_type]
         if self.args.steam:
             defs += ['-DUSE_STEAM=ON']
         cmd = ['cmake',  '..'] + defs + self.get_cmake_args()
@@ -176,7 +180,6 @@ class LinuxBuilder(Builder):
         shutil.rmtree(self.temp)
 
 ARCHS = ('x86', 'armeabi')
-ANDROID_TARGET = 12
 BUILD_TOOLS_VERSION = '23.0.1'
 
 ANDROID_SDK = 'C:/Program Files (x86)/Android/android-sdk'
@@ -186,8 +189,6 @@ ADB = os.path.join(PLATFORM_TOOLS, 'adb.exe')
 AAPT = os.path.join(BUILD_TOOLS, 'aapt.exe')
 DX = os.path.join(BUILD_TOOLS, 'dx.bat')
 ZIPALIGN = os.path.join(BUILD_TOOLS, 'zipalign.exe')
-ANDROID_JAR = os.path.join(ANDROID_SDK, 'platforms',
-                           'android-%s' % ANDROID_TARGET, 'android.jar')
 ANDROID_PROJECT_SRC = os.path.join(base_dir, 'android', 'project')
 ANDROID_SRC = os.path.join(ANDROID_PROJECT_SRC, 'src')
 RES_DIR = os.path.join(ANDROID_PROJECT_SRC, 'res')
@@ -197,13 +198,38 @@ R_JAVA = os.path.join('gen', 'org', 'libsdl', 'app', 'R.java')
 SDL_JAVA = os.path.join(ANDROID_SRC, 'org', 'libsdl', 'app',
                         'SDLActivity.java')
 JAVA_SRCS = [R_JAVA, SDL_JAVA]
+DEBUG_KEYSTORE = os.path.join(os.path.expanduser('~'), '.android',
+                              'debug.keystore')
 
 class AndroidBuilder(Builder):
     def setup_parser(self, parser):
         parser.add_argument('--install', action='store_true',
                             help='Install on Android device')
+        parser.add_argument('--tv', action='store_true',
+                            help='Make APK compatible with Android TV')
 
     def build(self):
+        if self.args.tv:
+            self.target_version = 21
+        else:
+            self.target_version = 12
+        self.android_jar = os.path.join(ANDROID_SDK, 'platforms',
+                                        'android-%s' % self.target_version,
+                                        'android.jar')
+
+        with open(ANDROID_MANIFEST, 'rb') as fp:
+            data = fp.read()
+            if self.args.tv:
+                data = data.replace('android:minSdkVersion="10"',
+                                    ('android:minSdkVersion="%s"'
+                                     % self.target_version))
+                data = data.replace('android:targetSdkVersion="12"',
+                                    ('android:targetSdkVersion="%s"'
+                                     % self.target_version))
+
+        with open('AndroidManifest.xml', 'wb') as fp:
+            fp.write(data)
+
         makedirs('bin/lib')
         archs = ('x86', 'armeabi')
         for arch in archs:
@@ -213,22 +239,26 @@ class AndroidBuilder(Builder):
         makedirs('obj')
         makedirs('assets')
         makedirs('apk')
+
         shutil.copy('Assets.dat', os.path.join('assets', 'Assets.dat'))
         self.call([AAPT, 'package', '-m', '-J', 'gen', '-A', 'assets', '-M',
-                   ANDROID_MANIFEST, '-S', RES_DIR, '-I', ANDROID_JAR])
+                   './AndroidManifest.xml', '-S', RES_DIR, '-I',
+                   self.android_jar])
         self.call(['javac', '-source', '1.6', '-target', '1.6', '-classpath',
-                   ANDROID_JAR, '-d', 'obj',
+                   self.android_jar, '-d', 'obj',
                    '-sourcepath', '%s;gen' % ANDROID_SRC] + JAVA_SRCS)
         self.call([DX, '--dex', '--verbose', '--output=bin/classes.dex',
                    'obj'])
         self.call([DX, '--dex', '--verbose', '--output=bin/classes.dex',
                    'obj'])
         self.call([AAPT, 'package', '-f', '-A', 'assets', '-M',
-                   ANDROID_MANIFEST, '-S', RES_DIR, '-I', ANDROID_JAR,
-                   '-F', 'apk/unsigned.apk', 'bin'])
-        if not os.path.isfile('debug.keystore'):
-            self.create_keystore()
-        self.call(['jarsigner', '-verbose', '-keystore', 'debug.keystore',
+                   './AndroidManifest.xml', '-S', RES_DIR, '-I',
+                   self.android_jar, '-F', 'apk/unsigned.apk', 'bin'])
+        # if not os.path.isfile('debug.keystore'):
+        #     self.create_keystore()
+
+        self.call(['jarsigner', '-verbose', '-sigalg', 'SHA1withRSA',
+                   '-digestalg', 'SHA1', '-keystore', DEBUG_KEYSTORE,
                    '-storepass', 'android', '-keypass', 'android',
                    '-signedjar', 'apk/signed.apk', 'apk/unsigned.apk',
                    'androiddebugkey'])
@@ -238,13 +268,13 @@ class AndroidBuilder(Builder):
             self.install()
 
     def install(self):
-        self.call([ADB, 'install', 'apk/release.apk'])
+        self.call([ADB, 'install', '-r', 'apk/release.apk'])
 
     def create_keystore(self):
         self.call(['keytool', '-genkey', '-v', '-keystore', 'debug.keystore',
                    '-storepass', 'android', '-alias', 'androiddebugkey',
-                   '-keypass', 'android',
-                   '-dname', 'CN=Android Debug,O=Android,C=US'])
+                   '-keypass', 'android', '-keyalg', 'RSA', '-validity', 
+                   '14000', '-dname', 'CN=Android Debug,O=Android,C=US'])
 
     def build_arch(self, arch):
         self.arch = arch
@@ -253,7 +283,7 @@ class AndroidBuilder(Builder):
         self.build_project()
 
         makedirs(os.path.join('bin', 'lib', arch))
-        shutil.copy(os.path.join(self.build_dir, 'libChowdren.so'),
+        shutil.copy(os.path.join('libs', self.arch, 'libChowdren.so'),
                     os.path.join('bin', 'lib', arch, 'libChowdren.so'))
 
     def build_project(self):
@@ -267,7 +297,7 @@ class AndroidBuilder(Builder):
         return ['-GMinGW Makefiles',
                 '-DCMAKE_TOOLCHAIN_FILE=%s' % toolchain,
                 '-DANDROID_ABI=%s' % self.arch,
-                '-DANDROID_NATIVE_API_LEVEL=12']
+                '-DANDROID_NATIVE_API_LEVEL=%s' % self.target_version]
 
     def finish(self):
         pass
@@ -297,6 +327,7 @@ def main():
     builder.setup_parser(parser)
     parser.add_argument('--steam', action='store_true',
                         help='Performs a build with Steamworks')
+    parser.add_argument('--build_type')
     builder.setup(parser.parse_args())
     builder.build()
     builder.finish()

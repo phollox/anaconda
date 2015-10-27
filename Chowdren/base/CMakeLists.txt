@@ -12,12 +12,7 @@ if (NOT CMAKE_CROSSCOMPILING)
     include_directories("${CHOWDREN_BASE_DIR}/include/desktop")
     list(APPEND CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include/desktop")
     include_directories("${CHOWDREN_BASE_DIR}/desktop")
-
-    if (EMSCRIPTEN)
-        set(PLATFORM_CPP "${CHOWDREN_BASE_DIR}/desktop/emscriptenplatform.cpp")
-    else()
-        set(PLATFORM_CPP ${CHOWDREN_BASE_DIR}/desktop/platform.cpp)
-    endif()
+    set(PLATFORM_CPP ${CHOWDREN_BASE_DIR}/desktop/platform.cpp)
 endif()
 
 if (ANDROID)
@@ -32,6 +27,24 @@ if (ANDROID)
     )
 endif()
 
+if (EMSCRIPTEN)
+    include_directories("${CHOWDREN_BASE_DIR}/include/emscripten")
+    list(APPEND CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include/emscripten")
+    include_directories("${CHOWDREN_BASE_DIR}/emscripten")
+    set(PLATFORM_CPP ${CHOWDREN_BASE_DIR}/emscripten/platform.cpp)
+    set(PLATFORM_SRCS
+        ${CHOWDREN_BASE_DIR}/emscripten/glslshader.cpp
+        ${CHOWDREN_BASE_DIR}/emscripten/fbo.cpp
+        ${PLATFORM_SRCS}
+    )
+    set(EMSCRIPTEN_FLAGS "-s USE_SDL=2 -s TOTAL_MEMORY=67108864 -s FULL_ES2=1")
+    set(CMAKE_EXE_LINKER_FLAGS
+        "${CMAKE_EXE_LINKER_FLAGS} ${EMSCRIPTEN_FLAGS} --preload-file Assets.dat")
+    add_definitions(${EMSCRIPTEN_FLAGS})
+    add_definitions("-Wno-warn-absolute-paths")
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+endif()
+
 include_directories("${CHOWDREN_BASE_DIR}/include")
 include_directories("${CHOWDREN_BASE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}")
@@ -42,15 +55,13 @@ option(USE_PYTHON "Use Python" OFF)
 option(USE_STEAM "Use Steam" OFF)
 option(EMULATE_WIIU "Emulate Wii U features" OFF)
 
-if (ANDROID)
+if (ANDROID OR EMSCRIPTEN)
     set(USE_GLES2 ON)
 elseif (CMAKE_CROSSCOMPILING)
     set(USE_GL OFF)
     set(USE_GLES2 OFF)
     set(USE_GLES1 OFF)
     set(USE_D3D OFF)
-elseif (EMSCRIPTEN)
-    set(USE_GLES2 ON)
 elseif (APP_PLATFORM STREQUAL "generic")
     set(USE_GL ON)
 elseif (APP_PLATFORM STREQUAL "d3d")
@@ -74,11 +85,13 @@ endif()
 
 if (ANDROID)
     add_definitions(-DCHOWDREN_IS_ANDROID -DUSE_ASSET_MANAGER)
+    include(AndroidNdkGdb)
+    android_ndk_gdb_enable()
 elseif (NOT CMAKE_CROSSCOMPILING)
     add_definitions(-DCHOWDREN_IS_DESKTOP)
 endif()
 
-if (NOT CMAKE_CROSSCOMPILING OR EMSCRIPTEN)
+if (NOT CMAKE_CROSSCOMPILING)
     set(PLATFORM_SRCS
         ${CHOWDREN_BASE_DIR}/desktop/glslshader.cpp
         ${CHOWDREN_BASE_DIR}/desktop/fbo.cpp
@@ -432,6 +445,7 @@ set(EXE_NAME "Chowdren")
 
 if (ANDROID)
     add_library(${EXE_NAME} SHARED ${SRCS})
+    android_ndk_gdb_debuggable(${EXE_NAME}) 
 else()
     add_executable(${EXE_NAME} WIN32 MACOSX_BUNDLE ${SRCS})
 endif()
@@ -455,7 +469,6 @@ target_link_libraries(
 )
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
-
 set(BIN_DIR ".")
 set(DATA_PATH ".")
 if(APPLE)

@@ -177,6 +177,9 @@ def use_counter_int(converter, expression):
 def use_image_preload(converter):
     return True
 
+def use_frame_preload(converter):
+    return converter.platform_name != '3ds'
+
 def use_image_flush(converter, frame):
     if frame.name in ('Update Records', 'Unlocked!', 'Black Load',
                       'Continue?', 'Bonus Stage'):
@@ -259,6 +262,9 @@ def get_missing_image(converter, image):
 from PIL import Image
 
 def get_images(converter):
+    if converter.platform_name == '3ds':
+        return {}
+
     images = {}
     # if not converter.platform_name == 'wiiu':
     #     return images

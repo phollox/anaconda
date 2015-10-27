@@ -87,6 +87,9 @@ def use_image_flush(converter, frame):
 def use_image_preload(converter):
     return False
 
+def use_frame_preload(converter):
+    return converter.config.use_image_preload()
+
 def add_defines(converter):
     pass
 

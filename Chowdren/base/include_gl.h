@@ -1,7 +1,8 @@
 #ifndef INCLUDE_GL_H
 #define INCLUDE_GL_H
 
-#if defined(CHOWDREN_IS_DESKTOP) || defined(CHOWDREN_IS_ANDROID)
+#if defined(CHOWDREN_USE_D3D) || defined(CHOWDREN_USE_GL) || \
+    defined(CHOWDREN_USE_GLES2)
 
 #ifdef CHOWDREN_USE_D3D
 
@@ -93,6 +94,6 @@ extern PFNGLGETUNIFORMLOCATIONARBPROC __glGetUniformLocationARB;
 
 #undef TRANSPARENT
 
-#endif // CHOWDREN_IS_DESKTOP
+#endif
 
 #endif // INCLUDE_GL_H

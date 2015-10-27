@@ -203,7 +203,7 @@ void BaseShader::set_int(FrameObject * instance, int src, int uniform)
 {
     int val = (int)instance->get_shader_parameter(src);
 #ifdef CHOWDREN_USE_D3D
-    float v[4] = {val, 0, 0, 0};
+    float v[4] = {(float)val, 0, 0, 0};
     render_data.device->SetPixelShaderConstantF(uniform, &v[0], 1);
 #else
     glUniform1i((GLint)uniform, val);
@@ -213,7 +213,7 @@ void BaseShader::set_int(FrameObject * instance, int src, int uniform)
 void BaseShader::set_float(FrameObject * instance, int src, int uniform)
 {
 #ifdef CHOWDREN_USE_D3D
-    float v[4] = {instance->get_shader_parameter(src), 0.0f, 0.0f, 0.0f};
+    float v[4] = {(float)instance->get_shader_parameter(src), 0, 0, 0};
     render_data.device->SetPixelShaderConstantF(uniform, &v[0], 1);
 #else
     glUniform1f((GLint)uniform, instance->get_shader_parameter(src));

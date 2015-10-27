@@ -215,6 +215,7 @@ void Image::replace(const std::string & path)
 
     unload();
     tex = other->tex;
+    flags |= STATIC;
 #ifndef CHOWDREN_IS_WIIU
     alpha = other->alpha;
 #endif

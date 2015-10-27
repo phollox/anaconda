@@ -1001,7 +1001,7 @@ class Converter(object):
 
             self.assets.write_preload(handles)
 
-        if self.config.use_image_preload():
+        if self.config.use_frame_preload():
             for frame_index in self.processed_frames:
                 images = self.frame_images.get(frame_index - 1, ())
                 event_file.putmeth('void load_frame_%s_images' % frame_index)
@@ -1238,7 +1238,7 @@ class Converter(object):
             for image in game.images.itemDict.itervalues():
                 pil_image = custom_images.get(image.handle, None)
                 if pil_image is None:
-                    pil_image = Image.fromstring('RGBA', (image.width,
+                    pil_image = Image.frombytes('RGBA', (image.width,
                         image.height), image.getImageData())
 
                 handle = (image.handle, game_index)
@@ -1720,7 +1720,7 @@ class Converter(object):
         if self.config.use_image_flush(frame):
             start_writer.putlnc('reset_image_cache();')
 
-        if self.config.use_image_preload():
+        if self.config.use_frame_preload():
             start_writer.putlnc('load_frame_%s_images();', frame_index + 1)
 
         if self.config.use_image_flush(frame):

@@ -547,9 +547,9 @@ bool Media::is_channel_valid(unsigned int channel)
     return channel < 32;
 }
 
-#ifdef CHOWDREN_IS_DESKTOP
+#if defined(CHOWDREN_IS_DESKTOP)
 #define OGG_STREAM_THRESHOLD_MB 0.5
-#elif CHOWDREN_IS_3DS
+#elif defined(CHOWDREN_IS_3DS) || defined(CHOWDREN_IS_ANDROID)
 #define OGG_STREAM_THRESHOLD_MB 0.1
 #else
 #define OGG_STREAM_THRESHOLD_MB 0.75
@@ -619,7 +619,14 @@ void Media::add_cache(unsigned int id, FSFile & fp)
     if ((is_wav && size <= WAV_STREAM_THRESHOLD) ||
         (!is_wav && size <= OGG_STREAM_THRESHOLD))
     {
+#ifdef CHOWDREN_IS_3DS
         data = new SoundMemory(id, fp, type, size);
+#else
+        unsigned char * sound_data = new unsigned char[size];
+        fp.read(sound_data, size); 
+        data = new SoundMemory(id, sound_data, type, size);
+        delete[] sound_data;
+#endif
     } else {
         data = new SoundCache(id, fp.tell(), type, size);
     }
