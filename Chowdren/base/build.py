@@ -114,7 +114,7 @@ class LinuxBuilder(Builder):
         self.chroot = None
 
     def copy_dependencies(self, arch):
-        os.makedirs(self.src_bin_dir)
+        makedirs(self.src_bin_dir)
 
         if not self.args.steam:
             return
@@ -131,7 +131,7 @@ class LinuxBuilder(Builder):
                     os.path.join(self.src_bin_dir, 'libsteam_api.so'))
 
     def create_dist(self, arch):
-        os.makedirs(self.dist_dir)
+        makedirs(self.dist_dir)
 
         src_bin_dir = self.src_bin_dir
         dst_bin_dir = self.dst_bin_dir
