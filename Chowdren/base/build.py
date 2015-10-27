@@ -88,7 +88,7 @@ class LinuxBuilder(Builder):
 
     def call(self, args):
         if self.chroot:
-            args = ['schroot', '--chroot', self.chroot, '--'] + args
+            args = ['schroot', '--chroot %s' % self.chroot, '--'] + args
         return Builder.call(self, args)
 
     def build_arch(self, arch):

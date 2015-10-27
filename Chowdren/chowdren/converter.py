@@ -667,6 +667,7 @@ class Converter(object):
             shutil.rmtree(new_base, ignore_errors=True)
             shutil.copytree(self.base_path, new_base)
             base_path = '${CMAKE_CURRENT_SOURCE_DIR}/base'
+            shutil.move(os.path.join(new_base, 'build.py'), self.outdir)
         else:
             base_path = self.base_path.replace('\\', '/')
         self.info_dict['base_path'] = base_path
