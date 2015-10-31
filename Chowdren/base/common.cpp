@@ -1,3 +1,20 @@
+// Copyright (c) Mathias Kaerlev 2012-2015.
+//
+// This file is part of Anaconda.
+//
+// Anaconda is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Anaconda is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
+
 #include "common.h"
 #include "fileio.h"
 #include <string>
@@ -94,6 +111,19 @@ Font::Font(const std::string & name, int size, bool bold, bool italic,
 
 // Background
 
+#ifdef CHOWDREN_PASTE_CACHE
+#define PASTE_CACHE_SIZE 256
+
+inline void get_cache_pos(Background * b, int * pos, int * out)
+{
+    out[0] = clamp(pos[0] / PASTE_CACHE_SIZE, 0, b->cache_w);
+    out[1] = clamp(pos[1] / PASTE_CACHE_SIZE, 0, b->cache_h);
+    out[2] = clamp(pos[2] / PASTE_CACHE_SIZE + 1, 0, b->cache_w);
+    out[3] = clamp(pos[3] / PASTE_CACHE_SIZE + 1, 0, b->cache_h);
+}
+
+#endif
+
 Background::Background(Layer * layer)
 {
 #ifdef CHOWDREN_PASTE_PRECEDENCE
@@ -119,9 +149,9 @@ Background::Background(Layer * layer)
 #endif
 
 #ifdef CHOWDREN_PASTE_CACHE
-    dirty = true;
-    for (int i = 0; i < 4; ++i)
-        cache_pos[i] = 0;
+    cache_w = manager.frame->width / PASTE_CACHE_SIZE + 1;
+    cache_h = manager.frame->height / PASTE_CACHE_SIZE + 1;
+    cache = new BackgroundCache[cache_w * cache_h];
 #endif
 }
 
@@ -157,12 +187,18 @@ Background::~Background()
     free(col.data);
     col.data = NULL;
 #endif
+
+#ifdef CHOWDREN_PASTE_CACHE
+    delete[] cache;
+#endif
 }
 
 void Background::reset(bool clear_items)
 {
 #ifdef CHOWDREN_PASTE_CACHE
-    dirty = true;
+    for (int i = 0; i < cache_w * cache_h; ++i) {
+        cache[i].clear = true;
+    }
 #endif
 
     if (!clear_items)
@@ -213,8 +249,12 @@ void Background::destroy_at(int x, int y)
                      item->dest_y + item->src_height,
                      x, y, x+1, y+1)) {
 #ifdef CHOWDREN_PASTE_CACHE
-            if (collides(item->aabb, cache_pos))
-                dirty = true;
+            int vv[4];
+            get_cache_pos(this, item->aabb, vv);
+            for (int y = vv[1]; y < vv[3]; ++y)
+            for (int x = vv[0]; x < vv[2]; ++x) {
+                cache[y * cache_w + x].dirty = true;
+            }
 #endif
             delete item;
             it = items.erase(it);
@@ -366,8 +406,7 @@ void Background::paste(Image * img, int dest_x, int dest_y,
     item->effect = effect;
 
 #ifdef CHOWDREN_PASTE_CACHE
-    if (collides(cache_pos, item->aabb) && fbo.tex != 0)
-        new_paste.push_back(item);
+    new_paste.push_back(item);
 #endif
 
 #ifdef CHOWDREN_PASTE_BROADPHASE
@@ -417,68 +456,82 @@ void Background::paste(Image * img, int dest_x, int dest_y,
 void Background::draw(Layer * layer, int v[4])
 {
 #ifdef CHOWDREN_PASTE_CACHE
-    if (dirty || !contains(cache_pos, v)) {
-        new_paste.clear();
-        dirty = false;
-        const int cache_off_x = (1024 - WINDOW_WIDTH) / 2;
-        const int cache_off_y = (1024 - WINDOW_HEIGHT) / 2;
-
-        cache_pos[0] = v[0] - cache_off_x;
-        cache_pos[1] = v[1] - cache_off_y;
-        cache_pos[2] = v[2] + cache_off_x;
-        cache_pos[3] = v[3] + cache_off_y;
-        
-        if (fbo.tex == 0)
-            fbo.init(cache_pos[2] - cache_pos[0], cache_pos[3] - cache_pos[1]);
-
-        fbo.bind();
-        Render::SavedViewport saved_vp;
-        Render::SavedOffset saved_offset;
-        Render::set_view(0, 0,
-                         cache_pos[2] - cache_pos[0],
-                         cache_pos[3] - cache_pos[1]);
-        Render::set_offset(-cache_pos[0], -cache_pos[1]);
-        Render::clear(0, 0, 0, 0);
-
-        BackgroundItems::const_iterator it;
-        for (it = items.begin(); it != items.end(); ++it) {
-            BackgroundItem * item = *it;
-            if (!collides(item->aabb, cache_pos))
-                continue;
-            item->draw();
-        }
-
-        fbo.unbind();
-
-        saved_vp.restore();
-        saved_offset.restore();
-    } else if (!new_paste.empty()) {
-        fbo.bind();
-        Render::SavedViewportOffset saved;
-        Render::set_view(0, 0,
-                         cache_pos[2] - cache_pos[0],
-                         cache_pos[3] - cache_pos[1]);
-        Render::set_offset(-cache_pos[0], -cache_pos[1]);
-
+    if (!new_paste.empty()) {
         BackgroundItems::const_iterator it;
         for (it = new_paste.begin(); it != new_paste.end(); ++it) {
+            int vv[4];
             BackgroundItem * item = *it;
-            item->draw();
-        }
-        fbo.unbind();
-        saved.restore();
+            get_cache_pos(this, item->aabb, vv);
+            for (int y = vv[1]; y < vv[3]; ++y)
+            for (int x = vv[0]; x < vv[2]; ++x) {
+                int i = y * cache_w + x;
+                BackgroundCache & p = cache[i];
+                if (p.fbo.tex == 0) {
+                    p.fbo.init(PASTE_CACHE_SIZE, PASTE_CACHE_SIZE);
+                    p.clear = true;
+                    p.dirty = false;
+                }
 
+                p.fbo.bind();
+                if (p.clear) {
+                    Render::clear(0, 0, 0, 0);
+                    p.clear = false;
+                }
+                Render::SavedViewportOffset saved;
+                Render::set_view(0, 0, PASTE_CACHE_SIZE, PASTE_CACHE_SIZE);
+                Render::set_offset(-x * PASTE_CACHE_SIZE,
+                                   -y * PASTE_CACHE_SIZE);
+                item->draw();
+                p.fbo.unbind();
+                saved.restore();
+            }
+        }
         new_paste.clear();
     }
 
-    Texture t = fbo.get_tex();
+    for (int y = 0; y < cache_h; ++y)
+    for (int x = 0; x < cache_w; ++x) {
+        int i = y * cache_w + x;
+        BackgroundCache & p = cache[i];
+        if (!p.dirty || p.fbo.tex == 0 || p.clear)
+            continue;
+        p.fbo.bind();
+        Render::clear(0, 0, 0, 0);
+        Render::SavedViewportOffset saved;
+        Render::set_view(0, 0, PASTE_CACHE_SIZE, PASTE_CACHE_SIZE);
+        int xx = x * PASTE_CACHE_SIZE;
+        int yy = y * PASTE_CACHE_SIZE;
+        int aabb[4] = {xx, yy, xx + PASTE_CACHE_SIZE, yy + PASTE_CACHE_SIZE};
+        Render::set_offset(-xx, -yy);
+        BackgroundItems::const_iterator it;
+        for (it = items.begin(); it != items.end(); ++it) {
+            BackgroundItem * item = *it;
+            if (!collides(item->aabb, aabb))
+                continue;
+            item->draw();
+        }
+        p.fbo.unbind();
+        saved.restore();
+    }
 
     Render::set_effect(Render::PREMUL);
-    Render::draw_tex(cache_pos[0], cache_pos[1],
-                     cache_pos[2], cache_pos[3],
-                     Color(), t,
-                     fbo_texcoords[0], fbo_texcoords[1],
-                     fbo_texcoords[2], fbo_texcoords[3]);
+    int draw_pos[4];
+    get_cache_pos(this, v, draw_pos);
+    for (int y = draw_pos[1]; y < draw_pos[3]; ++y)
+    for (int x = draw_pos[0]; x < draw_pos[2]; ++x) {
+        int i = y * cache_w + x;
+        BackgroundCache & p = cache[i];
+        if (p.fbo.tex == 0 || p.clear)
+            continue;
+        Texture t = p.fbo.get_tex();
+        int xx = x * PASTE_CACHE_SIZE;
+        int yy = y * PASTE_CACHE_SIZE;
+        Render::draw_tex(xx, yy,
+                         xx + PASTE_CACHE_SIZE, yy + PASTE_CACHE_SIZE,
+                         Color(), t,
+                         fbo_texcoords[0], fbo_texcoords[1],
+                         fbo_texcoords[2], fbo_texcoords[3]);
+    }
     Render::disable_effect();
 #else
 

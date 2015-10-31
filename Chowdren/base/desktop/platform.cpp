@@ -1,3 +1,20 @@
+// Copyright (c) Mathias Kaerlev 2012-2015.
+//
+// This file is part of Anaconda.
+//
+// Anaconda is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Anaconda is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
+
 #ifdef _WIN32
 #include <windows.h>
 #include <mmsystem.h>
@@ -627,7 +644,7 @@ void d3d_reset(bool last_failed)
         pparams.BackBufferFormat = D3DFMT_UNKNOWN;
     }
 
-    for (int i = 0; i < 32; ++i) {
+    for (int i = 0; i < Framebuffer::MAX_FBO; ++i) {
         Framebuffer * fbo = Framebuffer::fbos[i];
         if (fbo == NULL || fbo->fbo == NULL)
             continue;
@@ -682,7 +699,7 @@ void d3d_reset(bool last_failed)
         }
     }
 
-    for (int i = 0; i < 32; ++i) {
+    for (int i = 0; i < Framebuffer::MAX_FBO; ++i) {
         Framebuffer * fbo = Framebuffer::fbos[i];
         if (fbo == NULL)
             continue;
@@ -705,7 +722,11 @@ void d3d_reset(bool last_failed)
         Background * back = it->back;
         if (back == NULL)
             continue;
-        back->dirty = true;
+        for (int y = 0; y < back->cache_h; ++y)
+        for (int x = 0; x < back->cache_w; ++x) {
+            int i = y * back->cache_w + x;
+            back->cache[i].dirty = true;
+        }
     }
 #endif
 }
@@ -2209,6 +2230,10 @@ void platform_exit()
     joysticks.clear();
 
     SDL_Quit();
+
+#ifdef CHOWDREN_IS_ANDROID
+    exit(0);
+#endif
 }
 
 #ifndef CHOWDREN_IS_DESKTOP
