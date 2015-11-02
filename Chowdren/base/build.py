@@ -155,8 +155,12 @@ class LinuxBuilder(Builder):
 
         shutil.rmtree(dst_bin_dir, ignore_errors=True)
         shutil.copytree(src_bin_dir, dst_bin_dir)
-        shutil.copy(os.path.join(self.install_dir, 'run.sh'),
-                    os.path.join(self.dist_dir, 'run.sh'))
+
+        with open(os.path.join(self.install_dir, 'run.sh'), 'rb') as fp:
+            run_data = '\n'.join(fp.read().splitlines())
+
+        with open(os.path.join(self.dist_dir, 'run.sh'), 'wb') as fp:
+            fp.write(run_data)
 
         arch_deps = {
             'amd64': ('/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0',
@@ -317,7 +321,8 @@ class AndroidBuilder(Builder):
         pass
 
 class MacBuilder(Builder):
-    pass
+    def get_cmake_args(self):
+        return ['-DCMAKE_OSX_DEPLOYMENT_TARGET=10.6']
 
 BUILDERS = {
     'android': AndroidBuilder

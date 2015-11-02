@@ -186,12 +186,6 @@ void GameManager::set_window(bool fullscreen)
 
     // OpenGL init
     Render::init();
-
-#ifdef CHOWDREN_VSYNC
-    platform_set_vsync(true);
-#else
-    platform_set_vsync(false);
-#endif
 }
 
 void GameManager::set_window_scale(int scale)
@@ -1173,31 +1167,10 @@ static void open_console()
     if (getenv("CHOWDREN_SHOW_DEBUGGER") == NULL)
         return;
 #endif
-    int outHandle, errHandle, inHandle;
-    FILE *outFile, *errFile, *inFile;
     AllocConsole();
-    CONSOLE_SCREEN_BUFFER_INFO coninfo;
-    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &coninfo);
-
-    outHandle = _open_osfhandle((intptr_t)GetStdHandle(STD_OUTPUT_HANDLE),
-                                _O_TEXT);
-    errHandle = _open_osfhandle((intptr_t)GetStdHandle(STD_ERROR_HANDLE),
-                                _O_TEXT);
-    inHandle = _open_osfhandle((intptr_t)GetStdHandle(STD_INPUT_HANDLE),
-                               _O_TEXT);
-
-    outFile = _fdopen(outHandle, "w" );
-    errFile = _fdopen(errHandle, "w");
-    inFile =  _fdopen(inHandle, "r");
-
-    *stdout = *outFile;
-    *stderr = *errFile;
-    *stdin = *inFile;
-
-    setvbuf(stdout, NULL, _IONBF, 0);
-    setvbuf(stderr, NULL, _IONBF, 0);
-    setvbuf(stdin, NULL, _IONBF, 0);
-
+    freopen("CONIN$", "r", stdin);
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
     std::ios::sync_with_stdio();
 }
 #endif

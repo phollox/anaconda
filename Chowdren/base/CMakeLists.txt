@@ -304,6 +304,9 @@ if(MSVC)
     elseif(MSVC12)
         SET(CMAKE_GENERATOR_TOOLSET "v120_xp" CACHE STRING
             "Name of generator toolset." FORCE)
+    elseif(MSVC14)
+        SET(CMAKE_GENERATOR_TOOLSET "v140_xp" CACHE STRING
+            "Name of generator toolset." FORCE)
     endif()
 
     # /bigobj is required for MSVC because objects.cpp can get too big on

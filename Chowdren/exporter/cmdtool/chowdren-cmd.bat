@@ -1,0 +1,1 @@
+start cmd.exe /k "chowdren-env.bat"
