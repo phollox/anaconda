@@ -551,5 +551,6 @@ parameterLoaders = [
     Filename,
     String,
     CharacterEncoding,
-    CharacterEncoding
+    CharacterEncoding,
+    Short
 ]

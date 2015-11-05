@@ -78,7 +78,8 @@ parameterNames = {
     63 : 'FILENAME',
     64 : 'FASTLOOPNAME',
     65 : 'CHAR_ENCODING_INPUT',
-    66 : 'CHAR_ENCODING_OUTPUT'
+    66 : 'CHAR_ENCODING_OUTPUT',
+    67 : 'RUNTIME'
 }
 
 def getName(id):

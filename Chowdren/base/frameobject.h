@@ -646,6 +646,17 @@ public:
         items[obj->index].next = LAST_SELECTED;
     }
 
+    void select_single_check(FrameObject * obj)
+    {
+        if (empty())
+            return;
+        if (obj->id != (*this)[0]->id) {
+            empty_selection();
+            return;
+        }
+        select_single(obj);
+    }
+
     void save_selection();
     void restore_selection();
     void clear_saved_selection();

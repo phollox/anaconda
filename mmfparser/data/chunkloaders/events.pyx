@@ -110,6 +110,8 @@ cdef class Parameter(DataLoader):
         cdef int currentPosition = reader.tell()
         cdef int size = reader.readShort()
         self.code = reader.readShort()
+        if self.code >= len(<list>parameterLoaders):
+            print 'Unknown parameter code:', self.code
         self.loader = self.new((<list>parameterLoaders)[self.code], reader)
         reader.seek(currentPosition+size)
 

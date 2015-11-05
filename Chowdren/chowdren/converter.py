@@ -1483,9 +1483,10 @@ class Converter(object):
 
             runinfo = self.runinfo.get_qualifier(qualifier.getQualifier())
             self.qualifier_runinfo[qual_obj] = runinfo
-            object_infos = tuple(
-                [self.filter_object_type((info, qualifier.type))
-                for info in object_infos])
+            object_infos = [self.filter_object_type((info, qualifier.type))
+                            for info in object_infos]
+            object_infos.sort()
+            object_infos = tuple(object_infos)
             self.qualifiers[qual_obj] = object_infos
             self.qualifier_types[qual_obj] = qualifier.type
 
@@ -3266,16 +3267,25 @@ class Converter(object):
         list_name = self.get_object_list(object_info)
 
         clear_lists = set()
+        obj_single = None
 
         has_col = False
+        set_lists = []
+
         for obj in objs:
             if self.has_common_objects(obj, self.has_selection):
                 has_col = True
             else:
-                if self.has_single(obj):
-                    print 'ignoring single for clear list'
+                single = self.get_single(obj)
+                if single is not None:
+                    print 'using single for clear list'
+                    writer.putlnc('%s.select_single_check(%s);',
+                                  self.object_lists[obj + (self.game_index,)],
+                                  single)
+                    has_col = True
                     continue
                 clear_lists.add(self.get_object_list(obj))
+            set_lists.append(obj)
 
         if has_col:
             writer.putln('// icache destruction')
@@ -3285,7 +3295,7 @@ class Converter(object):
         for obj_list in clear_lists:
             writer.putlnc('%s.clear_selection();', obj_list)
 
-        for obj in objs:
+        for obj in set_lists:
             if obj == object_info:
                 continue
             self.set_list(obj, self.get_object_list(obj))
