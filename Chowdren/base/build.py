@@ -405,7 +405,7 @@ class MacBuilder(Builder):
             shutil.copy(os.path.join(steam_path, 'libsteam_api.dylib'),
                 os.path.join(app_path, 'MacOS', 'libsteam_api.dylib'))
         for (name, id_path) in ID_FILES:
-            path = os.path.join(app_path, id_path)
+            path = os.path.join(app_path, name)
             if not os.path.isfile(path):
                 continue
                 self.call(['install_name_tool', '-id', id_path, path])
