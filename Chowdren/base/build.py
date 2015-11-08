@@ -327,7 +327,7 @@ CMAKE_URL = 'https://cmake.org/files/v3.4/cmake-3.4.0-rc3-Darwin-x86_64.tar.gz'
 
 SET_PATHS = (
     ('@rpath/SDL2.framework/Versions/A/SDL2',
-     '@executable_path/../Frameworks/SDL2.framework/Versions/A/SDL2'),
+     '@executable_path/../MacOS/libSDL2.dylib'),
     ('@loader_path/libsteam_api.dylib',
      '@executable_path/../MacOS/libsteam_api.dylib'),
     ('/Users/travis/build/LWJGL-CI/openal-soft/OSX/libopenal.1.dylib',
@@ -338,7 +338,7 @@ CODE_FILES = (
     'MacOS/Chowdren',
     'MacOS/libopenal.1.dylib',
     'MacOS/libsteam_api.dylib',
-    'Frameworks/SDL2.framework/Versions/A/SDL2'
+    'MacOS/libSDL2.dylib'
 )
 
 ID_FILES = (
@@ -346,7 +346,7 @@ ID_FILES = (
     ('MacOS/libsteam_api.dylib',
      '@executable_path/../MacOS/libsteam_api.dylib'),
     ('Frameworks/SDL2.framework/Versions/A/SDL2',
-     '@executable_path/../Frameworks/SDL2.framework/Versions/A/SDL2')
+     '@executable_path/../MacOS/libSDL2.dylib')
 )
 
 class MacBuilder(Builder):
@@ -394,11 +394,8 @@ class MacBuilder(Builder):
         lib_dir = os.path.join(self.base_path, 'lib', 'osx')
         shutil.copy(os.path.join(lib_dir, 'libopenal.dylib'),
                     os.path.join(app_path, 'MacOS', 'libopenal.1.dylib'))
-        makedirs(os.path.join(app_path, 'Frameworks'))
-        shutil.rmtree(os.path.join(app_path, 'Frameworks', 'SDL2.framework'),
-                      ignore_errors=True)
-        shutil.copytree(os.path.join(lib_dir, 'SDL2.framework'),
-                        os.path.join(app_path, 'Frameworks', 'SDL2.framework'))
+        shutil.copy(os.path.join(lib_dir, 'libSDL2.dylib'),
+                    os.path.join(app_path, 'MacOS', 'libSDL2.dylib'))
         if self.args.steam:
             steam_path = os.path.join(self.base_path, 'steam', 'sdk',
                                       'redistributable_bin', 'osx32')
