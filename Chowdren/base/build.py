@@ -345,8 +345,7 @@ ID_FILES = (
     ('MacOS/libopenal.1.dylib', '@executable_path/../MacOS/libopenal.1.dylib'),
     ('MacOS/libsteam_api.dylib',
      '@executable_path/../MacOS/libsteam_api.dylib'),
-    ('Frameworks/SDL2.framework/Versions/A/SDL2',
-     '@executable_path/../MacOS/libSDL2.dylib')
+    ('MacOS/libSDL2.dylib', '@executable_path/../MacOS/libSDL2.dylib')
 )
 
 class MacBuilder(Builder):
