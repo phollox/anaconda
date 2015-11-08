@@ -395,6 +395,8 @@ class MacBuilder(Builder):
         shutil.copy(os.path.join(lib_dir, 'libopenal.dylib'),
                     os.path.join(app_path, 'MacOS', 'libopenal.1.dylib'))
         makedirs(os.path.join(app_path, 'Frameworks'))
+        shutil.rmtree(os.path.join(app_path, 'Frameworks', 'SDL2.framework'),
+                      ignore_errors=True)
         shutil.copytree(os.path.join(lib_dir, 'SDL2.framework'),
                         os.path.join(app_path, 'Frameworks', 'SDL2.framework'))
         if self.args.steam:
