@@ -341,6 +341,14 @@ CODE_FILES = (
     'Frameworks/SDL2.framework/Versions/A/SDL2'
 )
 
+ID_FILES = (
+    ('MacOS/libopenal.1.dylib', '@executable_path/../MacOS/libopenal.1.dylib'),
+    ('MacOS/libsteam_api.dylib',
+     '@executable_path/../MacOS/libsteam_api.dylib'),
+    ('Frameworks/SDL2.framework/Versions/A/SDL2',
+     '@executable_path/../Frameworks/SDL2.framework/Versions/A/SDL2')
+)
+
 class MacBuilder(Builder):
     def get_cmake_args(self):
         return ['-DCMAKE_OSX_DEPLOYMENT_TARGET=10.6', '-GXcode']
@@ -394,6 +402,11 @@ class MacBuilder(Builder):
                                       'redistributable_bin', 'osx32')
             shutil.copy(os.path.join(steam_path, 'libsteam_api.dylib'),
                 os.path.join(app_path, 'MacOS', 'libsteam_api.dylib'))
+        for (name, id_path) in ID_FILES:
+            path = os.path.join(app_path, name)
+            if not os.path.isfile(path):
+                continue
+                self.call(['install_name_tool', '-id', id_path, path])
         for name in CODE_FILES:
             path = os.path.join(app_path, name)
             if not os.path.isfile(path):
@@ -401,8 +414,6 @@ class MacBuilder(Builder):
             for (src_path, to_path) in SET_PATHS:
                 self.call(['install_name_tool', '-change', src_path, to_path,
                            path])
-        # self.call([self.get_cmake_path(), '--build', '.',
-        #            '--config', 'Release', '--target install'])
         os.chdir(cwd)
 
     def get_cmake_path(self):
