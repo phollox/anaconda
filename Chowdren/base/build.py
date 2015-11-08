@@ -327,7 +327,7 @@ CMAKE_URL = 'https://cmake.org/files/v3.4/cmake-3.4.0-rc3-Darwin-x86_64.tar.gz'
 
 class MacBuilder(Builder):
     def get_cmake_args(self):
-        return ['-DCMAKE_OSX_DEPLOYMENT_TARGET=10.6']
+        return ['-DCMAKE_OSX_DEPLOYMENT_TARGET=10.6', '-GXcode']
 
     def install_cmake(self):
         print 'Installing CMake...'
