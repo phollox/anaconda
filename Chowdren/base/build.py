@@ -408,7 +408,7 @@ class MacBuilder(Builder):
             path = os.path.join(app_path, name)
             if not os.path.isfile(path):
                 continue
-                self.call(['install_name_tool', '-id', id_path, path])
+            self.call(['install_name_tool', '-id', id_path, path])
         for name in CODE_FILES:
             path = os.path.join(app_path, name)
             if not os.path.isfile(path):
