@@ -8,7 +8,11 @@ endif()
 
 set(CMAKE_MODULE_PATH "${CHOWDREN_BASE_DIR}/cmake")
 
-if (NOT CMAKE_CROSSCOMPILING)
+if (CMAKE_CROSSCOMPILING AND NOT APPLE)
+    set(CROSSCOMPILING 1)
+endif()
+
+if (NOT CROSSCOMPILING)
     include_directories("${CHOWDREN_BASE_DIR}/include/desktop")
     list(APPEND CMAKE_INCLUDE_PATH "${CHOWDREN_BASE_DIR}/include/desktop")
     include_directories("${CHOWDREN_BASE_DIR}/desktop")
@@ -57,7 +61,7 @@ option(EMULATE_WIIU "Emulate Wii U features" OFF)
 
 if (ANDROID OR EMSCRIPTEN)
     set(USE_GLES2 ON)
-elseif (CMAKE_CROSSCOMPILING)
+elseif (CROSSCOMPILING)
     set(USE_GL OFF)
     set(USE_GLES2 OFF)
     set(USE_GLES1 OFF)
@@ -87,11 +91,11 @@ if (ANDROID)
     add_definitions(-DCHOWDREN_IS_ANDROID -DUSE_ASSET_MANAGER)
     include(AndroidNdkGdb)
     android_ndk_gdb_enable()
-elseif (NOT CMAKE_CROSSCOMPILING)
+elseif (NOT CROSSCOMPILING)
     add_definitions(-DCHOWDREN_IS_DESKTOP)
 endif()
 
-if (NOT CMAKE_CROSSCOMPILING)
+if (NOT CROSSCOMPILING)
     set(PLATFORM_SRCS
         ${CHOWDREN_BASE_DIR}/desktop/glslshader.cpp
         ${CHOWDREN_BASE_DIR}/desktop/fbo.cpp
@@ -434,7 +438,7 @@ if (ANDROID)
     set(SRCS ${SDL_SRCS} ${SRCS})
 endif()
 
-if (NOT CMAKE_CROSSCOMPILING)
+if (NOT CROSSCOMPILING)
     find_package(SDL2 REQUIRED)
     find_package(OpenALSoft REQUIRED)
     if (USE_GL)
