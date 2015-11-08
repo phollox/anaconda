@@ -64,7 +64,7 @@ class Builder(object):
         defs = ['-DCMAKE_BUILD_TYPE=%s' % build_type]
         if self.args.steam:
             defs += ['-DUSE_STEAM=ON']
-        cmd = ['cmake',  '..'] + defs + self.get_cmake_args()
+        cmd = [self.get_cmake_path(),  '..'] + defs + self.get_cmake_args()
 
         self.call(cmd)
         os.chdir(cwd)
@@ -72,10 +72,15 @@ class Builder(object):
     def get_cmake_args(self):
         return []
 
+    def get_cmake_path(self):
+        return 'cmake'
+
     def call(self, args):
         print ' '.join(args)
         return subprocess.check_call(args)
 
+    def finish(self):
+        pass
 
 class LinuxBuilder(Builder):
     temp = None
@@ -307,18 +312,16 @@ class AndroidBuilder(Builder):
     def build_project(self):
         cwd = os.getcwd()
         os.chdir(self.build_dir)
-        self.call(['cmake', '--build', '.', '--', '-j6'])
+        self.call([self.get_cmake_path(), '--build', '.', '--', '-j6'])
         os.chdir(cwd)
 
     def get_cmake_args(self):
-        toolchain = os.path.join(base_dir, 'cmake', 'android.toolchain.cmake')
+        toolchain = os.path.join(base_dir, self.get_cmake_path(),
+                                 'android.toolchain.cmake')
         return ['-GMinGW Makefiles',
                 '-DCMAKE_TOOLCHAIN_FILE=%s' % toolchain,
                 '-DANDROID_ABI=%s' % self.arch,
                 '-DANDROID_NATIVE_API_LEVEL=%s' % self.target_version]
-
-    def finish(self):
-        pass
 
 CMAKE_URL = 'https://cmake.org/files/v3.4/cmake-3.4.0-rc3-Darwin-x86_64.tar.gz'
 
@@ -332,7 +335,6 @@ class MacBuilder(Builder):
         temp = tempfile.mkdtemp()
 
         os.chdir(temp)
-
         data = urllib2.urlopen(CMAKE_URL).read()
         with open('cmake.tar.gz', 'wb') as fp:
             fp.write(data)
@@ -342,17 +344,31 @@ class MacBuilder(Builder):
         directory = CMAKE_URL.split('/')[-1].replace('.tar.gz', '')
         app_path = os.path.join(directory, 'CMake.app')
         shutil.copytree(app_path, '/Applications/CMake.app')
-
         os.chdir(cwd)
+
+        print 'Installed CMake.'
 
     def build(self):
         if not os.path.isdir('/Applications/CMake.app'):
             self.install_cmake()
 
         if not os.path.isdir('/Applications/Xcode.app'):
-            print ('Error: Please install Xcode from the App Store, then open'
-                   ' and accept its EULA.')
+            print ('Error: Please install Xcode from the App Store, then open '
+                   'and accept its EULA.')
             return
+
+        self.build_dir = os.path.join(self.root_dir, 'build2')
+        self.create_project()
+        self.build_project()
+
+    def build_project(self):
+        cwd = os.getcwd()
+        os.chdir(self.build_dir)
+        self.call([self.get_cmake_path(), '--build', '.'])
+        os.chdir(cwd)
+
+    def get_cmake_path(self):
+        return '/Applications/CMake.app/Contents/bin/cmake'
 
 BUILDERS = {
     'android': AndroidBuilder
