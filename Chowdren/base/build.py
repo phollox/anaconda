@@ -364,7 +364,10 @@ class MacBuilder(Builder):
     def build_project(self):
         cwd = os.getcwd()
         os.chdir(self.build_dir)
-        self.call([self.get_cmake_path(), '--build', '.'])
+        self.call([self.get_cmake_path(), '--build', '.',
+                   '--config', 'Release'])
+        self.call([self.get_cmake_path(), '--build', '.',
+                   '--config', 'Release', '--target install'])
         os.chdir(cwd)
 
     def get_cmake_path(self):
