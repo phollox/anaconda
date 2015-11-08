@@ -390,7 +390,7 @@ class MacBuilder(Builder):
         shutil.copytree(os.path.join(lib_dir, 'SDL2.framework'),
                         os.path.join(app_path, 'Frameworks', 'SDL2.framework'))
         if self.args.steam:
-            steam_path = os.path.join(self.base_path, 'steam', 'sdk',,
+            steam_path = os.path.join(self.base_path, 'steam', 'sdk',
                                       'redistributable_bin', 'osx32')
             shutil.copy(os.path.join(steam_path, 'libsteam_api.dylib'),
                 os.path.join(app_path, 'MacOS', 'libsteam_api.dylib'))
