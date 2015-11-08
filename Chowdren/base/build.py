@@ -327,6 +327,7 @@ class MacBuilder(Builder):
         return ['-DCMAKE_OSX_DEPLOYMENT_TARGET=10.6']
 
     def install_cmake(self):
+        print 'Installing CMake...'
         cwd = os.getcwd()
         temp = tempfile.mkdtemp()
 
@@ -340,7 +341,7 @@ class MacBuilder(Builder):
 
         directory = CMAKE_URL.split('/')[-1].replace('.tar.gz', '')
         app_path = os.path.join(directory, 'CMake.app')
-        shutil.copytree(app_path, '/Applications')
+        shutil.copytree(app_path, '/Applications/CMake.app')
 
         os.chdir(cwd)
 
