@@ -325,6 +325,22 @@ class AndroidBuilder(Builder):
 
 CMAKE_URL = 'https://cmake.org/files/v3.4/cmake-3.4.0-rc3-Darwin-x86_64.tar.gz'
 
+SET_PATHS = (
+    ('@rpath/SDL2.framework/Versions/A/SDL2',
+     '@executable_path/../Frameworks/SDL2.framework/Versions/A/SDL2'),
+    ('@loader_path/libsteam_api.dylib',
+     '@executable_path/../MacOS/libsteam_api.dylib'),
+    ('/Users/travis/build/LWJGL-CI/openal-soft/OSX/libopenal.1.dylib',
+     '@executable_path/../MacOS/libopenal.1.dylib')
+)
+
+CODE_FILES = (
+    'MacOS/Chowdren',
+    'MacOS/libopenal.1.dylib',
+    'MacOS/libsteam_api.dylib',
+    'Frameworks/SDL2.framework/Versions/A/SDL2'
+)
+
 class MacBuilder(Builder):
     def get_cmake_args(self):
         return ['-DCMAKE_OSX_DEPLOYMENT_TARGET=10.6', '-GXcode']
@@ -366,8 +382,27 @@ class MacBuilder(Builder):
         os.chdir(self.build_dir)
         self.call([self.get_cmake_path(), '--build', '.',
                    '--config', 'Release'])
-        self.call([self.get_cmake_path(), '--build', '.',
-                   '--config', 'Release', '--target install'])
+        app_path = os.path.join('Release', 'Chowdren.app', 'Contents')
+        lib_dir = os.path.join(self.base_path, 'lib', 'osx')
+        shutil.copy(os.path.join(lib_dir, 'libopenal.dylib'),
+                    os.path.join(app_path, 'MacOS', 'libopenal.1.dylib'))
+        makedirs(os.path.join(app_path, 'Frameworks'))
+        shutil.copytree(os.path.join(lib_dir, 'SDL2.framework'),
+                        os.path.join(app_path, 'Frameworks', 'SDL2.framework'))
+        if self.args.steam:
+            steam_path = os.path.join(self.base_path, 'steam', 'sdk',,
+                                      'redistributable_bin', 'osx32')
+            shutil.copy(os.path.join(steam_path, 'libsteam_api.dylib'),
+                os.path.join(app_path, 'MacOS', 'libsteam_api.dylib'))
+        for name in CODE_FILES:
+            path = os.path.join(app_path, name)
+            if not os.path.isfile(path):
+                continue
+            for (src_path, to_path) in SET_PATHS:
+                self.call(['install_name_tool', '-change', src_path, to_path,
+                           path])
+        # self.call([self.get_cmake_path(), '--build', '.',
+        #            '--config', 'Release', '--target install'])
         os.chdir(cwd)
 
     def get_cmake_path(self):
@@ -390,6 +425,9 @@ def main():
         build_class = BUILDERS[config['platform']]
 
     builder = build_class()
+    base_path = config['base_path'].replace('${CMAKE_CURRENT_SOURCE_DIR}',
+                                            os.getcwd())
+    builder.base_path = base_path
 
     parser = argparse.ArgumentParser(description='Chowdren builder')
     builder.setup_parser(parser)
