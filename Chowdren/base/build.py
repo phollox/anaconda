@@ -320,9 +320,38 @@ class AndroidBuilder(Builder):
     def finish(self):
         pass
 
+CMAKE_URL = 'https://cmake.org/files/v3.4/cmake-3.4.0-rc3-Darwin-x86_64.tar.gz'
+
 class MacBuilder(Builder):
     def get_cmake_args(self):
         return ['-DCMAKE_OSX_DEPLOYMENT_TARGET=10.6']
+
+    def install_cmake(self):
+        cwd = os.getcwd()
+        temp = tempfile.mkdtemp()
+
+        os.chdir(temp)
+
+        data = urllib2.urlopen(CMAKE_URL).read()
+        with open('cmake.tar.gz', 'wb') as fp:
+            fp.write(data)
+        archive = tarfile.open('cmake.tar.gz')
+        archive.extractall()
+
+        directory = CMAKE_URL.split('/')[-1].replace('.tar.gz', '')
+        app_path = os.path.join(directory, 'CMake.app')
+        shutil.copytree(app_path, '/Applications')
+
+        os.chdir(cwd)
+
+    def build(self):
+        if not os.path.isdir('/Applications/CMake.app'):
+            self.install_cmake()
+
+        if not os.path.isdir('/Applications/Xcode.app'):
+            print ('Error: Please install Xcode from the App Store, then open'
+                   ' and accept its EULA.')
+            return
 
 BUILDERS = {
     'android': AndroidBuilder
