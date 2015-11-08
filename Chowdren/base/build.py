@@ -416,6 +416,8 @@ class MacBuilder(Builder):
             for (src_path, to_path) in SET_PATHS:
                 self.call(['install_name_tool', '-change', src_path, to_path,
                            path])
+        shutil.copy(os.path.join(self.root_dir, 'Assets.dat'),
+                    os.path.join(app_path, 'Resources', 'Assets.dat'))
         os.chdir(cwd)
 
     def get_cmake_path(self):
