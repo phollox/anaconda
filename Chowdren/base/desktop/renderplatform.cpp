@@ -222,7 +222,7 @@ void Render::init()
     Render::set_filter(render_data.white_tex, linear);
 
 #endif
-    render_data.last_tex = 0;
+    render_data.last_tex = -1;
 }
 
 #ifdef CHOWDREN_USE_D3D

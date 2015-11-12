@@ -147,5 +147,8 @@ def get_missing_image(converter, image):
 def get_images(converter):
     return {}
 
+def get_audio_preloads(converter):
+    return []
+
 def write_loop(converter, loop_name, event_writer, writer):
     pass

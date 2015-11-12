@@ -195,7 +195,7 @@ inline void Render::delete_tex(Texture tex)
 #else
     glDeleteTextures(1, &tex);
     if (render_data.last_tex == tex)
-        render_data.last_tex = 0;
+        render_data.last_tex = -1;
 #endif
 }
 

@@ -39,6 +39,7 @@
 #define BUFFER_COUNT 3
 
 #define USE_THREAD_PRELOAD
+#define USE_FILE_PRELOAD
 
 namespace ChowdrenAudio {
 
@@ -329,12 +330,9 @@ typedef float (*sampler_op)(const float*, unsigned int);
 template <sampler_op f>
 void resample_generic_mono(const float * src, unsigned int frac,
                            unsigned int increment, float * restrict dst,
-                           unsigned int dst_samples, float * new_end)
+                           unsigned int dst_samples)
 {
     for (unsigned int i = 0; i < dst_samples; i++) {
-        if (src >= new_end) {
-            std::cout << "resample fault 2" << std::endl;
-        }
         dst[i] = f(src, frac);
         frac += increment;
         src += frac >> FIXPOINT_FRAC_BITS;
@@ -345,12 +343,9 @@ void resample_generic_mono(const float * src, unsigned int frac,
 template <sampler_op f>
 void resample_generic_stereo(const float * src, unsigned int frac,
                              unsigned int increment, float * restrict dst,
-                             unsigned int dst_samples, float * new_end)
+                             unsigned int dst_samples)
 {
     for (unsigned int i = 0; i < dst_samples; i += 2) {
-        if (src+1 >= new_end) {
-            std::cout << "resample fault 2" << std::endl;
-        }
         dst[i] = f(src, frac);
         dst[i+1] = f(src+1, frac);
         frac += increment;
@@ -466,7 +461,7 @@ public:
         this->step = step_fixed;
     }
 
-    float * resample(unsigned int dst_samples, unsigned int end)
+    float * resample(unsigned int dst_samples)
     {
         float * src = &data[data_offset];
 		if (resample_size < dst_samples) {
@@ -474,13 +469,12 @@ public:
             delete[] resample_scratch;
             resample_scratch = new float[resample_size];
         }
-        float * new_end = &data[end];
         if (channels == 2) {
             resample_point_stereo(src, frac, step, resample_scratch,
-                                  dst_samples, new_end);
+                                  dst_samples);
         } else {
             resample_point_mono(src, frac, step, resample_scratch,
-                                dst_samples, new_end);
+                                dst_samples);
         }
 		return resample_scratch;
     }
@@ -515,7 +509,7 @@ public:
             dst_size -= frac;
             dst_size = ((dst_size + (step - 1)) / step);
             dst_size = std::min(dst_size, size / 2);
-            float * new_samples = resample(dst_size * channels, end);
+            float * new_samples = resample(dst_size * channels);
 
             if (channels == 2) {
                 for (unsigned int i = 0; i < dst_size; i++) {
@@ -750,6 +744,43 @@ public:
 
 #define BUFFER_SIZE ((sample_rate / BUFFER_COUNT) * channels)
 
+struct AudioPreload
+{
+    unsigned int sample_rate;
+    unsigned int channels;
+    unsigned int samples;
+    size_t size;
+};
+
+static hash_map<std::string, AudioPreload> audio_preloads;
+
+void create_audio_preload(const std::string & in_path)
+{
+    std::string path = convert_path(in_path);
+    std::cout << "Preload: " << path << std::endl;
+    FSFile fp(path.c_str(), "r");
+    size_t size = platform_get_file_size(path.c_str());
+    AudioPreload & preload = audio_preloads[path];
+    preload.size = size;
+    if (size <= 0)
+        return;
+    SoundDecoder * decoder = create_decoder(fp, get_audio_type(path), size);
+    preload.sample_rate = decoder->sample_rate;
+    preload.samples = decoder->get_samples();
+    preload.channels = decoder->channels;
+    delete decoder;
+}
+
+AudioPreload * get_audio_preload(const std::string & path)
+{
+    hash_map<std::string, AudioPreload>::iterator it = audio_preloads.find(path);
+    if (it == audio_preloads.end()) {
+        std::cout << "No preloads for " << path << std::endl;
+        return NULL;
+    }
+    return &(it->second);
+}
+
 class SoundStream : public SoundBase
 {
 public:
@@ -759,8 +790,16 @@ public:
     double seek_time;
     unsigned int current_buf;
 
+    unsigned int samples;
+
     volatile bool fill_now;
     volatile bool with_seek;
+
+#ifdef USE_FILE_PRELOAD
+    volatile Media::AudioType decoder_type;
+    volatile size_t decoder_size;
+    std::string decoder_filename;
+#endif 
 
     SoundStream(size_t offset, Media::AudioType type, size_t size)
     : SoundBase()
@@ -770,12 +809,49 @@ public:
         init(create_decoder(fp, type, size));
     }
 
+#ifdef USE_FILE_PRELOAD
+    SoundStream(const std::string & path, Media::AudioType type, size_t size)
+    : SoundBase()
+    {
+        AudioPreload * preload = get_audio_preload(path);
+        if (preload == NULL) {
+            fp.open(path.c_str(), "r");
+            init(create_decoder(fp, type, size));
+            return;
+        }
+        decoder_type = type;
+        decoder_size = size;
+        decoder_filename = path;
+        file = NULL;
+        playing = fill_now = with_seek = false;
+        flags |= LOOP;
+
+        sample_rate = preload->sample_rate;
+        channels = preload->channels;
+        samples = preload->samples;
+
+        update_rate();
+
+        data_size = (sample_rate / BUFFER_COUNT) * BUFFER_COUNT * channels;
+        data = new float[data_size];
+
+        // LOCK_STREAM;
+        for (int i = 0; i < MAX_SOUNDS; ++i) {
+            if (global_device.streams[i] != NULL)
+                continue;
+            global_device.streams[i] = this;
+            break;
+        }
+        // UNLOCK_STREAM;
+    }
+#else
     SoundStream(const std::string & path, Media::AudioType type, size_t size)
     : SoundBase()
     {
         fp.open(path.c_str(), "r");
         init(create_decoder(fp, type, size));
     }
+#endif
 
     void init(SoundDecoder * decoder)
     {
@@ -785,6 +861,7 @@ public:
 
 		sample_rate = decoder->sample_rate;
 		channels = decoder->channels;
+        samples = decoder->get_samples();
 
         update_rate();
 
@@ -872,8 +949,7 @@ public:
         if (get_status() == Stopped)
             return get_duration();
         unsigned int ticks = get_ticks();
-        unsigned int max_ticks = (file->get_samples() * 1000)
-                                 / file->sample_rate / file->channels;
+        unsigned int max_ticks = (samples * 1000) / sample_rate / channels;
         if (flags & STREAM_LOOP)
             ticks %= max_ticks;
         else
@@ -883,13 +959,12 @@ public:
 
     double get_duration()
     {
-        return double(file->get_samples()) / file->sample_rate
-               / file->channels;
+        return double(samples) / sample_rate / channels;
     }
 
     int get_sample_rate()
     {
-        return file->sample_rate;
+        return sample_rate;
     }
 
     void update()
@@ -898,6 +973,10 @@ public:
             return;
 
         if (fill_now) {
+            if (file == NULL) {
+                fp.open(decoder_filename.c_str(), "r");
+                file = create_decoder(fp, decoder_type, decoder_size);
+            }
             if (with_seek) {
                 file->seek(seek_time);
             }

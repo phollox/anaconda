@@ -155,17 +155,6 @@ Background::Background(Layer * layer)
 #endif
 }
 
-#ifdef CHOWDREN_PASTE_BROADPHASE
-void clear_back_vec(Broadphase & items)
-{
-    BackgroundItems::iterator it;
-    for (it = items.begin(); it != items.end(); ++it) {
-        BackgroundItem * item = *it;
-        delete item;
-    }
-    items.clear();
-}
-#else
 void clear_back_vec(BackgroundItems & items)
 {
     BackgroundItems::iterator it;
@@ -175,7 +164,6 @@ void clear_back_vec(BackgroundItems & items)
     }
     items.clear();
 }
-#endif
 
 Background::~Background()
 {
@@ -233,14 +221,48 @@ struct RemoveBackgroundCallback
     }    
 };
 
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+inline void rebake_collision_map(Background * back,
+                                 int x1, int y1, int x2, int y2)
+{
+    int col_w = back->col_w;
+    BitArray & col = back->col;
+    for (int y = y1; y < y2; ++y) {
+        int col_y = y * col_w;
+        for (int x = x1; x < x2; ++x) {
+            col.unset(col_y + x);
+        }
+    }
+    int v[4] = {x1, y1, x2, y2};
+    BackgroundItems::const_iterator it;
+    for (it = back->col_items.begin(); it != back->col_items.end(); ++it) {
+        BackgroundItem * item = *it;
+        if (!collides(item->aabb, v))
+            continue;
+        int xx1, yy1, xx2, yy2;
+        intersect(x1, y1, x2, y2,
+                  item->aabb[0], item->aabb[1], item->aabb[2], item->aabb[3],
+                  xx1, yy1, xx2, yy2);
+        int bx1 = item->aabb[0];
+        int by1 = item->aabb[1];
+        int src_x = item->src_x;
+        int src_y = item->src_y;
+        Image * image = item->image;
+        BitArray & alpha = image->alpha;
+        for (int y = yy1; y < yy2; ++y) {
+            int img_y = (src_y + y - by1) * image->width;
+            int col_y = y * col_w;
+            for (int x = xx1; x < xx2; ++x) {
+                if (alpha.get(img_y + (src_x + x - bx1)))
+                    col.set(col_y + x);
+            }
+        }
+    }
+}
+#endif
+
 void Background::destroy_at(int x, int y)
 {
-#ifdef CHOWDREN_PASTE_BROADPHASE
-    int v[4] = {x, y, x+1, y+1};
-    RemoveBackgroundCallback callback(x, y);
-    items.remove_query(v, callback);
-    col_items.remove_query(v, callback);
-#else
     BackgroundItems::iterator it = items.begin();
     while (it != items.end()) {
         BackgroundItem * item = *it;
@@ -262,6 +284,12 @@ void Background::destroy_at(int x, int y)
             ++it;
         }
     }
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+    int x1 = x;
+    int y1 = y;
+    int x2 = x;
+    int y2 = y;
+#endif
     it = col_items.begin();
     while (it != col_items.end()) {
         BackgroundItem * item = *it;
@@ -269,10 +297,21 @@ void Background::destroy_at(int x, int y)
                      item->dest_x + item->src_width,
                      item->dest_y + item->src_height,
                      x, y, x+1, y+1)) {
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+            int * aabb = item->aabb;
+            rect_union(x1, y1, x2, y2,
+                       aabb[0], aabb[1], aabb[2], aabb[3],
+                       x1, y1, x2, y2);
+#endif
             delete item;
             it = col_items.erase(it);
         } else
             ++it;
+    }
+
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+    if (x1 != x2 && y1 != y2) {
+        rebake_collision_map(this, x1, y1, x2, y2);
     }
 #endif
 }
@@ -282,40 +321,11 @@ inline bool compare_aabb(int a[4], int b[4])
     return memcmp(&a[0], &b[0], sizeof(int)*4) == 0;
 }
 
-#ifdef CHOWDREN_PASTE_BROADPHASE
-struct RemoveExactCallback
-{
-    BackgroundItem * item;
-
-    RemoveBackgroundExactCallback(BackgroundItem * item, bool check_image)
-    : item(item)
-    {
-    }
-
-    bool on_callback(void * data)
-    {
-        BackgroundItem * other = (BackgroundItem*)data;
-        if (other == item)
-            return true;
-        if (!compare_aabb(item->aabb, other->aabb) ||
-            (check_image && other->image != img))
-            return true;
-        delete other;
-        return false;
-    }    
-};
-
-inline void remove_paste_item(BackgroundItem * item, Broadphase & broadphase,
-                              bool check_image)
-{
-    RemoveExactCallback callback(item, check_image);
-    broadphase.remove_query(item->aabb, broadphase);
-}
-#else
-inline void remove_paste_item(BackgroundItem * item, BackgroundItems & items,
-                              bool check_image)
+template <bool check_image>
+inline bool remove_paste_item(BackgroundItem * item, BackgroundItems & items)
 {
     BackgroundItems::iterator it = items.begin();
+    bool removed = false;
     while (it != items.end()) {
         BackgroundItem * other = *it;
         if (other == item) {
@@ -329,28 +339,12 @@ inline void remove_paste_item(BackgroundItem * item, BackgroundItems & items,
             continue;
         }
         it = items.erase(it);
+		delete other;
+        removed = true;
     }
-}
 
-inline void remove_contained_item(BackgroundItem * item,
-                                  BackgroundItems & items)
-{
-    BackgroundItems::iterator it = items.begin();
-    while (it != items.end()) {
-        BackgroundItem * other = *it;
-        if (other == item) {
-            ++it;
-            continue;
-        }
-        if (!contains(item->aabb, other->aabb)) {
-            ++it;
-            continue;
-        }
-        it = items.erase(it);
-    }
+    return removed;
 }
-#endif
-
 
 void Background::paste(Image * img, int dest_x, int dest_y,
                        int src_x, int src_y, int src_width, int src_height,
@@ -384,11 +378,7 @@ void Background::paste(Image * img, int dest_x, int dest_y,
         if (collision_type == 3)
             item->flags |= (LADDER_OBSTACLE | BOX_COLLISION);
 
-#ifdef CHOWDREN_PASTE_BROADPHASE
-        col_items.add(item, item->aabb);
-#else
         col_items.push_back(item);
-#endif
 
 #ifndef CHOWDREN_OBSTACLE_IMAGE
         return;
@@ -409,17 +399,25 @@ void Background::paste(Image * img, int dest_x, int dest_y,
     new_paste.push_back(item);
 #endif
 
-#ifdef CHOWDREN_PASTE_BROADPHASE
-    items.add(item, item->aabb);
-#else
     items.push_back(item);
-#endif
 
 #ifdef CHOWDREN_PASTE_PRECEDENCE
     int x1 = std::max(0, dest_x);
     int y1 = std::max(0, dest_y);
     int x2 = std::min(col_w, dest_x + src_width);
     int y2 = std::min(col_h, dest_y + src_height);
+#endif
+
+#ifdef CHOWDREN_PASTE_REMOVE
+    if (collision_type == 0 || collision_type == 4) {
+        if (remove_paste_item<false>(item, col_items)) {
+            rebake_collision_map(this, x1, y1, x2, y2);
+        }
+        return;
+    }
+#endif
+
+#ifdef CHOWDREN_PASTE_PRECEDENCE
     if (collision_type == 0 && color.a == 255) {
         img->upload_texture(); // can't be bothered to handle both cases
         BitArray & alpha = img->alpha;
@@ -445,12 +443,6 @@ void Background::paste(Image * img, int dest_x, int dest_y,
     }
 #endif
 
-#ifdef CHOWDREN_PASTE_REMOVE
-    if (collision_type == 0 || collision_type == 4) {
-        remove_paste_item(item, col_items, false);
-        remove_paste_item(item, items, true);
-    }
-#endif
 }
 
 void Background::draw(Layer * layer, int v[4])
@@ -534,9 +526,6 @@ void Background::draw(Layer * layer, int v[4])
     }
     Render::disable_effect();
 #else
-
-#ifdef CHOWDREN_PASTE_BROADPHASE
-#else
     BackgroundItems::const_iterator it;
     for (it = items.begin(); it != items.end(); ++it) {
         BackgroundItem * item = *it;
@@ -545,12 +534,13 @@ void Background::draw(Layer * layer, int v[4])
         item->draw();
     }
 #endif
-#endif
 }
 
 CollisionBase * Background::collide(CollisionBase * a)
 {
-#ifdef CHOWDREN_PASTE_BROADPHASE
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+    if (::collide(a, &back_col))
+        return &back_col;
 #else
     BackgroundItems::iterator it;
     for (it = col_items.begin(); it != col_items.end(); ++it) {
@@ -558,14 +548,15 @@ CollisionBase * Background::collide(CollisionBase * a)
         if (::collide(a, item))
             return item;
     }
-
-    return NULL;
 #endif
+    return NULL;
 }
 
 CollisionBase * Background::overlaps(CollisionBase * a)
 {
-#ifdef CHOWDREN_PASTE_BROADPHASE
+#ifdef CHOWDREN_PASTE_PRECEDENCE
+    if (::collide(a, &back_col))
+        return &back_col;
 #else
     BackgroundItems::iterator it;
     for (it = col_items.begin(); it != col_items.end(); ++it) {
@@ -575,8 +566,8 @@ CollisionBase * Background::overlaps(CollisionBase * a)
         if (::collide(a, item))
             return item;
     }
-    return NULL;
 #endif
+    return NULL;
 }
 
 // Layer
@@ -1024,9 +1015,11 @@ CollisionBase * Layer::test_background_collision(CollisionBase * a)
         if (ret)
             return ret;
     }
+#ifndef CHOWDREN_NO_BACKDROPS
     BackgroundCallback callback(a);
     if (!broadphase.query_static(a->aabb, callback))
         return callback.other;
+#endif
     return NULL;
 }
 
@@ -2100,11 +2093,13 @@ bool FrameObject::overlaps_background()
 #endif
     }
     flags |= HAS_COLLISION_CACHE;
+#ifndef CHOWDREN_NO_BACKDROPS
     BackgroundOverlapCallback callback(collision);
     if (!layer->broadphase.query_static(collision->proxy, callback)) {
         flags |= HAS_COLLISION;
         return true;
     }
+#endif
     return false;
 }
 

@@ -1,5 +1,6 @@
 from chowdren.writers.events.system import get_loop_index_name
 import re
+import os
 
 def use_deferred_collisions(converter):
     return False
@@ -17,8 +18,11 @@ def init(converter):
     converter.add_define('CHOWDREN_ACTIVE_REPLACE_COLOR')
     converter.add_define('CHOWDREN_ACTIVE_LOAD_SINGLE')
     converter.add_define('CHOWDREN_ACTIVE_LOOPING_APPEARING')
-    converter.add_define('CHOWDREN_SPECIAL_POINT_FILTER')
+    if converter.platform_name != 'android':
+        converter.add_define('CHOWDREN_SPECIAL_POINT_FILTER')
+    converter.add_define('CHOWDREN_PASTE_PRECEDENCE')
     converter.add_define('CHOWDREN_JOYSTICK2_CONTROLLER')
+    converter.add_define('CHOWDREN_NO_BACKDROPS')
     converter.add_define('CHOWDREN_FORCE_X360')
     converter.add_define('CHOWDREN_PASTE_CACHE')
     # converter.add_define('CHOWDREN_PASTE_SMALL_CACHE')
@@ -81,7 +85,7 @@ def use_image_preload(converter):
 def use_image_flush(converter, frame):
     if converter.platform_name != 'android':
         return False
-    return True
+    return frame.name == 'GAME FRAME'
 
 alterable_int_objects = [
     ('SCOREVARIABLES_', [9, 10]),
@@ -217,3 +221,9 @@ except ImportError:
 
 def get_locals(converter):
     return nah.local_dict
+
+def get_audio_preloads(converter):
+    path = os.path.join(os.path.dirname(__file__), 'nahpreloads.py')
+    with open(path, 'rb') as fp:
+        data = eval(fp.read())
+    return data

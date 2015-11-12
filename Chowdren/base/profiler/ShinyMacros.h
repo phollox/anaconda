@@ -53,6 +53,9 @@ extern "C" {
 #define PROFILE_OUTPUT_STREAM(stream)										\
 	ShinyManager_outputToStream(&Shiny_instance, (stream))
 
+#define PROFILE_OUTPUT_WRITE_STREAM(stream)										\
+	ShinyManager_outputToWriteStream(&Shiny_instance, (stream))
+
 #ifdef __cplusplus
 #define PROFILE_GET_TREE_STRING()											\
 	ShinyManager_outputTreeToString(&Shiny_instance)

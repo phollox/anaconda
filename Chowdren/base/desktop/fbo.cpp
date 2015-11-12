@@ -59,7 +59,7 @@ void Framebuffer::destroy()
     fbo_index = -1;
 #else
     if (render_data.last_tex == tex)
-        render_data.last_tex = 0;
+        render_data.last_tex = -1;
     glDeleteTextures(1, &tex);
     glDeleteFramebuffers(1, &fbo);
 #endif
@@ -138,6 +138,7 @@ void Framebuffer::bind()
     render_data.device->SetRenderTarget(0, fbo);
 #else
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    render_data.last_tex = -1;
 #endif
 }
 
@@ -153,6 +154,7 @@ void Framebuffer::unbind()
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     else
         glBindFramebuffer(GL_FRAMEBUFFER, old_fbo->fbo);
+    render_data.last_tex = -1;
 #endif
     current_fbo = old_fbo;
 }

@@ -39,7 +39,7 @@ inline double clamp_sound(double val)
     return std::max(0.0, std::min(val, 100.0));
 }
 
-inline Media::AudioType get_audio_type(const std::string & filename)
+Media::AudioType get_audio_type(const std::string & filename)
 {
     Media::AudioType type;
     if (get_path_ext(filename) == "wav")
@@ -261,9 +261,17 @@ bool Channel::is_stopped()
 static unsigned char * startup_data;
 static unsigned int startup_size;
 
+#ifdef USE_FILE_PRELOAD
+#include "audiopreload.h"
+#endif
+
 void Media::init()
 {
     ChowdrenAudio::open_audio();
+
+#ifdef USE_FILE_PRELOAD
+    preload_audio();
+#endif
 
     double start_time = platform_get_time();
 
@@ -331,9 +339,20 @@ void Media::play(SoundData * data, int channel, int loop)
 void Media::play(const std::string & in, int channel, int loop)
 {
     std::string filename = convert_path(in);
-    size_t size = platform_get_file_size(filename.c_str());
+    size_t size;
+#ifdef USE_FILE_PRELOAD
+    ChowdrenAudio::AudioPreload * preload;
+    preload = ChowdrenAudio::get_audio_preload(filename);
+    if (preload != NULL) {
+        size = preload->size;
+    } else
+#endif
+    {
+        size = platform_get_file_size(filename.c_str());
+    }
     if (size <= 0) {
-        std::cout << "Audio file does not exist: " << filename << std::endl;
+        std::cout << "Audio file does not exist: " << filename
+            << std::endl;
         return;
     }
     AudioType type = get_audio_type(filename);

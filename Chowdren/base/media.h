@@ -26,6 +26,7 @@ class SoundData;
 
 namespace ChowdrenAudio
 {
+    void create_audio_preload(const std::string & path);
     class SoundBase;
 }
 
@@ -107,6 +108,8 @@ public:
     double get_main_volume();
     void set_main_volume(double volume);
 };
+
+Media::AudioType get_audio_type(const std::string & filename);
 
 extern Media media;
 

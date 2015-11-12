@@ -251,15 +251,16 @@ class Backdrop(ObjectWriter):
             raise NotImplementedError
 
     def write_init(self, writer):
-        name_id = 'BACK_ID_' + get_method_name(self.data.name).upper()
-        writer.putraw('#ifdef %s' % name_id)
-        writer.putlnc('manager.frame->back_instances[%s].push_back(this);',
-                      name_id)
-        writer.putraw('#endif')
+        if self.data.name is not None:
+            name_id = 'BACK_ID_' + get_method_name(self.data.name).upper()
+            writer.putraw('#ifdef %s' % name_id)
+            writer.putlnc('manager.frame->back_instances[%s].push_back(this);',
+                          name_id)
+            writer.putraw('#endif')
 
         image = self.converter.get_image(self.common.image)
         writer.putln('image = %s;' % image)
-        if self.data.name.endswith('(DRC)'):
+        if self.data.name and self.data.name.endswith('(DRC)'):
             writer.putraw('#if defined(CHOWDREN_IS_WIIU) || '
                           'defined(CHOWDREN_EMULATE_WIIU)')
             writer.putln('remote = CHOWDREN_REMOTE_TARGET;')

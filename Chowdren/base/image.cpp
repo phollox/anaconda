@@ -325,12 +325,16 @@ const float fbo_texcoords[4] = {
 void Image::draw(int x, int y, Color color,
                  float angle, float scale_x, float scale_y)
 {
+    if (scale_x <= 0.0f || scale_y <= 0.0f)
+        return;
+
     if (tex == 0) {
         upload_texture();
 
         if (tex == 0)
             return;
     }
+
 
     if (angle == 0.0f && scale_x == 1.0f && scale_y == 1.0f) {
         int xx = x - hotspot_x;

@@ -814,7 +814,12 @@ bool GameManager::update()
     if (profile_time <= 0) {
         profile_time += 500;
         PROFILE_UPDATE();
-        PROFILE_OUTPUT("data:/profile.txt");
+        std::string path = SDL_AndroidGetExternalStoragePath();
+        path = path + "/profile.txt";
+        std::cout << "Profile path: " << path << std::endl;
+        FILE * fp = fopen(path.c_str(), "wb");
+        PROFILE_OUTPUT_STREAM(fp);
+        fclose(fp);
     }
 #endif
 

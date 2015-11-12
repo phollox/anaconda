@@ -196,11 +196,12 @@ SHINY_API const char* ShinyManager_getOutputErrorString(ShinyManager *self);
 SHINY_API int ShinyManager_output(ShinyManager *self, const char *a_filename);
 SHINY_API void ShinyManager_outputToFile(ShinyManager *self, void *stream);
 SHINY_API void ShinyManager_outputToStream(ShinyManager *self, FILE *stream);
+SHINY_API void ShinyManager_outputToWriteStream(ShinyManager *self,
+												void *stream);
 
 
 #ifdef __cplusplus
 } /* end of extern "C" */
-
 
 SHINY_INLINE std::string ShinyManager_outputTreeToString(ShinyManager *self) {
 	const char* error = ShinyManager_getOutputErrorString(self);

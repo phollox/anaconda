@@ -373,6 +373,7 @@ const char* ShinyManager_getOutputErrorString(ShinyManager *self) {
 /*---------------------------------------------------------------------------*/
 
 #include "platform.h"
+#include "datastream.h"
 
 int ShinyManager_output(ShinyManager *self, const char *a_filename) {
 	if (!a_filename) {
@@ -456,6 +457,42 @@ void ShinyManager_outputToFile(ShinyManager *self, void * in_stream) {
 		ShinyPrintNodes(buffer, &self->rootNode);
 		a_stream->write(buffer, size - 1);
 		a_stream->write((void*)"\n\n", 2);
+		free(buffer);
+	}
+#endif
+}
+
+void ShinyManager_outputToWriteStream(ShinyManager *self,
+									  void * in_stream) {
+	WriteStream * a_stream = (WriteStream*)in_stream;
+	const char *error = ShinyManager_getOutputErrorString(self);
+
+	if (error) {
+		a_stream->write(error, strlen(error));
+		a_stream->write("\n\n", 2);
+		return;
+	}
+
+#if SHINY_OUTPUT_MODE & SHINY_OUTPUT_MODE_FLAT
+	ShinyManager_sortZones(self);
+
+	{
+		int size = ShinyPrintZonesSize(self->zoneCount);
+		char *buffer = (char*) malloc(size);
+		ShinyPrintZones(buffer, &self->rootZone);
+		a_stream->write(buffer, size - 1);
+		a_stream->write("\n\n", 2);
+		free(buffer);
+	}
+#endif
+
+#if SHINY_OUTPUT_MODE & SHINY_OUTPUT_MODE_TREE
+	{
+		int size = ShinyPrintNodesSize(self->nodeCount);
+		char *buffer = (char*) malloc(size);
+		ShinyPrintNodes(buffer, &self->rootNode);
+		a_stream->write(buffer, size - 1);
+		a_stream->write("\n\n", 2);
 		free(buffer);
 	}
 #endif

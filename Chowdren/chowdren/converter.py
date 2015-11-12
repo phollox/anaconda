@@ -72,7 +72,7 @@ from chowdren.runinfo import RunInfo
 
 WRITE_SOUNDS = True
 PROFILE = False
-PROFILE_GROUPS = PROFILE and True
+PROFILE_GROUPS = PROFILE and False
 PROFILE_DRAW = PROFILE and False
 PROFILE_EVENTS = PROFILE and False
 PROFILE_OBJECTS = PROFILE and False
@@ -232,6 +232,14 @@ class EventContainer(object):
         self.end_label = '%s_end' % self.code_name
         self.check_ids = itertools.count()
         converter.config.init_container(self)
+
+    def get_dynamics(self):
+        containers = set()
+        for container in self.tree:
+            if container.is_static:
+                continue
+            containers.add(container)
+        return containers
 
     def add_child(self, child):
         self.children.append(child)
@@ -560,7 +568,13 @@ def fix_sound(data, extension):
     data = str(data)
     if extension != 'wav':
         return data
-    wav = wave.open(StringIO(data), 'rb')
+    try:
+        wav = wave.open(StringIO(data), 'rb')
+    except wave.Error:
+        print 'Could not convert wave. Probably ADPCM?'
+        with open('unsupported/%s.wav' % hash(data), 'wb') as fp:
+            fp.write(data)
+        return data
     channels, width, rate, frame_count, comptype, compname = wav.getparams()
     if width == 2:
         return data
@@ -594,7 +608,6 @@ class Converter(object):
         self.event_hash_id = 0
 
         self.clear_selection()
-        self.container_tree = []
         self.collision_objects = set()
         self.iterated_index = self.iterated_object = self.iterated_name = None
         self.in_actions = self.in_condition_expression = False
@@ -1062,6 +1075,16 @@ class Converter(object):
         frames_file.end_brace()
 
         frames_file.close()
+
+        preload_file = self.open_code('audiopreload.h')
+        preload_file.putln('#include "media.h"')
+
+        preload_file.putmeth('void preload_audio')
+        for path in self.config.get_audio_preloads():
+            preload_file.putlnc('ChowdrenAudio::create_audio_preload(%r);',
+                                path)
+        preload_file.end_brace()
+        preload_file.close()
 
         strings_file = self.open_code('intern.cpp')
         strings_file.putlnc('#include <string>')
@@ -1944,11 +1967,9 @@ class Converter(object):
                     event_file.putln('if (!%s) goto %s;' % (
                         container.code_name, container.end_label))
                     end_markers.insert(0, container.end_label)
-                    self.container_tree.insert(0, container)
                 elif group.mark == 'GroupEnd':
                     end_markers.remove(container.end_label)
                     event_file.put_label(container.end_label)
-                    self.container_tree.remove(container)
 
                     if PROFILE_GROUPS:
                         event_file.putlnc('PROFILE_END();')
@@ -2667,6 +2688,7 @@ class Converter(object):
     def write_events(self, name, writer, groups, triggered=False,
                      pre_calls=None, post_calls=None):
         names = pre_calls or []
+        containers = [None] * len(names)
         selections = self.has_single_selection
         col_objs = self.collision_objects
         for new_groups in self.iterate_groups(groups):
@@ -2674,6 +2696,7 @@ class Converter(object):
             self.collision_objects = col_objs
             names.append(self.write_event_function(writer, new_groups,
                                                    triggered))
+            containers.append(new_groups[0].container)
 
         if post_calls is not None:
             names.extend(post_calls)
@@ -2687,7 +2710,26 @@ class Converter(object):
             self.event_wrappers[wrapper_hash] = name
 
         writer.putmeth('void %s' % name)
-        for event_name in names:
+        names.append(None)
+        containers.append(None)
+        current_tree = set()
+        for event_index, event_name in enumerate(names):
+            container = containers[event_index]
+            if container is None:
+                container_tree = set()
+            else:    
+                container_tree = container.get_dynamics()
+            new_containers = container_tree - current_tree
+            old_containers = current_tree - container_tree
+            current_tree = container_tree
+            for container in old_containers:
+                writer.put_label(container.end_label)
+            for container in new_containers:
+                writer.putlnc('if (!%s) goto %s;',
+                              container.code_name,
+                              container.end_label)
+            if event_name is None:
+                continue
             writer.putlnc('%s();', event_name)
         writer.end_brace()
         return name
@@ -3254,17 +3296,17 @@ class Converter(object):
         set_lists = []
 
         for obj in objs:
+            single = self.get_single(obj)
+            if single is not None:
+                print 'using single for clear list'
+                writer.putlnc('%s.select_single_check(%s);',
+                              self.object_lists[obj + (self.game_index,)],
+                              single)
+                has_col = True
+                continue
             if self.has_common_objects(obj, self.has_selection):
                 has_col = True
             else:
-                single = self.get_single(obj)
-                if single is not None:
-                    print 'using single for clear list'
-                    writer.putlnc('%s.select_single_check(%s);',
-                                  self.object_lists[obj + (self.game_index,)],
-                                  single)
-                    has_col = True
-                    continue
                 clear_lists.add(self.get_object_list(obj))
             set_lists.append(obj)
 
@@ -3425,7 +3467,7 @@ class Converter(object):
         except Exception, e:
             data = self.get_object_writer(obj).data
             name = self.get_type_name(data.objectType)
-            # print name
+            print name
             raise e
 
     def get_object_class(self, object_type, star=True):
