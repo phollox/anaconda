@@ -538,6 +538,12 @@ class SystemObject(ObjectWriter):
                     else:
                         post_calls.append(func_name)
 
+            extra_pre_calls = self.converter.config.prepare_loop_body(name,
+                                                                      writer,
+                                                                      groups)
+            if extra_pre_calls is not None:
+                pre_calls = extra_pre_calls + (pre_calls or [])
+
             loop_name = self.converter.write_generated(
                 loop_name, writer, groups, pre_calls, post_calls)
             self.loop_funcs[name.lower()] = loop_name
@@ -1252,15 +1258,11 @@ class CreateBase(ActionWriter):
 
         has_selection = object_info in self.converter.has_selection
         select_single = (not multi and parent_info is not None
-                         and not has_selection)
+                         and not has_selection and parent_info != object_info)
         single_name = 'single_instance_%s' % self.get_id(self)
         if select_single:
             writer.putlnc('FrameObject * %s; %s = NULL;', single_name,
                           single_name)
-        if select_single:
-            class_name = self.converter.get_object_class(object_info[1])
-            self.converter.set_object(object_info,
-                                      '((%s)%s)' % (class_name, single_name))
 
         if object_info != parent_info and (not has_selection and
                                            not select_single):
@@ -1285,8 +1287,9 @@ class CreateBase(ActionWriter):
         if single_parent:
             parent = single_parent
         elif parent_info is not None:
+            copy = object_info == parent_info
             self.converter.start_object_iteration(parent_info, writer, 'p_it',
-                                                  copy=False)
+                                                  copy=copy)
             writer.putlnc('FrameObject * parent = %s;',
                           self.converter.get_object(parent_info))
             parent = 'parent'
@@ -1335,7 +1338,7 @@ class CreateBase(ActionWriter):
                 writer.indent()
                 writer.putlnc('%s = new_obj;', single_name)
                 writer.dedent()
-            else:
+            elif object_info != parent_info:
                 writer.putlnc('%s.add_back();', list_name)
             if is_shoot:
                 self.converter.get_object_writer(object_info).has_shoot = True
@@ -1366,6 +1369,11 @@ class CreateBase(ActionWriter):
                                          writer)
             writer.putlnc('%s->destroy();', single_name)
             writer.end_brace()
+
+        if select_single:
+            class_name = self.converter.get_object_class(object_info[1])
+            self.converter.set_object(object_info,
+                                      '((%s)%s)' % (class_name, single_name))
 
         if False: # action_name == 'DisplayText':
             paragraph = parameters[1].loader.value
@@ -1929,6 +1937,9 @@ class SetSemiTransparency(ActionWriter):
             value = self.convert_index(0)
             writer.putlnc('%s->blend_color.set_semi_transparency(%s);',
                           obj, value)
+            # because this is not consistent between F2.5 and MMF2
+            if self.converter.config.use_transparency_shader_reset():
+                writer.putlnc('%s->set_shader(Render::NONE);', obj)
 
 class SetEffect(ActionWriter):
     custom = True
@@ -2102,7 +2113,7 @@ class ToString(ExpressionWriter):
         converter = self.converter
         next = converter.expression_items[converter.item_index + 1].getName()
         if next == 'FixedValue':
-            return 'std::string('
+            return 'chowstring('
         return 'number_to_string('
 
 class GetLoopIndex(ExpressionWriter):
@@ -2149,6 +2160,9 @@ class GetSamplePosition(SampleExpression):
 
 class GetSampleDuration(SampleExpression):
     value = 'media.get_sample_duration'
+
+class GetSampleFrequency(SampleExpression):
+    value = 'media.get_sample_frequency'
 
 class CurrentFrame(ExpressionWriter):
     def get_string(self):
@@ -2260,7 +2274,7 @@ actions = make_table(ActionMethodWriter, {
     'ExecuteEvaluatedProgram' : 'open_process',
     'HideCursor' : 'set_cursor_visible(false)',
     'ShowCursor' : 'set_cursor_visible(true)',
-    'FullscreenMode' : 'set_fullscreen(true)',
+    'FullscreenMode' : 'manager.set_window(true)',
     'NextFrame' : NextFrame,
     'PreviousFrame' : PreviousFrame,
     'MoveToLayer' : 'set_layer(%s-1)',
@@ -2306,6 +2320,8 @@ actions = make_table(ActionMethodWriter, {
     'SetSamplePosition' : 'media.set_sample_position(%s, %s)',
     'SetSampleVolume' : 'media.set_sample_volume(%s, %s)',
     'SetSampleFrequency' : 'media.set_sample_frequency(%s, %s)',
+    'PauseSample' : 'media.pause_sample(%s)',
+    'ResumeSample' : 'media.resume_sample(%s)',
     'NextParagraph' : 'next_paragraph',
     'PauseApplication' : 'pause',
     'SetRandomSeed' : 'set_random_seed',
@@ -2542,6 +2558,7 @@ expressions = make_table(ExpressionMethodWriter, {
     'GetSampleVolume' : GetSampleVolume,
     'GetSamplePosition' : GetSamplePosition,
     'GetSampleDuration' : GetSampleDuration,
+    'GetSampleFrequency' : GetSampleFrequency,
     'GetChannelVolume' : '.media.get_channel_volume(-1 +',
     'GetChannelDuration' : '.media.get_channel_duration(-1 + ',
     'GetChannelFrequency' : '.media.get_channel_frequency(-1 + ',

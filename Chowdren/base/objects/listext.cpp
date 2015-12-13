@@ -26,13 +26,13 @@ ListObject::ListObject(int x, int y, int type_id)
 
 }
 
-void ListObject::load_file(const std::string & name)
+void ListObject::load_file(const chowstring & name)
 {
-    std::string data;
+    chowstring data;
     if (!read_file(name.c_str(), data))
         return;
     StringStream ss(data);
-    std::string line;
+    chowstring line;
     while (!ss.at_end()) {
         ss.read_line(line);
         add_line(line);
@@ -55,7 +55,7 @@ void ListObject::clear()
     lines.clear();
 }
 
-void ListObject::add_line(const std::string & value)
+void ListObject::add_line(const chowstring & value)
 {
     lines.push_back(value);
 
@@ -63,7 +63,7 @@ void ListObject::add_line(const std::string & value)
         sort();
 }
 
-const std::string & ListObject::get_line(int i)
+const chowstring & ListObject::get_line(int i)
 {
     i += index_offset;
     if (i < 0 || i >= int(lines.size()))
@@ -71,12 +71,12 @@ const std::string & ListObject::get_line(int i)
     return lines[i];
 }
 
-const std::string & ListObject::get_current_line()
+const chowstring & ListObject::get_current_line()
 {
     return get_line(current_line);
 }
 
-int ListObject::find_string(const std::string & text, int flag)
+int ListObject::find_string(const chowstring & text, int flag)
 {
 #ifndef NDEBUG
     if (flag != -1)
@@ -89,7 +89,7 @@ int ListObject::find_string(const std::string & text, int flag)
     return -1;
 }
 
-int ListObject::find_string_exact(const std::string & text, int flag)
+int ListObject::find_string_exact(const chowstring & text, int flag)
 {
 #ifndef NDEBUG
     if (flag != -1)
@@ -102,7 +102,7 @@ int ListObject::find_string_exact(const std::string & text, int flag)
     return -1;
 }
 
-void ListObject::set_line(int line, const std::string & value)
+void ListObject::set_line(int line, const chowstring & value)
 {
     line += index_offset;
     if (line < 0 || line >= int(lines.size()))
@@ -252,13 +252,13 @@ inline int compare_weights1(const char * str1, int len1,
     return len1 - len2;
 }
 
-inline bool list_sort(const std::string & a, const std::string & b)
+inline bool list_sort(const chowstring & a, const chowstring & b)
 {
     int len1 = int(a.size());
     int len2 = int(b.size());
-    int ret = compare_weights1(&a[0], len1, &b[0], len2);
+    int ret = compare_weights1(a.data(), len1, b.data(), len2);
     if (!ret)
-        ret = compare_weights2(&a[0], len1, &b[0], len2);
+        ret = compare_weights2(a.data(), len1, b.data(), len2);
     return ret < 0;
 }
 

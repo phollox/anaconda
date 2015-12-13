@@ -19,14 +19,15 @@
 #define CHOWDREN_MEDIA_H
 
 #include "assetfile.h"
+#include "chowconfig.h"
 
-void set_sounds_path(const std::string & path);
+void set_sounds_path(const chowstring & path);
 
 class SoundData;
 
 namespace ChowdrenAudio
 {
-    void create_audio_preload(const std::string & path);
+    void create_audio_preload(const chowstring & path);
     class SoundBase;
 }
 
@@ -58,6 +59,7 @@ class Media
 {
 public:
     SoundData * sounds[SOUND_ARRAY_SIZE];
+
     Channel channels[32];
 
     enum AudioType
@@ -71,7 +73,7 @@ public:
     void init();
     void stop();
     void play(SoundData * data, int channel = -1, int loop = 1);
-    void play(const std::string & filename, int channel = -1, int loop = 1);
+    void play(const chowstring & filename, int channel = -1, int loop = 1);
     void play_id(unsigned int id, int channel = -1, int loop = 1);
     void lock(unsigned int channel);
     void unlock(unsigned int channel);
@@ -89,6 +91,9 @@ public:
     double get_sample_volume(unsigned int id);
     double get_sample_position(unsigned int id);
     double get_sample_duration(unsigned int id);
+    double get_sample_frequency(unsigned int id);
+    void pause_sample(unsigned int id);
+    void resume_sample(unsigned int id);
     void stop_sample(unsigned int id);
     void stop_samples();
     void pause_samples();
@@ -102,14 +107,14 @@ public:
     bool is_sample_playing(unsigned int id);
     bool is_channel_playing(unsigned int channel);
     bool is_channel_valid(unsigned int channel);
-    void add_file(unsigned int id, const std::string & fn);
+    void add_file(unsigned int id, const chowstring & fn);
     void add_cache(unsigned int id, FSFile & fp);
     void add_cache(unsigned int id);
     double get_main_volume();
     void set_main_volume(double volume);
 };
 
-Media::AudioType get_audio_type(const std::string & filename);
+Media::AudioType get_audio_type(const chowstring & filename);
 
 extern Media media;
 

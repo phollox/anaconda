@@ -49,7 +49,7 @@ void ArrayObject::initialize(bool numeric, int offset, int x, int y, int z)
 #define TEXT_FLAG 2
 #define BASE1_FLAG 4
 
-void ArrayObject::load(const std::string & filename)
+void ArrayObject::load(const chowstring & filename)
 {
     FSFile fp(convert_path(filename).c_str(), "r");
     if (!fp.is_open()) {
@@ -59,7 +59,7 @@ void ArrayObject::load(const std::string & filename)
 
     FileStream stream(fp);
 
-    std::string magic;
+    chowstring magic;
     stream.read_string(magic, sizeof(CT_ARRAY_MAGIC));
 
     if (magic.compare(0, sizeof(CT_ARRAY_MAGIC),
@@ -104,7 +104,7 @@ void ArrayObject::load(const std::string & filename)
     fp.close();
 }
 
-void ArrayObject::save(const std::string & filename)
+void ArrayObject::save(const chowstring & filename)
 {
     FSFile fp(convert_path(filename).c_str(), "w");
     if (!fp.is_open())
@@ -146,7 +146,7 @@ ArrayNumber ArrayObject::get_value(int x, int y, int z)
     return data.array[get_index(x, y, z)];
 }
 
-const std::string & ArrayObject::get_string(int x, int y, int z)
+const chowstring & ArrayObject::get_string(int x, int y, int z)
 {
     adjust_pos(x, y, z);
     if (!is_valid(x, y, z))
@@ -161,7 +161,7 @@ void ArrayObject::set_value(ArrayNumber value, int x, int y, int z)
     data.array[get_index(x, y, z)] = value;
 }
 
-void ArrayObject::set_string(const std::string & value, int x, int y, int z)
+void ArrayObject::set_string(const chowstring & value, int x, int y, int z)
 {
     adjust_pos(x, y, z);
     expand(x, y, z);
@@ -204,13 +204,13 @@ void ArrayObject::expand(int x, int y, int z)
         }
         delete[] old_array;
     } else {
-        std::string * old_array = data.strings;
+        chowstring * old_array = data.strings;
         data.strings = NULL;
         clear();
         for (int x = 0; x < old_x; x++)
         for (int y = 0; y < old_y; y++)
         for (int z = 0; z < old_z; z++) {
-            const std::string & value = old_array[x + y * old_x +
+            const chowstring & value = old_array[x + y * old_x +
                                                   z * old_x * old_y];
             data.strings[get_index(x, y, z)] = value;
         }
@@ -239,7 +239,7 @@ void ArrayObject::clear()
                                      data.z_size]();
     } else {
         delete[] data.strings;
-        data.strings = new std::string[data.x_size *
+        data.strings = new chowstring[data.x_size *
                                        data.y_size *
                                        data.z_size];
     }

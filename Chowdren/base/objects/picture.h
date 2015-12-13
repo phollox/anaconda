@@ -19,7 +19,7 @@
 #define CHOWDREN_PICTURE_H
 
 #include "frameobject.h"
-#include <string>
+#include "chowstring.h"
 #include "image.h"
 #include "collision.h"
 #include "types.h"
@@ -39,7 +39,7 @@ public:
 
     Image * image;
     unsigned int picture_flags;
-    std::string filename;
+    chowstring filename;
     TransparentColor transparent_color;
     float scale_x, scale_y;
     int angle;
@@ -51,7 +51,7 @@ public:
 
     ActivePicture(int x, int y, int type_id);
     ~ActivePicture();
-    void load(const std::string & fn);
+    void load(const chowstring & fn);
     void set_transparent_color(const Color & color);
     void set_hotspot(int x, int y);
     void set_hotspot_mul(float x, float y);

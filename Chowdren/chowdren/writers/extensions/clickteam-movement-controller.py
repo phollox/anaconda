@@ -48,6 +48,10 @@ class GetDistance(ExpressionMethodWriter):
     method = 'get_distance'
     has_object = False
 
+class GetAngle(ExpressionMethodWriter):
+    method = 'get_angle'
+    has_object = False
+
 actions = make_table(StaticActionWriter, {
     51 : VectorLookAt,
     56 : SetVectorSpeed,
@@ -59,7 +63,8 @@ conditions = make_table(StaticConditionWriter, {
 
 expressions = make_table(StaticExpressionWriter, {
     56 : GetDistance,
-    57 : 'get_object_angle'
+    57 : 'get_object_angle',
+    58 : GetAngle
 })
 
 def get_object():

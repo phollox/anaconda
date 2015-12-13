@@ -42,6 +42,7 @@ GameManager manager;
 #include "media.h"
 #include "crashdump.cpp"
 #include "transition.cpp"
+#include "debugdraw.h"
 
 #if defined(CHOWDREN_IS_DESKTOP) || defined(CHOWDREN_IS_ANDROID)
 #include "SDL.h"
@@ -55,11 +56,20 @@ GameManager manager;
 #include "gui/gwen.h"
 #endif
 
+#ifdef CHOWDREN_USE_MODFUSION
+#include "objects/modfusion.h"
+#endif
+
+#ifdef CHOWDREN_NL2_CONSOLE
+#include "custom/nl2.h"
+NL2Handler nl2_handler;
+#endif
+
 // #define CHOWDREN_USER_PROFILER
 
 #if !defined(NDEBUG)
 #define CHOWDREN_SHOW_DEBUGGER
-#define SHOW_STATS
+// #define SHOW_STATS
 #endif
 
 GameManager::GameManager()
@@ -143,6 +153,11 @@ void GameManager::init()
     start_frame = 0;
     // values->set(1, 2);
     // values->set(12, 2);
+#elif defined(CHOWDREN_IS_NL2)
+    // values->set(17, 1);
+    // values->set(22, 2);
+    // values->set(24, 1);
+    // start_frame = 2;
 #elif defined(CHOWDREN_IS_NAH)
     platform_set_scale_type(2);
     start_frame = 0;
@@ -153,7 +168,7 @@ void GameManager::init()
 #else
     start_frame = 0;
 #endif
-
+    
 #ifdef NDEBUG
     set_frame(0);
 #else
@@ -225,11 +240,19 @@ void GameManager::on_key(int key, bool state)
 
 void GameManager::on_mouse(int key, bool state)
 {
+#ifdef CHOWDREN_NL2_CONSOLE
+    nl2_handler.on_mouse(key, state);
+    return;
+#endif
+
     if (state)
         mouse.add(key);
     else
         mouse.remove(key);
 }
+
+static float last_events = 0.0f;
+static float last_draw = 0.0f;
 
 int GameManager::update_frame()
 {
@@ -238,19 +261,23 @@ int GameManager::update_frame()
 #endif
     double dt = fps_limit.dt;
 
-// #ifdef SHOW_STATS
-//     if (dt > (1.2 / fps_limit.framerate)) {
-//         std::cout << "Bad frame: " << dt << " " << (1.0 / dt) << std::endl;
-//         std::cout << last_events << " " << last_draw << std::endl;
-//     }
-// #endif
-
+#ifdef SHOW_STATS
+    if (dt > (1.2 / fps_limit.framerate)) {
+        std::cout << "Bad frame: " << dt << " " << (1.0 / dt) << std::endl;
+        std::cout << last_events << " " << last_draw << std::endl;
+    }
+#endif
 
 #ifdef CHOWDREN_SUBAPP_FRAMES
     int w, h;
     platform_get_size(&w, &h);
     frame->display_width = w;
     frame->display_height = h;
+#endif
+
+#ifdef CHOWDREN_USE_MODFUSION
+    // XXX make this much more general
+    ModFusion::update();
 #endif
 
     if (fade_dir != 0.0f) {
@@ -373,16 +400,30 @@ void GameManager::draw()
         }
     }
 #elif CHOWDREN_IS_3DS
-    platform_set_display_target(CHOWDREN_TV_TARGET);
-    render_frame->draw(CHOWDREN_TV_TARGET);
-    draw_fade();
-
-    // only draw 30 fps on bottom screen
+    static bool swap_screens = true;
     static int draw_interval = 0;
-    if (draw_interval == 0) {
+    if (swap_screens) {
+        // only draw 30 fps on top screen
+        if (draw_interval == 0) {
+            platform_set_display_target(CHOWDREN_TV_TARGET);
+            render_frame->draw(CHOWDREN_REMOTE_TARGET);
+            draw_fade();
+        }
+
         platform_set_display_target(CHOWDREN_REMOTE_TARGET);
-        render_frame->draw(CHOWDREN_REMOTE_TARGET);
+        render_frame->draw(CHOWDREN_TV_TARGET);
         draw_fade();
+    } else {
+        platform_set_display_target(CHOWDREN_TV_TARGET);
+        render_frame->draw(CHOWDREN_TV_TARGET);
+        draw_fade();
+
+        // only draw 30 fps on bottom screen
+        if (draw_interval == 0) {
+            platform_set_display_target(CHOWDREN_REMOTE_TARGET);
+            render_frame->draw(CHOWDREN_REMOTE_TARGET);
+            draw_fade();
+        }
     }
     draw_interval = (draw_interval + 1) % 3;
 #else
@@ -401,11 +442,31 @@ void GameManager::draw()
     Render::set_offset(0, 0);
 #endif
 
+#ifdef USE_DEBUGDRAW
+    static vector<double> dt_window;
+    dt_window.push_back(fps_limit.dt);
+    if (dt_window.size() > 5) {
+        dt_window.erase(dt_window.begin());
+    }
+    double dt_full = 0.0;
+    for (unsigned int i = 0; i < dt_window.size(); ++i) {
+        dt_full += dt_window[i];
+    }
+    dt_full /= dt_window.size();
+    unsigned int fps = (int)(1 / dt_full);
+    Debug::print("FPS: " + number_to_string(fps));
+    static unsigned int under_50 = 0;
+    if (1.0 / fps_limit.dt < 40.0)
+        under_50++;
+    Debug::print("Frames under 40 FPS: " + number_to_string(under_50));
+    Debug::draw();
+#endif
+
 #ifdef CHOWDREN_IS_DEMO
     if (show_build_timer > 0.0) {
-        std::string date(__DATE__);
-        std::string tim(__TIME__);
-        std::string val = date + " " + tim;
+        chowstring date(__DATE__);
+        chowstring tim(__TIME__);
+        chowstring val = date + " " + tim;
         glPushMatrix();
         glTranslatef(50, 50, 0);
         glScalef(5, -5, 5);
@@ -461,8 +522,8 @@ void GameManager::set_frame(int index)
     std::cout << "Setting frame: " << index << std::endl;
 
 #ifdef CHOWDREN_USER_PROFILER
-    std::string logline = "Setting frame: " + number_to_string(index) + "\n";
-    user_log.write(&logline[0], logline.size());
+    chowstring logline = "Setting frame: " + number_to_string(index) + "\n";
+    user_log.write(logline.data(), logline.size());
 #endif
 
     frame->set_index(index);
@@ -526,7 +587,7 @@ void GameManager::set_deadzone(float value)
     deadzone = value;
 }
 
-void GameManager::simulate_key(const std::string & key)
+void GameManager::simulate_key(const chowstring & key)
 {
     int key_int = -1;
     if (!key.empty())
@@ -553,7 +614,7 @@ void GameManager::simulate_key(int key_int)
     simulate_count++;
 }
 
-void GameManager::map_button(int button, const std::string & key)
+void GameManager::map_button(int button, const chowstring & key)
 {
     if (button >= UNIFIED_AXIS_0 && button < UNIFIED_POV_0) {
         button = button - UNIFIED_AXIS_0;
@@ -590,8 +651,8 @@ void GameManager::map_button(int button, const std::string & key)
 }
 
 void GameManager::map_axis(int axis,
-                           const std::string & neg,
-                           const std::string & pos)
+                           const chowstring & neg,
+                           const chowstring & pos)
 {
     axis++;
     if (axis == CHOWDREN_AXIS_INVALID || axis >= CHOWDREN_AXIS_MAX)
@@ -749,6 +810,10 @@ bool GameManager::update()
     // update mouse position
     platform_get_mouse_pos(&mouse_x, &mouse_y);
 
+#ifdef CHOWDREN_NL2_CONSOLE
+    nl2_handler.update();
+#endif
+
 #ifdef SHOW_STATS
     if (show_stats)
         std::cout << "Framerate: " << fps_limit.current_framerate
@@ -763,8 +828,10 @@ bool GameManager::update()
 
         int ret = update_frame();
 
+        double events_dt = platform_get_time() - event_update_time;
+        last_events = events_dt;
 #ifdef CHOWDREN_USER_PROFILER
-        ss << (platform_get_time() - event_update_time) << " ";
+        ss << events_dt << " ";
 #endif
 #ifdef SHOW_STATS
         if (show_stats)
@@ -785,14 +852,14 @@ bool GameManager::update()
 
     draw();
 
+    double draw_dt = platform_get_time() - draw_time;
+    last_draw = draw_dt;
 #ifdef CHOWDREN_USER_PROFILER
-    ss << (platform_get_time() - draw_time) << " ";
+    ss << draw_dt << " ";
 #endif
-
 #ifdef SHOW_STATS
     if (show_stats) {
-        std::cout << "Draw took " << platform_get_time() - draw_time
-            << std::endl;
+        std::cout << "Draw took " << draw_dt << std::endl;
 #ifndef NDEBUG
         print_instance_stats();
 #endif
@@ -804,8 +871,8 @@ bool GameManager::update()
 
 #ifdef CHOWDREN_USER_PROFILER
     ss << "\n";
-    std::string logline = ss.str();
-    user_log.write(&logline[0], logline.size());
+    chowstring logline = ss.str();
+    user_log.write(logline.data(), logline.size());
 #endif
 
 #ifdef CHOWDREN_USE_PROFILER
@@ -814,12 +881,16 @@ bool GameManager::update()
     if (profile_time <= 0) {
         profile_time += 500;
         PROFILE_UPDATE();
-        std::string path = SDL_AndroidGetExternalStoragePath();
+#ifdef CHOWDREN_IS_ANDROID
+        chowstring path = SDL_AndroidGetExternalStoragePath();
         path = path + "/profile.txt";
         std::cout << "Profile path: " << path << std::endl;
         FILE * fp = fopen(path.c_str(), "wb");
         PROFILE_OUTPUT_STREAM(fp);
         fclose(fp);
+#else
+        PROFILE_OUTPUT("data:/profile.txt");
+#endif
     }
 #endif
 

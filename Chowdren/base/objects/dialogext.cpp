@@ -21,11 +21,11 @@
 #include "platform.h"
 #include "manager.h"
 
-static std::string title;
-static std::string text;
+static chowstring title;
+static chowstring text;
 
-static std::string path;
-static std::string default_path;
+static chowstring path;
+static chowstring default_path;
 
 static Frame * file_dialog_frame = NULL;
 static unsigned int file_dialog_loop_count = 0;
@@ -37,12 +37,12 @@ static DialogType dialog_type = DIALOG_OK;
 static unsigned int dialog_id = -1;
 static bool dialog_result;
 
-void DialogObject::set_title(const std::string & value)
+void DialogObject::set_title(const chowstring & value)
 {
     title = value;
 }
 
-void DialogObject::set_text(const std::string & value)
+void DialogObject::set_text(const chowstring & value)
 {
     text = value;
 }
@@ -75,34 +75,34 @@ void DialogObject::set_topmost()
     std::cout << "DialogObject::set_topmost not implemented" << std::endl;
 }
 
-void DialogObject::set_filter(const std::string & filter, int count)
+void DialogObject::set_filter(const chowstring & filter, int count)
 {
     std::cout << "DialogObject::set_filter not implemented: "
         << filter << " " << count << std::endl;
 }
 
-void DialogObject::set_default_filename(const std::string & filename)
+void DialogObject::set_default_filename(const chowstring & filename)
 {
     std::cout << "DialogObject::set_default_filename not implemented"
         << filename << std::endl;
     default_path = filename;
 }
 
-void DialogObject::set_default_extension(const std::string & ext)
+void DialogObject::set_default_extension(const chowstring & ext)
 {
     std::cout << "DialogObject::set_default_extension not implemented"
         << ext << std::endl;
 }
 
-void DialogObject::set_default_directory(const std::string & dir)
+void DialogObject::set_default_directory(const chowstring & dir)
 {
     std::cout << "DialogObject::set_default_directory not implemented"
         << dir << std::endl;
 }
 
-void DialogObject::open_load_selector(const std::string & dir)
+void DialogObject::open_load_selector(const chowstring & dir)
 {
-    vector<std::string> names;
+    vector<chowstring> names;
     file_dialog_frame = NULL;
     path.clear();
     if (!platform_file_open_dialog(title, "", dir, false, names))
@@ -112,7 +112,7 @@ void DialogObject::open_load_selector(const std::string & dir)
     path = names[0];
 }
 
-void DialogObject::open_save_selector(const std::string & dir)
+void DialogObject::open_save_selector(const chowstring & dir)
 {
     path.clear();
     if (!platform_file_save_dialog(title, "", dir, path))
@@ -158,7 +158,7 @@ bool DialogObject::is_failure(unsigned int id)
     return !dialog_result;
 }
 
-const std::string & DialogObject::get_path()
+const chowstring & DialogObject::get_path()
 {
     return path;
 }

@@ -21,14 +21,14 @@
 #include "Gwen/Gwen.h"
 #include "Gwen/Skins/Simple.h"
 #include "Gwen/Renderers/Chowdren.h"
-#include <string>
+#include "chowstring.h"
 
 class GwenData
 {
 public:
     int m_x, m_y;
 
-    std::string title;
+    chowstring title;
 
     Gwen::Controls::Canvas * canvas;
     Gwen::Controls::Base * frame_base;

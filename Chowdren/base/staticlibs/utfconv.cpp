@@ -18,13 +18,13 @@
 #include "utfconv.h"
 #include "utf8/unchecked.h"
 
-void convert_utf8_to_utf16(const std::string & value, std::string & out)
+void convert_utf8_to_utf16(const chowstring & value, chowstring & out)
 {
     if (value.empty()) {
         out.resize(0);
         return;
     }
-    unsigned char * source = (unsigned char*)&value[0];
+    unsigned char * source = (unsigned char*)value.data();
     unsigned char * end = source + value.size();
     out.resize(value.size() * 2);
 
@@ -41,7 +41,7 @@ void convert_utf8_to_utf16(const std::string & value, std::string & out)
     out.resize((unsigned long)(res_c - target_c));
 }
 
-void convert_utf16_to_utf8(const std::string & value, std::string & out)
+void convert_utf16_to_utf8(const chowstring & value, chowstring & out)
 {
     if (value.empty()) {
         out.resize(0);
@@ -55,8 +55,8 @@ void convert_utf16_to_utf8(const std::string & value, std::string & out)
         unsigned short * end;
         unsigned char * end_c;
     };
-    source_c = (unsigned char*)&value[0];
-    end_c = (unsigned char*)(&value[0] + value.size());
+    source_c = (unsigned char*)value.data();
+    end_c = (unsigned char*)(value.data() + value.size());
     if (value.size() >= 2 && (unsigned char)value[0] == 0xFF
         && (unsigned char)value[1] == 0xFE)
     {
@@ -68,9 +68,9 @@ void convert_utf16_to_utf8(const std::string & value, std::string & out)
     out.resize((unsigned long)(res - target));
 }
 
-void convert_windows1252_to_utf8(const std::string & value, std::string & out)
+void convert_windows1252_to_utf8(const chowstring & value, chowstring & out)
 {
-    std::string::const_iterator it;
+    chowstring::const_iterator it;
     out.clear();
     for (it = value.begin(); it != value.end(); ++it) {
         char c = *it;

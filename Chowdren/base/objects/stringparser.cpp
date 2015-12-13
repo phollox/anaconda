@@ -26,7 +26,7 @@ StringParser::StringParser(int x, int y, int id)
 
 }
 
-void StringParser::add_delimiter(const std::string & v)
+void StringParser::add_delimiter(const chowstring & v)
 {
     if (v.size() != 1) {
         std::cout << "Delimiter size " << v.size() << " not supported"
@@ -42,7 +42,7 @@ void StringParser::reset_delimiters()
     has_split = false;
 }
 
-void StringParser::load(const std::string & filename)
+void StringParser::load(const chowstring & filename)
 {
     if (filename[0] == '[')
         // work around HFA bug
@@ -59,7 +59,7 @@ void StringParser::split()
     has_split = true;
 }
 
-void StringParser::set(const std::string & v)
+void StringParser::set(const chowstring & v)
 {
     value = v;
     has_split = false;
@@ -71,14 +71,14 @@ int StringParser::get_count()
     return int(elements.size());
 }
 
-std::string StringParser::set_element(const std::string & value, int index)
+chowstring StringParser::set_element(const chowstring & value, int index)
 {
     if (delimiters.size() <= 0)
         return value;
     index--;
     split();
-    std::string ret;
-    vector<std::string>::const_iterator it;
+    chowstring ret;
+    vector<chowstring>::const_iterator it;
 
     for (int i = 0; i < int(elements.size()); i++) {
         if (i == index)
@@ -92,7 +92,7 @@ std::string StringParser::set_element(const std::string & value, int index)
     return ret;
 }
 
-const std::string & StringParser::get_element(int i)
+const chowstring & StringParser::get_element(int i)
 {
     i--;
     split();
@@ -101,7 +101,7 @@ const std::string & StringParser::get_element(int i)
     return elements[i];
 }
 
-const std::string & StringParser::get_last_element()
+const chowstring & StringParser::get_last_element()
 {
     split();
     if (elements.empty())
@@ -109,22 +109,22 @@ const std::string & StringParser::get_last_element()
     return elements[elements.size()-1];
 }
 
-std::string StringParser::replace(const std::string & from,
-                                  const std::string & to)
+chowstring StringParser::replace(const chowstring & from,
+                                  const chowstring & to)
 {
-    std::string ret = value;
+    chowstring ret = value;
     replace_substring(ret, from, to);
     return ret;
 }
 
-std::string StringParser::remove(const std::string & sub)
+chowstring StringParser::remove(const chowstring & sub)
 {
-    std::string ret = value;
+    chowstring ret = value;
     replace_substring(ret, sub, empty_string);
     return ret;
 }
 
-std::string StringParser::get_md5()
+chowstring StringParser::get_md5()
 {
     return ::get_md5(value);
 }

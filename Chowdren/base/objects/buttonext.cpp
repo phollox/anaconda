@@ -130,7 +130,7 @@ void ButtonObject::uncheck()
 #endif
 }
 
-void ButtonObject::set_text(const std::string & text)
+void ButtonObject::set_text(const chowstring & text)
 {
 #ifdef CHOWDREN_USE_GWEN
     button->SetText(Gwen::TextObject(text));

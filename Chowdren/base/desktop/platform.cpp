@@ -135,7 +135,7 @@ static bool check_opengl_extension(const char * name)
 {
     if (SDL_GL_ExtensionSupported(name) == SDL_TRUE)
         return true;
-    std::string message;
+    chowstring message;
     message += "OpenGL extension '";
     message += name;
     message += "' not supported.";
@@ -348,6 +348,7 @@ void platform_poll_events()
 #ifdef CHOWDREN_USE_EDITOBJ
     manager.input.clear();
 #endif
+    update_joystick();
 
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
@@ -430,7 +431,6 @@ void platform_poll_events()
                 break;
         }
     }
-    update_joystick();
 }
 
 // time
@@ -1253,17 +1253,17 @@ void platform_hide_mouse()
 
 #if defined(CHOWDREN_USE_STEAM_LANGUAGE) && defined(CHOWDREN_ENABLE_STEAM)
 
-const std::string & get_steam_language();
-const std::string & platform_get_language()
+const chowstring & get_steam_language();
+const chowstring & platform_get_language()
 {
     return get_steam_language();
 }
 
-#else
+#elif !defined(CHOWDREN_IS_ANDROID)
 
-const std::string & platform_get_language()
+const chowstring & platform_get_language()
 {
-    static std::string language("English");
+    static chowstring language("English");
     return language;
 }
 
@@ -1275,17 +1275,17 @@ const std::string & platform_get_language()
 
 #include <sys/stat.h>
 
-void platform_walk_folder(const std::string & in_path,
+void platform_walk_folder(const chowstring & in_path,
                           FolderCallback & callback)
 {
     if (in_path.empty())
         return;
-    std::string path = convert_path(in_path);
+    chowstring path = convert_path(in_path);
 #ifdef _WIN32
     HANDLE hFind = INVALID_HANDLE_VALUE;
     WIN32_FIND_DATA ffd;
 
-    std::string spec;
+    chowstring spec;
     char c = path[path.size()-1];
     if (c == '\\')
         spec = path + "*";
@@ -1383,22 +1383,22 @@ static FileType get_file_type(const char * filename)
 #endif
 }
 
-bool platform_path_exists(const std::string & value)
+bool platform_path_exists(const chowstring & value)
 {
     return get_file_type(value.c_str()) != NoneFile;
 }
 
-bool platform_is_directory(const std::string & value)
+bool platform_is_directory(const chowstring & value)
 {
     return get_file_type(value.c_str()) == Directory;
 }
 
-bool platform_is_file(const std::string & value)
+bool platform_is_file(const chowstring & value)
 {
     return get_file_type(value.c_str()) == RegularFile;
 }
 
-static bool create_dirs(const std::string & directory)
+static bool create_dirs(const chowstring & directory)
 {
     if (directory.empty())
         return true;
@@ -1407,7 +1407,7 @@ static bool create_dirs(const std::string & directory)
         return true;
 
     size_t slash = directory.find_last_of(PATH_SEP);
-    if (slash != std::string::npos) {
+    if (slash != chowstring::npos) {
         if (!create_dirs(directory.substr(0, slash)))
             return false;
     }
@@ -1423,15 +1423,15 @@ static bool create_dirs(const std::string & directory)
     return true;
 }
 
-void platform_create_directories(const std::string & value)
+void platform_create_directories(const chowstring & value)
 {
     create_dirs(value);
 }
 
-const std::string & platform_get_appdata_dir()
+const chowstring & platform_get_appdata_dir()
 {
     static bool initialized = false;
-    static std::string dir;
+    static chowstring dir;
     if (!initialized) {
 #ifdef _WIN32
         TCHAR path[MAX_PATH];
@@ -1470,6 +1470,7 @@ public:
     int last_press;
     int button_count;
     int hat_count;
+    int device_index;
 
     JoystickData()
     : has_effect(false), has_rumble(false), last_press(0), controller(NULL),
@@ -1630,6 +1631,40 @@ JoystickData * get_joy_instance(int instance)
 
 void add_joystick(int device)
 {
+#ifdef CHOWDREN_IS_ANDROID
+    // if we unpause an application, the device indices we get can become
+    // invalid. therefore, just iterate all joysticks until we found a
+    // valid one.
+    SDL_GameController * c = NULL;
+    SDL_Joystick * joy = NULL;
+    for (int i = 0; i < SDL_NumJoysticks(); ++i) {
+        SDL_GameController * new_c = NULL;
+        SDL_Joystick * new_joy = NULL;
+        if (SDL_IsGameController(i))
+            new_c = SDL_GameControllerOpen(i);
+        if (new_c == NULL)
+            new_joy = SDL_JoystickOpen(i);
+        else
+            new_joy = SDL_GameControllerGetJoystick(c);
+        if (new_joy == NULL)
+            continue;
+        vector<JoystickData>::iterator it;
+        for (it = joysticks.begin(); it != joysticks.end(); ++it) {
+            JoystickData & j = *it;
+            if (j.joy != new_joy)
+                continue;
+            new_joy = NULL;
+            break;
+        }
+        if (new_joy == NULL)
+            continue;
+        c = new_c;
+        joy = new_joy;
+        break;
+    }
+    if (joy == NULL)
+        return;
+#else
     SDL_GameController * c = NULL;
     if (SDL_IsGameController(device))
         c = SDL_GameControllerOpen(device);
@@ -1639,6 +1674,7 @@ void add_joystick(int device)
         joy = SDL_JoystickOpen(device);
     else
         joy = SDL_GameControllerGetJoystick(c);
+#endif
     vector<JoystickData>::iterator it;
     for (it = joysticks.begin(); it != joysticks.end(); ++it) {
         JoystickData & j = *it;
@@ -1654,6 +1690,7 @@ void add_joystick(int device)
     int index = joysticks.size();
     joysticks.resize(index+1);
     joysticks[index].init(c, joy, instance);
+    joysticks[index].device_index = device;
     selected_joy_index = index;
     selected_joy = &joysticks[selected_joy_index];
 }
@@ -1670,6 +1707,8 @@ void remove_joystick(int instance)
         JoystickData & j = *it;
         if (j.instance != instance)
             continue;
+        std::cout << "Removing joystick (device index): "
+            << j.device_index << std::endl;
         j.close();
         joysticks.erase(it);
         return;
@@ -1728,16 +1767,21 @@ int get_joystick_last_press(int n)
 {
     if (!is_joystick_attached(n))
         return CHOWDREN_BUTTON_INVALID;
-    return unremap_button(get_joy(n).last_press + 1);
+    int button = unremap_button(get_joy(n).last_press + 1);
+#ifdef CHOWDREN_IS_ANDROID
+    if (button == CHOWDREN_BUTTON_GUIDE)
+        button = CHOWDREN_BUTTON_START;
+#endif
+    return button;
 }
 
-extern std::string empty_string;
+extern chowstring empty_string;
 
-const std::string & get_joystick_name(int n)
+const chowstring & get_joystick_name(int n)
 {
     if (!is_joystick_attached(n))
         return empty_string;
-    static std::string ret;
+    static chowstring ret;
     JoystickData & joy = get_joy(n);
 #ifdef CHOWDREN_FORCE_X360
     ret = "X360 Controller";
@@ -1750,11 +1794,11 @@ const std::string & get_joystick_name(int n)
     return ret;
 }
 
-const std::string & get_joystick_guid(int n)
+const chowstring & get_joystick_guid(int n)
 {
     if (!is_joystick_attached(n))
         return empty_string;
-    static std::string ret;
+    static chowstring ret;
     ret.resize(64);
     JoystickData & joy = get_joy(n);
     SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy.joy);
@@ -1833,14 +1877,14 @@ float get_joystick_axis_raw(int n, int axis)
 
 #ifdef _WIN32
 
-void open_url(const std::string & name)
+void open_url(const chowstring & name)
 {
     ShellExecute(NULL, "open", name.c_str(), NULL, NULL, SW_SHOWNORMAL);
 }
 
 #elif __APPLE__
 
-void open_url(const std::string & name)
+void open_url(const chowstring & name)
 {
     CFStringRef str = CFStringCreateWithCString(0, name.c_str(), 0);
     CFURLRef ref = CFURLCreateWithString(0, str, 0);
@@ -1888,9 +1932,9 @@ extern "C" FILE * chow_popen(const char * cmd, const char * mode)
     return popen(transform_command(cmd), mode);
 }
 
-void open_url(const std::string & name)
+void open_url(const chowstring & name)
 {
-    std::string cmd;
+    chowstring cmd;
     cmd += "xdg-open '";
     cmd += name;
     cmd += "' &";
@@ -1908,10 +1952,10 @@ void open_url(const std::string & name)
 #include "../path.h"
 #endif
 
-bool platform_remove_file(const std::string & file)
+bool platform_remove_file(const chowstring & file)
 {
 #ifdef CHOWDREN_AUTO_STEAMCLOUD
-    std::string base = get_path_filename(file);
+    chowstring base = get_path_filename(file);
     const char * base_c = base.c_str();
     if (SteamRemoteStorage()->FileExists(base_c)) {
         return SteamRemoteStorage()->FileDelete(base_c);
@@ -1920,7 +1964,7 @@ bool platform_remove_file(const std::string & file)
     return remove(convert_path(file).c_str()) == 0;
 }
 
-static bool remove_directory_recurse(const std::string & path);
+static bool remove_directory_recurse(const chowstring & path);
 
 static bool remove_directory(const char * filename)
 {
@@ -1933,9 +1977,9 @@ static bool remove_directory(const char * filename)
 
 struct RemoveDirectoryCallback : FolderCallback
 {
-    const std::string & path;
+    const chowstring & path;
 
-	RemoveDirectoryCallback(const std::string & path)
+	RemoveDirectoryCallback(const chowstring & path)
     : path(path)
     {
     }
@@ -1945,13 +1989,13 @@ struct RemoveDirectoryCallback : FolderCallback
         if (item.is_file()) {
             remove(join_path(path, item.name).c_str());
         } else if (item.is_folder()) {
-            std::string new_path = join_path(path, item.name);
+            chowstring new_path = join_path(path, item.name);
             remove_directory_recurse(new_path);
         }
     }
 };
 
-static bool remove_directory_recurse(const std::string & dir)
+static bool remove_directory_recurse(const chowstring & dir)
 {
     if (remove_directory(dir.c_str()))
         return true;
@@ -1963,9 +2007,9 @@ static bool remove_directory_recurse(const std::string & dir)
     return false;
 }
 
-bool platform_remove_directory(const std::string & dir)
+bool platform_remove_directory(const chowstring & dir)
 {
-    std::string path = convert_path(dir);
+    chowstring path = convert_path(dir);
     return remove_directory_recurse(path);
 }
 
@@ -1979,11 +2023,11 @@ bool platform_remove_directory(const std::string & dir)
 
 // path
 
-std::string convert_path(const std::string & v)
+chowstring convert_path(const chowstring & v)
 {
-    std::string value = v;
+    chowstring value = v;
     if (value.compare(0, 3, "./\\") == 0)
-        value = std::string("./", 2) + value.substr(3);
+        value = chowstring("./", 2) + value.substr(3);
 
 #ifndef _WIN32
     std::replace(value.begin(), value.end(), '\\', '/');
@@ -2017,14 +2061,14 @@ std::string convert_path(const std::string & v)
                    if (!getcwd(temp, PATH_MAX)) temp[0] = '\0'
 #define RESTORE_CWD() (void)chdir(temp)
 
-bool platform_file_open_dialog(const std::string & title,
-                               const std::string & filter,
-                               const std::string & in_def,
+bool platform_file_open_dialog(const chowstring & title,
+                               const chowstring & filter,
+                               const chowstring & in_def,
                                bool multiple,
-                               vector<std::string> & out)
+                               vector<chowstring> & out)
 {
     SAVE_CWD();
-    std::string def = convert_path(in_def);
+    chowstring def = convert_path(in_def);
     const char * ret = tinyfd_openFileDialog(title.c_str(),
                                              def.c_str(),
                                              0,
@@ -2032,18 +2076,18 @@ bool platform_file_open_dialog(const std::string & title,
                                              NULL,
                                              multiple);
     if (ret != NULL)
-        out.push_back(std::string(ret));
+        out.push_back(chowstring(ret));
     RESTORE_CWD();
     return ret != NULL;
 }
 
-bool platform_file_save_dialog(const std::string & title,
-                               const std::string & filter,
-                               const std::string & in_def,
-                               std::string & out)
+bool platform_file_save_dialog(const chowstring & title,
+                               const chowstring & filter,
+                               const chowstring & in_def,
+                               chowstring & out)
 {
     SAVE_CWD();
-    std::string def = convert_path(in_def);
+    chowstring def = convert_path(in_def);
     const char * ret = tinyfd_saveFileDialog(title.c_str(),
                                              def.c_str(),
                                              0,
@@ -2057,8 +2101,8 @@ bool platform_file_save_dialog(const std::string & title,
 
 #include "dialoglocale.cpp"
 
-bool platform_show_dialog(const std::string & title,
-                          const std::string & message,
+bool platform_show_dialog(const chowstring & title,
+                          const chowstring & message,
                           DialogType type)
 {
 #ifdef __APPLE__
@@ -2131,25 +2175,25 @@ bool platform_show_dialog(const std::string & title,
 
 #else
 
-bool platform_file_open_dialog(const std::string & title,
-                               const std::string & filter,
-                               const std::string & in_def,
+bool platform_file_open_dialog(const chowstring & title,
+                               const chowstring & filter,
+                               const chowstring & in_def,
                                bool multiple,
-                               vector<std::string> & out)
+                               vector<chowstring> & out)
 {
     return false;
 }
 
-bool platform_file_save_dialog(const std::string & title,
-                               const std::string & filter,
-                               const std::string & in_def,
-                               std::string & out)
+bool platform_file_save_dialog(const chowstring & title,
+                               const chowstring & filter,
+                               const chowstring & in_def,
+                               chowstring & out)
 {
     return false;
 }
 
-bool platform_show_dialog(const std::string & title,
-                          const std::string & message,
+bool platform_show_dialog(const chowstring & title,
+                          const chowstring & message,
                           DialogType type)
 {
     return false;
@@ -2172,7 +2216,7 @@ void platform_prepare_frame_change()
 {
 }
 
-void platform_set_remote_setting(const std::string & v)
+void platform_set_remote_setting(const chowstring & v)
 {
 
 }
@@ -2203,9 +2247,9 @@ void platform_set_border(bool v)
 
 }
 
-static std::string remote_string("TV");
+static chowstring remote_string("TV");
 
-const std::string & platform_get_remote_setting()
+const chowstring & platform_get_remote_setting()
 {
     return remote_string;
 }
@@ -2215,7 +2259,7 @@ bool platform_has_error()
     return false;
 }
 
-void platform_debug(const std::string & value)
+void platform_debug(const chowstring & value)
 {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Debug",
                              value.c_str(), NULL);
@@ -2235,9 +2279,3 @@ void platform_exit()
     exit(0);
 #endif
 }
-
-#ifndef CHOWDREN_IS_DESKTOP
-void platform_unlock_achievement(const std::string & name)
-{
-}
-#endif

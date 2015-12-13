@@ -19,7 +19,7 @@
 #define CHOWDREN_ARRAYEXT_H
 
 #include "frameobject.h"
-#include <string>
+#include "chowstring.h"
 #include "datastream.h"
 #include "types.h"
 
@@ -45,7 +45,7 @@ public:
         int offset;
         bool is_numeric;
         ArrayNumber * array;
-        std::string * strings;
+        chowstring * strings;
         int x_size, y_size, z_size;
         int x_pos, y_pos, z_pos;
     };
@@ -63,12 +63,12 @@ public:
     ~ArrayObject();
     void initialize(bool is_numeric, int offset, int x, int y, int z);
     void clear();
-    const std::string & get_string(int x=-1, int y=-1, int z=-1);
+    const chowstring & get_string(int x=-1, int y=-1, int z=-1);
     ArrayNumber get_value(int x=-1, int y=-1, int z=-1);
     void set_value(ArrayNumber value, int x=-1, int y=-1, int z=-1);
-    void set_string(const std::string & value, int x=-1, int y=-1, int z=-1);
-    void load(const std::string & filename);
-    void save(const std::string & filename);
+    void set_string(const chowstring & value, int x=-1, int y=-1, int z=-1);
+    void load(const chowstring & filename);
+    void save(const chowstring & filename);
     void expand(int x, int y, int z);
 
     inline void adjust_pos(int & x, int & y, int & z)

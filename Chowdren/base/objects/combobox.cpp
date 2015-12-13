@@ -71,7 +71,7 @@ void ComboBox::draw()
     combo_box->SetWidth(width);
 }
 
-std::string ComboBox::get_line(int index)
+chowstring ComboBox::get_line(int index)
 {
     Gwen::Controls::MenuItem * item;
     item = (Gwen::Controls::MenuItem*)combo_box->GetItemByIndex(index +
@@ -85,7 +85,7 @@ void ComboBox::set_current_line(int index)
     combo_box->SelectItemByIndex(index + index_offset);
 }
 
-void ComboBox::add_line(const std::string value)
+void ComboBox::add_line(const chowstring value)
 {
     combo_box->AddItem(Gwen::TextObject(value));
 }
@@ -99,7 +99,7 @@ int ComboBox::get_current_line_number()
 	return index;
 }
 
-std::string ComboBox::get_current_line()
+chowstring ComboBox::get_current_line()
 {
     Gwen::Controls::MenuItem * item;
     item = (Gwen::Controls::MenuItem*)combo_box->GetSelectedItem();
@@ -137,7 +137,7 @@ bool ComboBox::is_list_dropped()
     return combo_box->IsMenuOpen();
 }
 
-int ComboBox::find_string_exact(const std::string & text, int flag)
+int ComboBox::find_string_exact(const chowstring & text, int flag)
 {
 #ifndef NDEBUG
     if (flag != -1)

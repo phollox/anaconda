@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include "chowstring.h"
 #include <vector>
 #include <sstream>
 #include <iomanip>
@@ -32,7 +32,7 @@
 class ProfilerEntry
 {
 public:
-    std::string name;
+    chowstring name;
     double start, dt;
 };
 
@@ -53,7 +53,7 @@ public:
         init_timer();
     }
 
-    void start(const std::string & name)
+    void start(const chowstring & name)
     {
         stack.push_back(current);
         current.name = name;
@@ -61,7 +61,7 @@ public:
         current.start = get_timer();
     }
 
-    void start_additive(const std::string & name)
+    void start_additive(const chowstring & name)
     {
         if (name == current.name)
             return;
@@ -86,7 +86,7 @@ public:
         stack.pop_back();
     }
 
-    void save(const std::string & path)
+    void save(const chowstring & path)
     {
         std::stringstream ss;
         ss << std::fixed << std::setprecision(15);
@@ -101,9 +101,9 @@ public:
 #else
         FSFile fp(path.c_str(), "w");
 #endif
-        std::string str = ss.str();
+        chowstring str = ss.str();
 
-        fp.write(&str[0], str.size());
+        fp.write(str.data(), str.size());
         fp.close();
     }
 

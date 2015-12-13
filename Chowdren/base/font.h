@@ -40,7 +40,7 @@ typedef enum
 #include <math.h>
 #include "types.h"
 #include "datastream.h"
-#include <string>
+#include "chowstring.h"
 #include "color.h"
 #include "render.h"
 

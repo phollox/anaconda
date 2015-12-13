@@ -248,7 +248,7 @@ namespace Utility
     }
 
     // String expressions
-    inline std::string Substr(const std::string & String, int Start, int Length)
+    inline chowstring Substr(const chowstring & String, int Start, int Length)
     {
         if(Start < 0)
             Start = String.size() + Start;
@@ -259,9 +259,9 @@ namespace Utility
         return String.substr(Start, Length);
     }
 
-    inline const std::string & StrExpressionCompare(float First, float Second,
-        int ComparisonType, const std::string & ReturnIfTrue,
-        const std::string & ReturnIfFalse)
+    inline const chowstring & StrExpressionCompare(float First, float Second,
+        int ComparisonType, const chowstring & ReturnIfTrue,
+        const chowstring & ReturnIfFalse)
     {
         if (Compare(First, Second, ComparisonType))
             return ReturnIfTrue;

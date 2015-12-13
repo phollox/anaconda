@@ -301,7 +301,7 @@ inline int get_active_load_point(int value, int max)
     return value;
 }
 
-void Active::load(const std::string & filename, int anim, int dir, int frame,
+void Active::load(const chowstring & filename, int anim, int dir, int frame,
                   int hot_x, int hot_y, int action_x, int action_y,
                   TransparentColor transparent_color)
 {

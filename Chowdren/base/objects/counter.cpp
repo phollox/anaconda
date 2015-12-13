@@ -37,7 +37,7 @@ void Counter::calculate_box()
     if (type == IMAGE_COUNTER) {
         width = 0;
         height = 0;
-        for (std::string::const_iterator it = cached_string.begin();
+        for (chowstring::const_iterator it = cached_string.begin();
              it != cached_string.end(); ++it) {
             Image * image = get_image(it[0]);
             width += image->width;
@@ -120,12 +120,12 @@ void Counter::set(double value)
         collision = new OffsetInstanceBox(this);
 
     if (type == IMAGE_COUNTER) {
-        std::ostringstream str;
-        if (zero_pad > 0)
+        if (zero_pad > 0) {
+            std::ostringstream str;
             str << std::setw(zero_pad) << std::setfill('0') << value;
-        else
-            str << value;
-        cached_string = str.str();
+        } else {
+            cached_string = number_to_string(value);
+        }
         calculate_box();
     } else if (type == ANIMATION_COUNTER) {
         calculate_box();
@@ -162,9 +162,10 @@ void Counter::draw()
 
     if (type == IMAGE_COUNTER) {
         double current_x = x;
-        for (std::string::reverse_iterator it = cached_string.rbegin();
-             it != cached_string.rend(); ++it) {
-            Image * image = get_image(it[0]);
+        const char * start = cached_string.data();
+        const char * end = start + cached_string.size();
+        for (const char * pos = end - 1; pos >= start; pos--) {
+            Image * image = get_image(*pos);
             if (image == NULL)
                 continue;
             image->draw(current_x + image->hotspot_x - image->width,

@@ -36,7 +36,7 @@ static const char* http_headers[] =
 
 struct HTTPRequest
 {
-    std::string host, path, args;
+    chowstring host, path, args;
 };
 
 static happyhttp::Connection conn;
@@ -50,11 +50,11 @@ static HTTPRequest http_request;
 static Mutex request_mutex;
 
 static volatile bool has_response = false;
-static std::string http_response;
+static chowstring http_response;
 static Mutex response_mutex;
 
 static volatile bool http_running = false;
-static std::string http_data;
+static chowstring http_data;
 
 #define HTTP_PREFIX "http://"
 
@@ -116,7 +116,7 @@ HTTPObject::~HTTPObject()
     http_running = false;
 }
 
-void HTTPObject::add_post(const std::string & name, const std::string & value)
+void HTTPObject::add_post(const chowstring & name, const chowstring & value)
 {
     if (args.empty())
         args += name + "=" + value;
@@ -124,7 +124,7 @@ void HTTPObject::add_post(const std::string & name, const std::string & value)
         args += "&" + name + "=" + value;
 }
 
-void HTTPObject::get(const std::string & url)
+void HTTPObject::get(const chowstring & url)
 {
     int start = 0;
 	if (url.compare(0, sizeof(HTTP_PREFIX) - 1,
@@ -132,11 +132,11 @@ void HTTPObject::get(const std::string & url)
         start += sizeof(HTTP_PREFIX)-1;
 
     size_t end = url.find_first_of('/', start);
-    if (end == std::string::npos)
+    if (end == chowstring::npos)
         end = url.size();
 
-    std::string host = url.substr(start, end-start);
-    std::string path = url.substr(end);
+    chowstring host = url.substr(start, end-start);
+    chowstring path = url.substr(end);
     if (path.empty())
         path = "/";
 
@@ -182,12 +182,12 @@ HTTPObject::~HTTPObject()
 {
 }
 
-void HTTPObject::add_post(const std::string & name, const std::string & value)
+void HTTPObject::add_post(const chowstring & name, const chowstring & value)
 {
 }
 
 
-void HTTPObject::get(const std::string & url)
+void HTTPObject::get(const chowstring & url)
 {
 }
 

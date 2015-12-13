@@ -25,14 +25,14 @@ StringTokenizer::StringTokenizer(int x, int y, int type_id)
 {
 }
 
-void StringTokenizer::split(const std::string & text,
-                            const std::string & delims)
+void StringTokenizer::split(const chowstring & text,
+                            const chowstring & delims)
 {
     elements.clear();
     split_string(text, delims, elements);
 }
 
-const std::string & StringTokenizer::get(int index)
+const chowstring & StringTokenizer::get(int index)
 {
     if (index < 0 || index >= int(elements.size()))
         return empty_string;

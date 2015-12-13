@@ -55,17 +55,17 @@ SHINY_API void ShinyPrintZones(char* output, const ShinyZone *a_root);
 } /* end of extern "C" */
 
 
-#include <string>
+#include "chowstring.h"
 
-SHINY_INLINE std::string ShinyNodesToString(const ShinyNode *a_root, unsigned int a_count) {
-	std::string str;
+SHINY_INLINE chowstring ShinyNodesToString(const ShinyNode *a_root, unsigned int a_count) {
+	chowstring str;
 	str.resize(ShinyPrintNodesSize(a_count) - 1);
 	ShinyPrintNodes(&str[0], a_root);
 	return str;
 }
 
-SHINY_INLINE std::string ShinyZonesToString(const ShinyZone *a_root, unsigned int a_count) {
-	std::string str;
+SHINY_INLINE chowstring ShinyZonesToString(const ShinyZone *a_root, unsigned int a_count) {
+	chowstring str;
 	str.resize(ShinyPrintZonesSize(a_count) - 1);
 	ShinyPrintZones(&str[0], a_root);
 	return str;

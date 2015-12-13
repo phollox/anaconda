@@ -20,7 +20,7 @@
 
 #include "frameobject.h"
 #include "types.h"
-#include <string>
+#include "chowstring.h"
 #include "color.h"
 #include "image.h"
 
@@ -32,10 +32,10 @@ enum BlitterAnimation
 
 struct LineReference
 {
-    char * start;
+    const char * start;
     int size;
 
-    LineReference(char * start, int size)
+    LineReference(const char * start, int size)
     : start(start), size(size)
     {
     }
@@ -47,11 +47,11 @@ public:
     FRAMEOBJECT_HEAD(TextBlitter)
 
     vector<LineReference> lines;
-    std::string text;
+    chowstring text;
     int char_width, char_height;
     int char_offset;
     Image * image;
-    const std::string * charmap_str;
+    const chowstring * charmap_str;
     int * charmap;
     float flash_time, flash_interval;
     int alignment;
@@ -70,21 +70,34 @@ public:
 
     TransparentColor transparent_color;
 
-    bool has_callback;
+    enum CallbackFlags
+    {
+        CHAR_CALLBACK = 1 << 0,
+        LINE_CALLBACK = 1 << 1,
+        BEGIN_CALLBACK = 1 << 2
+    };
+
+    int callback_flags;
     int callback_line_count;
     int callback_line;
-    int callback_char;
+    int callback_char; // index
     int callback_transparency;
+#ifdef CHOWDREN_BLITTER_EXT_CALLBACKS
+    int callback_character_char; // value
+    int callback_char_width;
+    int callback_char_dst_x;
+    int callback_char_src_y;
+#endif
 
     Image * draw_image;
     ReplacedImages replacer;
 
     TextBlitter(int x, int y, int type_id);
     ~TextBlitter();
-    void initialize(const std::string & charmap);
-    void load(const std::string & filename);
-    void set_text(const std::string & text);
-    void append_text(const std::string & text);
+    void initialize(const chowstring & charmap);
+    void load(const chowstring & filename);
+    void set_text(const chowstring & text);
+    void append_text(const chowstring & text);
     void update_lines();
     void set_x_spacing(int spacing);
     void set_y_spacing(int spacing);
@@ -99,18 +112,18 @@ public:
     void draw();
     void update();
     void flash(float value);
-    std::string get_line(int index);
+    chowstring get_line(int index);
     int get_line_count();
-    std::string get_map_char(int index);
+    chowstring get_map_char(int index);
     void replace_color(Color from, Color to);
     void set_transparent_color(int color);
     void set_animation_parameter(int index, int value);
     void set_animation_type(int value);
     void set_animation_speed(int value);
-    void set_charmap(const std::string & charmap);
-    const std::string & get_charmap();
+    void set_charmap(const chowstring & charmap);
+    const chowstring & get_charmap();
 
-    const std::string & get_text()
+    const chowstring & get_text()
     {
         return text;
     }
@@ -121,6 +134,8 @@ public:
     }
 
     virtual void call_char_callback();
+    virtual void call_line_callback();
+    virtual void call_begin_callback();
 };
 
 extern FrameObject * default_blitter_instance;

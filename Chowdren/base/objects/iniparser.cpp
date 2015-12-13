@@ -27,7 +27,7 @@ http://code.google.com/p/inih/
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
-#include <string>
+#include "chowstring.h"
 #include <sstream>
 #include <istream>
 #include "platform.h"
@@ -76,25 +76,13 @@ static char* strncpy0(char* dest, const char* src, size_t size)
     return dest;
 }
 
-static void get_line(std::istream & input, std::string & line)
-{
-    std::getline(input, line);
-}
-
-static bool at_end(std::istream & input)
-{
-    return !input;
-}
-
 #define MAX_INI_STRING 50
 
-int ini_parse_string_impl(const std::string & s,
+int ini_parse_string_impl(const chowstring & s,
                           int (*handler)(void*, const char*, const char*,
                                          const char*),
                           void* user)
 {
-    std::istringstream input(s);
-
     /* Uses a fair bit of stack (use heap instead if you need to) */
     char section[MAX_INI_STRING] = "";
 
@@ -102,10 +90,15 @@ int ini_parse_string_impl(const std::string & s,
     int lineno = 0;
     int error = 0;
 
+    unsigned int pos = 0;
+
     /* Scan through file line by line */
-    while (!at_end(input)) {
-        std::string newline;
-        get_line(input, newline);
+    while (pos < s.size()) {
+        unsigned int line_end = pos;
+        while (line_end < s.size() && s[line_end] != '\n')
+            line_end++;
+        chowstring newline(s, pos, line_end - pos);
+        pos = line_end + 1;
         char * line = (char*)newline.c_str();
         lineno++;
 
@@ -164,7 +157,7 @@ int ini_parse_string_impl(const std::string & s,
     return error;
 }
 
-int ini_parse_string(const std::string & s,
+int ini_parse_string(const chowstring & s,
                      int (*handler)(void*, const char*, const char*,
                                     const char*),
                      void* user)
@@ -172,13 +165,13 @@ int ini_parse_string(const std::string & s,
     if (s.size() >= 2 && (unsigned char)s[0] == 0xFF
         && (unsigned char)s[1] == 0xFE)
     {
-        std::string out;
+        chowstring out;
         convert_utf16_to_utf8(s, out);
         return ini_parse_string_impl(out, handler, user);
     }
 
 #ifdef CHOWDREN_INI_USE_UTF8
-    std::string out;
+    chowstring out;
     convert_windows1252_to_utf8(s, out);
     return ini_parse_string_impl(out, handler, user);
 #else

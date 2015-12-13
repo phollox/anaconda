@@ -240,13 +240,13 @@ void SurfaceObject::resize_canvas(int x1, int y1, int x2, int y2)
 #include "objects/capture.h"
 #endif
 
-void SurfaceObject::load(const std::string & filename,
-                         const std::string & ignore_ext)
+void SurfaceObject::load(const chowstring & filename,
+                         const chowstring & ignore_ext)
 {
     load(filename);
 }
 
-void SurfaceObject::load(const std::string & filename)
+void SurfaceObject::load(const chowstring & filename)
 {
     if (selected_image == NULL)
         return;
@@ -254,7 +254,7 @@ void SurfaceObject::load(const std::string & filename)
     selected_image->reset();
     selected_image->transparent = Color(255, 0, 255); // old_trans;
 
-    std::string path = convert_path(filename);
+    chowstring path = convert_path(filename);
     Image * image = NULL;
 #ifdef CHOWDREN_USE_CAPTURE
     if (!CaptureObject::filename.empty() &&
@@ -458,8 +458,8 @@ void SurfaceObject::apply_matrix(double div, double offset, double iterations,
     //std::cout << "Apply matrix not implemented" << std::endl;
 }
 
-void SurfaceObject::save(const std::string & filename,
-                         const std::string & ext)
+void SurfaceObject::save(const chowstring & filename,
+                         const chowstring & ext)
 {
     std::cout << "Surface save not implemented: " << filename << std::endl;
 }

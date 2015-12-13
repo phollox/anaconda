@@ -31,7 +31,7 @@ DirectShow::~DirectShow()
     delete collision;
 }
 
-void DirectShow::load(const std::string & filename)
+void DirectShow::load(const chowstring & filename)
 {
     std::cout << "Load DirectShow file: " << filename << std::endl;
 }

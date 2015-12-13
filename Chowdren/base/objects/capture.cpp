@@ -20,7 +20,7 @@
 #include "fbo.h"
 #include "platform.h"
 
-void CaptureObject::set_filename(const std::string & value)
+void CaptureObject::set_filename(const chowstring & value)
 {
     filename = convert_path(value);
 }
@@ -73,6 +73,6 @@ void CaptureObject::set_origin(int x, int y)
         << std::endl;
 }
 
-std::string CaptureObject::filename;
+chowstring CaptureObject::filename;
 Image CaptureObject::image;
 bool CaptureObject::capture = false;

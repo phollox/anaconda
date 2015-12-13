@@ -40,7 +40,7 @@ namespace Gwen
 	}
 
 	typedef std::wstring UnicodeString;
-	typedef std::string String;
+	typedef chowstring String;
 
 	typedef wchar_t UnicodeChar; // Portability??
 

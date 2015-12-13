@@ -21,7 +21,7 @@ inline float fParam()
     return 0.0f;
 }
 
-inline const std::string sParam()
+inline const chowstring sParam()
 {
     return "";
 }
@@ -31,7 +31,7 @@ inline int xlParam()
     return 0;
 }
 
-inline std::string xsParam()
+inline chowstring xsParam()
 {
     return "";
 }

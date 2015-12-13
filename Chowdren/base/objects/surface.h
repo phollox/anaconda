@@ -20,7 +20,7 @@
 
 #include "frameobject.h"
 #include "image.h"
-#include <string>
+#include "chowstring.h"
 #include "color.h"
 #include "fbo.h"
 
@@ -121,7 +121,7 @@ public:
     int selected_index;
 
     // File loading
-    std::string filename;
+    chowstring filename;
     bool load_failed;
 
     // Polygon draw
@@ -134,8 +134,8 @@ public:
     ~SurfaceObject();
     void update();
     void draw();
-    void load(const std::string & filename, const std::string & ignore_ext);
-    void load(const std::string & filename);
+    void load(const chowstring & filename, const chowstring & ignore_ext);
+    void load(const chowstring & filename);
     void resize(int w, int h);
     void resize_canvas(int x, int y, int w, int h);
     void set_stretch_mode(int mode);
@@ -158,7 +158,7 @@ public:
                       double x1y1, double x1y2, double x1y3,
                       double x2y1, double x2y2, double x2y3,
                       double x3y1, double x3y2, double x3y3);
-    void save(const std::string & filename, const std::string & ext);
+    void save(const chowstring & filename, const chowstring & ext);
     void reverse_x();
     void add_image(int w, int h);
     void set_transparent_color(const Color & color, bool replace);

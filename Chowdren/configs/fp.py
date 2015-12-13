@@ -229,7 +229,6 @@ LOOP_CALLS = {
 def get_loop_call_names(converter, name):
     return LOOP_CALLS.get(name, None)
 
-
 def use_loop_selection_clear(converter):
     return False
 

@@ -20,13 +20,13 @@
 #include "common.h"
 #include <iostream>
 
-static std::string calc_text;
+static chowstring calc_text;
 static FTSimpleLayout layout;
 static bool layout_init = false;
 static int calc_width, calc_height;
 static int calc_max_width = 1000000;
 
-void CalcRect::set_text(const std::string & text)
+void CalcRect::set_text(const chowstring & text)
 {
     if (calc_text == text)
         return;
@@ -41,7 +41,7 @@ void CalcRect::set_text(const std::string & text)
     // std::cout << "CalcRect: Set text: " << text << std::endl;
 }
 
-void CalcRect::set_font(const std::string & font_name, int size, int style)
+void CalcRect::set_font(const chowstring & font_name, int size, int style)
 {
     if (layout_init)
         return;

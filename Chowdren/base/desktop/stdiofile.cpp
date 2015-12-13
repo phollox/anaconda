@@ -65,10 +65,10 @@ public:
 class SteamWriteFile : public FileHandle
 {
 public:
-    std::string filename;
+    chowstring filename;
     std::ostringstream stream;
 
-    SteamWriteFile(const std::string & filename)
+    SteamWriteFile(const chowstring & filename)
     {
         std::cout << "Opening Steam write: " << filename << std::endl;
         this->filename = filename;
@@ -99,8 +99,8 @@ public:
     void close()
     {
         stream.seekp(0, std::ios_base::end);
-        std::string v = stream.str();
-        SteamRemoteStorage()->FileWrite(filename.c_str(), &v[0], v.size());
+        chowstring v = stream.str();
+        SteamRemoteStorage()->FileWrite(filename.c_str(), v.data(), v.size());
     }
 
     bool at_end()
@@ -117,7 +117,7 @@ public:
     SteamReadFile(const char * filename)
     {
         int32 size = SteamRemoteStorage()->GetFileSize(filename);
-        std::string v;
+        chowstring v;
         v.resize(size, 0);
         SteamRemoteStorage()->FileRead(filename, &v[0], size);
         stream.str(v);
@@ -184,7 +184,7 @@ public:
         }
 
 #ifdef FSFILE_CONVERT_PATH
-        std::string file_string = convert_path(filename);
+        chowstring file_string = convert_path(filename);
         const char * file_string_c = file_string.c_str();
         fp = fopen(file_string_c, real_mode);
 #else
@@ -242,7 +242,7 @@ void BaseFile::open(const char * filename, const char * mode)
     }
 #ifdef CHOWDREN_AUTO_STEAMCLOUD
     HANDLE_BASE * new_handle = NULL;
-    std::string base = get_path_filename(filename);
+    chowstring base = get_path_filename(filename);
     if (is_read) {
         const char * base_c = base.c_str();
         if (SteamRemoteStorage()->FileExists(base_c))

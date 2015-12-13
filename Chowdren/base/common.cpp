@@ -17,7 +17,7 @@
 
 #include "common.h"
 #include "fileio.h"
-#include <string>
+#include "chowstring.h"
 #include "chowconfig.h"
 #include "font.h"
 #include <iterator>
@@ -26,6 +26,12 @@
 #include "overlap.cpp"
 #include "collision.cpp"
 #include "objects/active.h"
+
+#ifdef USE_CHOWSTRING
+#include "chowstring.cpp"
+#endif
+
+#include "debugdraw.cpp"
 
 #ifndef CHOWDREN_IS_WIIU
 #include "fbo.h"
@@ -51,18 +57,18 @@ namespace boost
 }
 #endif
 
-std::string unix_newline_character("\n");
-std::string newline_character("\r\n");
-std::string empty_string("");
+chowstring unix_newline_character("\n");
+chowstring newline_character("\r\n");
+chowstring empty_string("");
 
 static const char hex_characters[] = "0123456789abcdef";
 
-std::string get_md5(const std::string & value)
+chowstring get_md5(const chowstring & value)
 {
     MD5_CTX ctx;
     MD5_Init(&ctx);
-    MD5_Update(&ctx, &value[0], value.size());
-    std::string res;
+    MD5_Update(&ctx, value.data(), value.size());
+    chowstring res;
     res.resize(32);
     unsigned char digest[16];
     MD5_Final(digest, &ctx);
@@ -102,7 +108,7 @@ void swap_position(const FlatObjectList & list)
 
 // Font
 
-Font::Font(const std::string & name, int size, bool bold, bool italic,
+Font::Font(const char * name, int size, bool bold, bool italic,
            bool underline)
 : name(name), size(size),  bold(bold), italic(italic), underline(underline)
 {
@@ -1659,7 +1665,8 @@ FrameObject * Frame::add_object(FrameObject * instance, int layer_index)
     return add_object(instance, &layers[layer_index]);
 }
 
-void Frame::add_background_object(FrameObject * instance, int layer_index)
+FrameObject * Frame::add_background_object(FrameObject * instance,
+                                           int layer_index)
 {
     instance->frame = this;
     Layer * layer = &layers[layer_index];
@@ -1677,6 +1684,7 @@ void Frame::add_background_object(FrameObject * instance, int layer_index)
                      instance->y + instance->height};
         layer->broadphase.add(instance, bb);
     }
+    return instance;
 }
 
 void Frame::set_object_layer(FrameObject * instance, int new_layer)
@@ -1701,7 +1709,7 @@ void Frame::set_object_layer(FrameObject * instance, int new_layer)
         instance->collision->create_proxy();
 }
 
-int Frame::get_loop_index(const std::string & name)
+int Frame::get_loop_index(const chowstring & name)
 {
     return *((*loops)[name].index);
 }
@@ -1913,7 +1921,7 @@ void FrameObject::set_y(int new_y)
 
 #ifdef CHOWDREN_USE_DYNAMIC_NUMBER
 static bool alterable_debug_loaded = false;
-static hash_map<std::string, AlterableValues::AlterableDebug> alterable_debug;
+static hash_map<chowstring, AlterableValues::AlterableDebug> alterable_debug;
 
 static void load_alterable_debug()
 {
@@ -1925,7 +1933,7 @@ static void load_alterable_debug()
         return;
     FileStream stream(fp);
     int count = stream.read_uint32();
-    std::string name;
+    chowstring name;
     for (int i = 0; i < count; ++i) {
         stream.read_string(name, stream.read_uint32());
         AlterableValues::AlterableDebug & debug = alterable_debug[name];
@@ -1942,7 +1950,7 @@ void save_alterable_debug()
     FSFile fp("runinfo.dat", "w");
     WriteStream stream;
     stream.write_uint32(alterable_debug.size());
-    hash_map<std::string, AlterableValues::AlterableDebug>::iterator it;
+    hash_map<chowstring, AlterableValues::AlterableDebug>::iterator it;
     for (it = alterable_debug.begin(); it != alterable_debug.end(); ++it) {
         stream.write_uint32(it->first.size());
         stream.write_string(it->first);
@@ -2069,14 +2077,23 @@ bool FrameObject::overlaps_background()
     if (flags & DESTROYING)
         return false;
 #endif
+
     if (collision == NULL)
         return false;
+
+#ifdef CHOWDREN_IS_NL2
+    // XXX should be correct for all games, but just safeguarding for now
+    if ((flags & INACTIVE) && !(collision->flags & BOX_COLLISION))
+        return false;
+#endif
+
     if (flags & HAS_COLLISION_CACHE)
         return (flags & HAS_COLLISION) != 0;
+
+#ifndef CHOWDREN_NO_PASTE
     // XXX also cache pasted collisions? will need ID to see if
     // pasted items were changed
     Background * b = layer->back;
-    int * aabb = collision->aabb;
     if (b != NULL) {
         BackgroundItems::iterator it;
 #ifdef CHOWDREN_PASTE_PRECEDENCE
@@ -2092,6 +2109,8 @@ bool FrameObject::overlaps_background()
         }
 #endif
     }
+#endif
+
     flags |= HAS_COLLISION_CACHE;
 #ifndef CHOWDREN_NO_BACKDROPS
     BackgroundOverlapCallback callback(collision);
@@ -2191,13 +2210,13 @@ void FrameObject::set_shader(int value)
     effect = value;
 }
 
-void FrameObject::set_shader_parameter(const std::string & name, double value)
+void FrameObject::set_shader_parameter(const chowstring & name, double value)
 {
     if (name.empty())
         return;
     if (shader_parameters == NULL)
         shader_parameters = new ShaderParameters;
-    unsigned int hash = hash_shader_parameter(&name[0], name.size());
+    unsigned int hash = hash_shader_parameter(name.data(), name.size());
     ShaderParameter * param = find_shader_parameter(hash);
     if (param == NULL) {
         shader_parameters->emplace_back();
@@ -2207,7 +2226,7 @@ void FrameObject::set_shader_parameter(const std::string & name, double value)
     param->value = value;
 }
 
-void FrameObject::set_shader_parameter(const std::string & name, Image & img)
+void FrameObject::set_shader_parameter(const chowstring & name, Image & img)
 {
     if (name.empty())
         return;
@@ -2215,8 +2234,8 @@ void FrameObject::set_shader_parameter(const std::string & name, Image & img)
     set_shader_parameter(name, (double)img.tex);
 }
 
-void FrameObject::set_shader_parameter(const std::string & name,
-                                       const std::string & path)
+void FrameObject::set_shader_parameter(const chowstring & name,
+                                       const chowstring & path)
 {
     if (name.empty())
         return;
@@ -2224,7 +2243,7 @@ void FrameObject::set_shader_parameter(const std::string & name,
     set_shader_parameter(name, *img);
 }
 
-void FrameObject::set_shader_parameter(const std::string & name,
+void FrameObject::set_shader_parameter(const chowstring & name,
                                        const Color & color)
 {
     if (name.empty())
@@ -2446,10 +2465,10 @@ void FrameObject::set_angle(float angle, int quality)
 {
 }
 
-const std::string & FrameObject::get_name()
+const chowstring & FrameObject::get_name()
 {
 #ifdef NDEBUG
-    static const std::string v("Unspecified");
+    static const chowstring v("Unspecified");
     return v;
 #else
     return name;
@@ -2611,7 +2630,7 @@ FixedValue::operator double() const
     return v2;
 }
 
-FixedValue::operator std::string() const
+FixedValue::operator chowstring() const
 {
 #ifdef CHOWDREN_PERSISTENT_FIXED_STRING
     return number_to_string(object->x) + "&" + number_to_string(object->y);
@@ -2716,7 +2735,7 @@ void draw_gradient(int x1, int y1, int x2, int y2, int gradient_type,
 
 // File
 
-const std::string & File::get_appdata_directory()
+const chowstring & File::get_appdata_directory()
 {
     return platform_get_appdata_dir();
 }
@@ -2733,14 +2752,14 @@ const std::string & File::get_appdata_directory()
 
 #endif
 
-void File::change_directory(const std::string & path)
+void File::change_directory(const chowstring & path)
 {
 // #ifdef CHOWDREN_IS_DESKTOP
 //     chdir(convert_path(path).c_str());
 // #endif
 }
 
-void File::create_directory(const std::string & path)
+void File::create_directory(const chowstring & path)
 {
 #ifdef _WIN32
     platform_create_directories(path);
@@ -2749,7 +2768,7 @@ void File::create_directory(const std::string & path)
 #endif
 }
 
-bool File::file_exists(const std::string & path)
+bool File::file_exists(const chowstring & path)
 {
 #ifdef _WIN32
     return platform_is_file(path);
@@ -2758,13 +2777,13 @@ bool File::file_exists(const std::string & path)
 #endif
 }
 
-bool File::file_readable(const std::string & path)
+bool File::file_readable(const chowstring & path)
 {
     FSFile fp(convert_path(path).c_str(), "r");
     return fp.is_open();
 }
 
-bool File::name_exists(const std::string & path)
+bool File::name_exists(const chowstring & path)
 {
 #ifdef _WIN32
     return platform_path_exists(path);
@@ -2773,7 +2792,7 @@ bool File::name_exists(const std::string & path)
 #endif
 }
 
-bool File::directory_exists(const std::string & path)
+bool File::directory_exists(const chowstring & path)
 {
 #ifdef _WIN32
     return platform_is_directory(path);
@@ -2782,34 +2801,34 @@ bool File::directory_exists(const std::string & path)
 #endif
 }
 
-void File::delete_file(const std::string & path)
+void File::delete_file(const chowstring & path)
 {
     if (platform_remove_file(path))
         return;
 }
 
-void File::delete_folder(const std::string & path)
+void File::delete_folder(const chowstring & path)
 {
     platform_remove_directory(path);
 }
 
-bool File::copy_file(const std::string & src, const std::string & dst)
+bool File::copy_file(const chowstring & src, const chowstring & dst)
 {
 #ifdef _WIN32
-    std::string new_src = src;
-    std::string new_dst = dst;
+    chowstring new_src = src;
+    chowstring new_dst = dst;
 #else
-    std::string new_src = convert_path(src);
-    std::string new_dst = convert_path(dst);
+    chowstring new_src = convert_path(src);
+    chowstring new_dst = convert_path(dst);
 #endif
 
-    std::string data;
+    chowstring data;
     if (!read_file(new_src.c_str(), data))
         return false;
     FSFile fp(new_dst.c_str(), "w");
     if (!fp.is_open())
         return false;
-    fp.write(&data[0], data.size());
+    fp.write(data.data(), data.size());
     fp.close();
 
 #ifdef CHOWDREN_CACHE_INI
@@ -2818,7 +2837,7 @@ bool File::copy_file(const std::string & src, const std::string & dst)
     return true;
 }
 
-int File::get_size(const std::string & path)
+int File::get_size(const chowstring & path)
 {
 #ifdef _WIN32
     return platform_get_file_size(path.c_str());
@@ -2827,40 +2846,40 @@ int File::get_size(const std::string & path)
 #endif
 }
 
-void File::rename_file(const std::string & src, const std::string & dst)
+void File::rename_file(const chowstring & src, const chowstring & dst)
 {
     copy_file(src, dst);
     delete_file(src);
 }
 
-void File::append_text(const std::string & text, const std::string & path)
+void File::append_text(const chowstring & text, const chowstring & path)
 {
 #ifdef _WIN32
-    std::string new_path = path;
+    chowstring new_path = path;
 #else
-    std::string new_path = convert_path(path);
+    chowstring new_path = convert_path(path);
 #endif
 
-    std::string data;
+    chowstring data;
     if (!read_file(new_path.c_str(), data))
         return;
     data += text;
     FSFile fp(new_path.c_str(), "w");
     if (!fp.is_open())
         return;
-    fp.write(&data[0], data.size());
+    fp.write(data.data(), data.size());
     fp.close();
 }
 
-std::string File::get_ext(const std::string & path)
+chowstring File::get_ext(const chowstring & path)
 {
-    std::string ext = get_path_ext(path);
+    chowstring ext = get_path_ext(path);
     if (ext.empty())
         return ext;
     return "." + ext;
 }
 
-std::string File::get_title(const std::string & path)
+chowstring File::get_title(const chowstring & path)
 {
     return get_path_basename(path);
 }
@@ -3019,7 +3038,7 @@ int get_joystick_y(int n)
     return get_joystick_axis(n, CHOWDREN_AXIS_LEFTY) * 1000.0f;
 }
 
-std::string get_joytokey_name(int id)
+chowstring get_joytokey_name(int id)
 {
     std::ostringstream s;
 
@@ -3057,34 +3076,36 @@ struct RumbleEffect
     int duration;
 };
 
-static hash_map<std::string, RumbleEffect> rumble_effects;
+static hash_map<chowstring, RumbleEffect> rumble_effects;
 
 void create_joystick_rumble(int n, float delay, float duration,
-                            float l, float r, const std::string & name)
+                            float l, float r, const chowstring & name)
 {
     RumbleEffect effect = {delay, l * 100.0f, r * 100.0f,
                            int(duration * 1000.0f)};
     rumble_effects[name] = effect;
 }
 
-void start_joystick_rumble(int n, const std::string & name, int times)
+void start_joystick_rumble(int n, const chowstring & name, int times)
 {
     RumbleEffect & effect = rumble_effects[name];
     joystick_vibrate(n, effect.l, effect.r, effect.duration);
 }
 
-const std::string & get_platform()
+const chowstring & get_platform()
 {
 #ifdef _WIN32
-    static std::string name("Chowdren Windows");
+    static chowstring name("Chowdren Windows");
 #elif __APPLE__
-    static std::string name("Chowdren OS X");
+    static chowstring name("Chowdren OS X");
 #elif __linux
-    static std::string name("Chowdren Linux");
+    static chowstring name("Chowdren Linux");
 #elif CHOWDREN_IS_WIIU
-    static std::string name("Chowdren WiiU");
+    static chowstring name("Chowdren WiiU");
+#elif CHOWDREN_IS_ANDROID
+    static chowstring name("Chowdren Android");
 #else
-    static std::string name("Chowdren ???");
+    static chowstring name("Chowdren ???");
 #endif
     return name;
 }

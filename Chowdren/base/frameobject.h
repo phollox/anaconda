@@ -21,7 +21,7 @@
 #include "chowconfig.h"
 #include "alterables.h"
 #include "color.h"
-#include <string>
+#include "chowstring.h"
 #include <string.h>
 #include "types.h"
 #include <algorithm>
@@ -49,7 +49,7 @@ public:
 
     FixedValue(FrameObject * object);
     operator double() const;
-    operator std::string() const;
+    operator chowstring() const;
     operator FrameObject*() const;
     unsigned int get_uint() const;
 #ifdef CHOWDREN_USE_DYNAMIC_NUMBER
@@ -153,14 +153,14 @@ enum AnimationIndex
 
 #ifdef CHOWDREN_USE_VALUEADD
 
-int hash_extra_key(const std::string & value);
+int hash_extra_key(const chowstring & value);
 
 class ExtraAlterables
 {
 public:
     int & flags;
     vector<double> values;
-    vector<std::string> strings;
+    vector<chowstring> strings;
     unsigned char value_offsets[CHOWDREN_VALUEADD_COUNT];
     unsigned char string_offsets[CHOWDREN_VALUEADD_COUNT];
 
@@ -177,7 +177,7 @@ public:
         return values[offset - 1];
     }
 
-    const std::string & get_string(int key)
+    const chowstring & get_string(int key)
     {
         int offset = string_offsets[key];
         if (offset == 0)
@@ -198,7 +198,7 @@ public:
         value_offsets[key] = values.size();
     }
 
-    void set_string(int key, const std::string & value)
+    void set_string(int key, const chowstring & value)
     {
         if (flags & (DESTROYING | FADEOUT))
             return;
@@ -212,7 +212,7 @@ public:
     }
 
     // slow paths
-    double get_value(const std::string & key)
+    double get_value(const chowstring & key)
     {
         int hash = hash_extra_key(key);
         if (hash == -1) {
@@ -224,7 +224,7 @@ public:
         return get_value(hash);
     }
 
-    const std::string & get_string(const std::string & key)
+    const chowstring & get_string(const chowstring & key)
     {
         int hash = hash_extra_key(key);
         if (hash == -1) {
@@ -236,7 +236,7 @@ public:
         return get_string(hash);
     }
 
-    void set_value(const std::string & key, double value)
+    void set_value(const chowstring & key, double value)
     {
         int hash = hash_extra_key(key);
         if (hash == -1) {
@@ -248,7 +248,7 @@ public:
         set_value(hash, value);
     }
 
-    void set_string(const std::string & key, const std::string & value)
+    void set_string(const chowstring & key, const chowstring & value)
     {
         int hash = hash_extra_key(key);
         if (hash == -1) {
@@ -288,7 +288,7 @@ class FrameObject
 {
 public:
 #ifndef NDEBUG
-    std::string name;
+    chowstring name;
     
 #endif
     int x, y;
@@ -400,11 +400,11 @@ public:
     bool overlaps(FrameObject * other);
     void set_layer(int layer);
     void set_shader(int effect);
-    void set_shader_parameter(const std::string & name, double value);
-    void set_shader_parameter(const std::string & name, Image & image);
-    void set_shader_parameter(const std::string & name, const Color & color);
-    void set_shader_parameter(const std::string & name,
-                              const std::string & path);
+    void set_shader_parameter(const chowstring & name, double value);
+    void set_shader_parameter(const chowstring & name, Image & image);
+    void set_shader_parameter(const chowstring & name, const Color & color);
+    void set_shader_parameter(const chowstring & name,
+                              const chowstring & path);
     int get_level();
     void set_level(int index);
     void move_relative(FrameObject * other, int disp);
@@ -425,7 +425,7 @@ public:
     void advance_movement(int dir);
     Movement * get_movement();
     void shoot(FrameObject * other, int speed, int direction);
-    const std::string & get_name();
+    const chowstring & get_name();
     void look_at(int x, int y);
     void wrap_pos();
     void rotate_toward(int dir);
@@ -463,11 +463,11 @@ public:
         return param->value;
     }
 
-    double get_shader_parameter(const std::string & name)
+    double get_shader_parameter(const chowstring & name)
     {
         if (shader_parameters == NULL)
             return 0.0;
-        unsigned int hash = hash_shader_parameter(&name[0], name.size());
+        unsigned int hash = hash_shader_parameter(name.data(), name.size());
         ShaderParameter * param = find_shader_parameter(hash);
         if (param == NULL)
             return 0.0;
@@ -571,8 +571,9 @@ public:
     {
         int size = items.size();
         items[0].next = size-1;
-        for (int i = 1; i < size; i++)
+        for (int i = 1; i < size; i++) {
             items[i].next = i-1;
+        }
         return *this;
     }
 

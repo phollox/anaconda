@@ -86,7 +86,7 @@ class SetString(ActionWriter):
             if v == self.converter.strings.get('Finish', None):
                 writer.putln('platform_debug("Unittest done");')
                 return
-            self.group.add_member('std::string unittest_result')
+            self.group.add_member('chowstring unittest_result')
             writer.putlnc('unittest_result = %r;', self.convert_index(0))
             if not self.get_bool(0):
                 writer.putln('platform_debug("Unittest failed");')

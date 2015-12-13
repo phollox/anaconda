@@ -42,17 +42,17 @@ public:
     void update();
     void draw();
     int get_current_line_number();
-    std::string get_current_line();
-    std::string get_line(int index);
+    chowstring get_current_line();
+    chowstring get_line(int index);
     void set_current_line(int index);
-    void add_line(const std::string line);
+    void add_line(const chowstring line);
     void highlight();
     void dehighlight();
     void lose_focus();
     void reset();
     bool is_list_dropped();
     bool is_selection_changed();
-    int find_string_exact(const std::string & text, int flag);
+    int find_string_exact(const chowstring & text, int flag);
     void init_control();
 };
 

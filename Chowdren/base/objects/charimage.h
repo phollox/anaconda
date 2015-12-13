@@ -19,7 +19,7 @@
 #define CHOWDREN_CHARIMAGE_H
 
 #include "frameobject.h"
-#include <string>
+#include "chowstring.h"
 #include "types.h"
 #include "font.h"
 
@@ -48,10 +48,10 @@ struct CharacterImageBlock
 {
     int line;
     CharacterImageAttributes attribs;
-    std::string text;
+    chowstring text;
 
     CharacterImageBlock(int line, const CharacterImageAttributes & attribs,
-                        const std::string & text)
+                        const chowstring & text)
     : line(line), attribs(attribs), text(text)
     {
     }
@@ -74,8 +74,8 @@ public:
     FRAMEOBJECT_HEAD(CharacterImageObject)
 
     CharacterImageAlias * aliases;
-    std::string text;
-    std::string unformatted;
+    chowstring text;
+    chowstring unformatted;
     int x_off;
 
     int total_height[3];
@@ -85,14 +85,14 @@ public:
 
     CharacterImageObject(int x, int y, int type_id);
     ~CharacterImageObject();
-    void set_text(const std::string & text);
+    void set_text(const chowstring & text);
     void update_text();
     void draw();
-    std::string get_char(int index);
-    int get_char_width(int alias, const std::string & c);
-    void set_char_width(int alias, const std::string & c, int width);
-    void set_clipping_width(int alias, const std::string & c, int width);
-    void load(int alias, const std::string & c, const std::string & path,
+    chowstring get_char(int index);
+    int get_char_width(int alias, const chowstring & c);
+    void set_char_width(int alias, const chowstring & c, int width);
+    void set_clipping_width(int alias, const chowstring & c, int width);
+    void load(int alias, const chowstring & c, const chowstring & path,
               int x_hotspot, int y_hotspot);
 };
 

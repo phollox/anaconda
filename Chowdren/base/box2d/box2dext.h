@@ -123,8 +123,8 @@ public:
     void update();
     void create_body(float x, float y, float angle);
     void create_body(FrameObject * obj, float x, float y, int rot, int dest);
-    void create_shape(FrameObject * obj, const std::string & value);
-    void create_shape(FrameObject * obj, const std::string & value,
+    void create_shape(FrameObject * obj, const chowstring & value);
+    void create_shape(FrameObject * obj, const chowstring & value,
                       float x, float y, float density, float friction,
                       float elasticity);
     void create_mouse_joint(FrameObject * obj, float x, float y,
@@ -136,7 +136,7 @@ public:
     void create_box(FrameObject * obj, float width, float height,
                     float x, float y, float angle, float density,
                     float friction, float elasticity);
-    void create_edge_chain(int id, const std::string & v, int loop,
+    void create_edge_chain(int id, const chowstring & v, int loop,
                            float x, float y, float friction, float elasticity);
     void set_auto_update(int v);
     void remove_joint(int id);

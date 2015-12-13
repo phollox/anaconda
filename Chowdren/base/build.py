@@ -26,6 +26,7 @@ import tarfile
 import stat
 import argparse
 import subprocess
+import json
 
 chroot_prefix = 'steamrt_scout_'
 chroots = '/var/chroots'
@@ -64,6 +65,8 @@ class Builder(object):
         defs = ['-DCMAKE_BUILD_TYPE=%s' % build_type]
         if self.args.steam:
             defs += ['-DUSE_STEAM=ON']
+        else:
+            defs += ['-DUSE_STEAM=OFF']
         cmd = [self.get_cmake_path(),  '..'] + defs + self.get_cmake_args()
 
         self.call(cmd)
@@ -202,7 +205,7 @@ class LinuxBuilder(Builder):
             return
         shutil.rmtree(self.temp)
 
-ARCHS = ('x86', 'armeabi')
+ARCHS = ('x86', 'armeabi', 'armeabi-v7a')
 BUILD_TOOLS_VERSION = '23.0.1'
 
 ANDROID_SDK = 'C:/Program Files (x86)/Android/android-sdk'
@@ -213,16 +216,17 @@ AAPT = os.path.join(BUILD_TOOLS, 'aapt.exe')
 DX = os.path.join(BUILD_TOOLS, 'dx.bat')
 ZIPALIGN = os.path.join(BUILD_TOOLS, 'zipalign.exe')
 ANDROID_PROJECT_SRC = os.path.join(base_dir, 'android', 'project')
-ANDROID_SRC = os.path.join(ANDROID_PROJECT_SRC, 'src')
 RES_DIR = os.path.join(ANDROID_PROJECT_SRC, 'res')
 ANDROID_MANIFEST = os.path.join(ANDROID_PROJECT_SRC, 'AndroidManifest.xml')
 
 R_JAVA = os.path.join('gen', 'org', 'libsdl', 'app', 'R.java')
-SDL_JAVA = os.path.join(ANDROID_SRC, 'org', 'libsdl', 'app',
-                        'SDLActivity.java')
-JAVA_SRCS = [R_JAVA, SDL_JAVA]
+ANDROID_SRC = os.path.join(ANDROID_PROJECT_SRC, 'src')
+SDL_JAVA_REL = 'SDLActivity.java'
+SDL_JAVA = os.path.join(ANDROID_SRC, SDL_JAVA_REL)
+CHOWDREN_JAVA = os.path.join(ANDROID_SRC, 'ChowdrenActivity.java')
 DEBUG_KEYSTORE = os.path.join(os.path.expanduser('~'), '.android',
                               'debug.keystore')
+PACKAGE_NAME = 'org.chowdren.app'
 
 class AndroidBuilder(Builder):
     def setup_parser(self, parser):
@@ -230,6 +234,10 @@ class AndroidBuilder(Builder):
                             help='Install on Android device')
         parser.add_argument('--tv', action='store_true',
                             help='Make APK compatible with Android TV')
+        parser.add_argument('--gamecircle', action='store_true',
+                            help='Use GameCircle for achievements')
+        parser.add_argument('--package', default='com.chowdren.app',
+                            help='Package name to use')
 
     def build(self):
         if self.args.tv:
@@ -240,51 +248,113 @@ class AndroidBuilder(Builder):
                                         'android-%s' % self.target_version,
                                         'android.jar')
 
+        # create AndroidManifest.xml
         with open(ANDROID_MANIFEST, 'rb') as fp:
             data = fp.read()
-            if self.args.tv:
-                data = data.replace('android:minSdkVersion="10"',
-                                    ('android:minSdkVersion="%s"'
-                                     % self.target_version))
-                data = data.replace('android:targetSdkVersion="12"',
-                                    ('android:targetSdkVersion="%s"'
-                                     % self.target_version))
+
+        data = data.replace(PACKAGE_NAME, self.args.package)
+
+        if self.args.tv:
+            data = data.replace('android:minSdkVersion="10"',
+                                ('android:minSdkVersion="%s"'
+                                 % self.target_version))
+            data = data.replace('android:targetSdkVersion="12"',
+                                ('android:targetSdkVersion="%s"'
+                                 % self.target_version))
+        if self.args.gamecircle:
+            data = data.replace('<!-- gamecircle', '')
+            data = data.replace('gamecircle -->', '')
+
+        if not self.args.tv:
+            data = data.replace('android:banner="@drawable/banner"', '')
 
         with open('AndroidManifest.xml', 'wb') as fp:
             fp.write(data)
 
+        # create SDLActivity.java
+        with open(SDL_JAVA, 'rb') as fp:
+            data = fp.read()
+
+        if self.args.gamecircle:
+            data = data.replace('/* gamecircle', '')
+            data = data.replace('gamecircle */', '')
+
+        sdl_java = os.path.join('src', SDL_JAVA_REL)
+        makedirs(os.path.dirname(sdl_java))
+        with open(sdl_java, 'wb') as fp:
+            fp.write(data)
+
+        # create ChowdrenActivity.java
+        with open(CHOWDREN_JAVA, 'rb') as fp:
+            data = fp.read()
+
+        data = data.replace(PACKAGE_NAME, self.args.package)
+
+        chowdren_java = os.path.join('src', 'ChowdrenActivity.java')
+        with open(chowdren_java, 'wb') as fp:
+            fp.write(data)
+
+        r_java = ['gen'] + self.args.package.split('.') + ['R.java']
+        r_java = os.path.join(*r_java)
+        java_srcs = [r_java, sdl_java, chowdren_java]
+
         makedirs('bin/lib')
-        archs = ('x86', 'armeabi')
-        for arch in archs:
+        for arch in ARCHS:
             self.build_arch(arch)
+
         makedirs('gen')
         makedirs('bin')
         makedirs('obj')
         makedirs('assets')
         makedirs('apk')
 
+        res_dir = RES_DIR
+        if os.path.isdir('res'):
+            res_dir = 'res'
+
+        deps = [self.android_jar]
+        dex_names = ['obj']
+        if self.args.gamecircle:
+            so = os.path.join(base_dir, 'GameCircleSDK', 'jni',
+                              'libAmazonGamesJni.so')
+            shutil.copy(so, 'bin/lib/armeabi-v7a/libAmazonGamesJni.so')
+            gamecircle_libs = os.path.join(base_dir, 'GameCircleSDK', 'libs')
+            deps.append(os.path.join(gamecircle_libs, 'gamecirclesdk.jar'))
+            for name in os.listdir(gamecircle_libs):
+                if not name.endswith('.jar'):
+                    continue
+                gamecircle_lib = os.path.join(gamecircle_libs, name)
+                dex_names.append(gamecircle_lib)
+
         shutil.copy('Assets.dat', os.path.join('assets', 'Assets.dat'))
         self.call([AAPT, 'package', '-m', '-J', 'gen', '-A', 'assets', '-M',
-                   './AndroidManifest.xml', '-S', RES_DIR, '-I',
+                   './AndroidManifest.xml', '-S', res_dir, '-I',
                    self.android_jar])
         self.call(['javac', '-source', '1.6', '-target', '1.6', '-classpath',
-                   self.android_jar, '-d', 'obj',
-                   '-sourcepath', '%s;gen' % ANDROID_SRC] + JAVA_SRCS)
-        self.call([DX, '--dex', '--verbose', '--output=bin/classes.dex',
-                   'obj'])
-        self.call([DX, '--dex', '--verbose', '--output=bin/classes.dex',
-                   'obj'])
+                   ';'.join(deps), '-d', 'obj',
+                   '-sourcepath', 'src;gen'] + java_srcs)
+        self.call([DX, '--dex', '--verbose', '--output=bin/classes.dex']
+                  + dex_names)
         self.call([AAPT, 'package', '-f', '-A', 'assets', '-M',
-                   './AndroidManifest.xml', '-S', RES_DIR, '-I',
+                   './AndroidManifest.xml', '-S', res_dir, '-I',
                    self.android_jar, '-F', 'apk/unsigned.apk', 'bin'])
-        # if not os.path.isfile('debug.keystore'):
-        #     self.create_keystore()
-
+        if os.path.isfile('key.cfg'):
+            with open('key.cfg', 'rb') as fp:
+                key_json = json.load(fp)
+            store_path = key_json['store']
+            store_pass = key_json['store_pass']
+            key_pass = key_json['key_pass']
+            alias = key_json['alias']
+        else:
+            store_path = DEBUG_KEYSTORE
+            store_pass = 'android'
+            key_pass = 'android'
+            alias = 'androiddebugkey'
         self.call(['jarsigner', '-verbose', '-sigalg', 'SHA1withRSA',
-                   '-digestalg', 'SHA1', '-keystore', DEBUG_KEYSTORE,
-                   '-storepass', 'android', '-keypass', 'android',
+                   '-digestalg', 'SHA1', '-keystore', store_path,
+                   '-storepass', store_pass, '-keypass', key_pass,
                    '-signedjar', 'apk/signed.apk', 'apk/unsigned.apk',
-                   'androiddebugkey'])
+                   alias])
         self.call([ZIPALIGN, '-f', '4', 'apk/signed.apk', 'apk/release.apk'])
 
         if self.args.install:
@@ -318,10 +388,15 @@ class AndroidBuilder(Builder):
     def get_cmake_args(self):
         toolchain = os.path.join(base_dir, self.get_cmake_path(),
                                  'android.toolchain.cmake')
-        return ['-GMinGW Makefiles',
+        args = ['-GMinGW Makefiles',
                 '-DCMAKE_TOOLCHAIN_FILE=%s' % toolchain,
                 '-DANDROID_ABI=%s' % self.arch,
                 '-DANDROID_NATIVE_API_LEVEL=%s' % self.target_version]
+        if self.args.gamecircle:
+            args += ['-DUSE_GAMECIRCLE=ON']
+        else:
+            args += ['-DUSE_GAMECIRCLE=OFF']
+        return args
 
 CMAKE_URL = 'https://cmake.org/files/v3.4/cmake-3.4.0-rc3-Darwin-x86_64.tar.gz'
 
@@ -444,7 +519,8 @@ def main():
     builder.setup_parser(parser)
     parser.add_argument('--steam', action='store_true',
                         help='Performs a build with Steamworks')
-    parser.add_argument('--build_type')
+    parser.add_argument('--build_type', help=('Selects a build type, e.g. '
+                                              'Release or Debug'))
     builder.setup(parser.parse_args())
     builder.build()
     builder.finish()

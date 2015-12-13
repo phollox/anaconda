@@ -30,12 +30,12 @@ EditObject::EditObject(int x, int y, int type_id)
 {
 }
 
-void EditObject::set_text(const std::string & value)
+void EditObject::set_text(const chowstring & value)
 {
 
 }
 
-const std::string & EditObject::get_text()
+const chowstring & EditObject::get_text()
 {
     return empty_string;
 }
@@ -193,7 +193,7 @@ void EditObject::draw()
 #endif
 }
 
-void EditObject::set_text(const std::string & value)
+void EditObject::set_text(const chowstring & value)
 {
 #ifdef CHOWDREN_USE_GWEN
     text_box->SetText(Gwen::TextObject(value), false);
@@ -203,7 +203,7 @@ void EditObject::set_text(const std::string & value)
 #endif
 }
 
-const std::string & EditObject::get_text()
+const chowstring & EditObject::get_text()
 {
 #ifdef CHOWDREN_USE_GWEN
     return new_text;

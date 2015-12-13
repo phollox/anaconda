@@ -84,6 +84,17 @@ def call(args):
         sys.exit()
         return
 
+def call_output(args):
+    exp = ' '.join(args)
+    print exp
+    print ''
+    try:
+        return subprocess.check_output(args)
+    except subprocess.CalledProcessError:
+        print 'Error, quitting...'
+        sys.exit()
+        return
+
 COMPARISONS = [
     '==',
     '!=',
@@ -144,7 +155,7 @@ class StringWrapper(object):
 
     def __repr__(self):
         if self.cpp and self.value == '':
-            return 'std::string()'
+            return 'chowstring()'
         new = ''
         for c in self.value:
             if c == '\\':
@@ -163,7 +174,7 @@ class StringWrapper(object):
                 new += c
         ret = '"%s"' % new
         if self.cpp:
-            ret = 'std::string(%s, %s)' % (ret, len(self.value))
+            ret = 'chowstring(%s, %s)' % (ret, len(self.value))
         return ret
 
 def to_c(format_spec, *args, **kw):

@@ -150,7 +150,7 @@ struct Grid
 
 static void dump_map(int dest_x, int dest_y, PathPlanner * planner)
 {
-    // std::string v = number_to_string(dest_x) + "_" + number_to_string(dest_y)
+    // chowstring v = number_to_string(dest_x) + "_" + number_to_string(dest_y)
     //                 + ".dat";
     save_bitarray("dump.dat", planner->map,
                   planner->map_width, planner->map_height);

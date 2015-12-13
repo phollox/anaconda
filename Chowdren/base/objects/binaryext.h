@@ -19,7 +19,7 @@
 #define CHOWDREN_BINARYEXT_H
 
 #include "frameobject.h"
-#include <string>
+#include "chowstring.h"
 
 class BinaryObject : public FrameObject
 {
@@ -31,8 +31,8 @@ public:
 
     BinaryObject(int x, int y, int type_id);
     ~BinaryObject();
-    void load_file(const std::string & filename);
-    void save_file(const std::string & filename);
+    void load_file(const chowstring & filename);
+    void save_file(const chowstring & filename);
     void set_byte(unsigned char value, size_t addr);
     void resize(size_t size);
     int get_byte(size_t addr);

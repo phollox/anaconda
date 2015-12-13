@@ -212,6 +212,8 @@ DEFAULT_CHARMAP = ''.join([chr(item) for item in xrange(32, 256)])
 
 class EventContainer(object):
     is_static = None
+    dead = False
+
     def __init__(self, name, inactive, parent, converter):
         self.name = name
         if parent is None:
@@ -234,11 +236,11 @@ class EventContainer(object):
         converter.config.init_container(self)
 
     def get_dynamics(self):
-        containers = set()
+        containers = []
         for container in self.tree:
             if container.is_static:
                 continue
-            containers.add(container)
+            containers.append(container)
         return containers
 
     def add_child(self, child):
@@ -564,16 +566,17 @@ class FrameDataWriter(MultiFileWriter):
         self.putln('#include "events.h"')
         self.putlnc('#include "%s.h"', self.get_filename())
 
-def fix_sound(data, extension):
+def fix_sound(converter, data, extension):
     data = str(data)
     if extension != 'wav':
         return data
     try:
         wav = wave.open(StringIO(data), 'rb')
-    except wave.Error:
-        print 'Could not convert wave. Probably ADPCM?'
-        with open('unsupported/%s.wav' % hash(data), 'wb') as fp:
-            fp.write(data)
+    except wave.Error, e:
+        print 'Could not convert wave, asking config.'
+        data = converter.config.get_wave_sound(data)
+        if data is None:
+            raise NotImplementedError()
         return data
     channels, width, rate, frame_count, comptype, compname = wav.getparams()
     if width == 2:
@@ -781,6 +784,7 @@ class Converter(object):
         self.object_names = {}
         self.object_class_index = 0
         self.all_objects = {}
+        self.non_alias_objects = {}
         self.name_to_item = {}
         self.object_types = {}
         self.object_list_ids = {}
@@ -852,10 +856,10 @@ class Converter(object):
         special_objs = set()
 
         # assimilate objects that share their list
-        for handle, writer in self.all_objects.iteritems():
-            self.game_index = handle[2]
+        for in_handle, writer in self.non_alias_objects.iteritems():
+            self.game_index = in_handle[2]
             self.game = self.games[self.game_index]
-            handle = handle[:-1]
+            handle = in_handle[:-1]
             if not self.is_valid_object(handle):
                 continue
             has_updates = writer.has_updates()
@@ -867,7 +871,7 @@ class Converter(object):
             key = (writer.class_name, has_updates, has_movements, has_sleep,
                    has_kill)
             list_name = self.get_object_list(handle)
-            list_to_writers[list_name].add(writer)
+            list_to_writers[list_name].add((writer, key))
             if list_name not in special_objs and list_name in updated_objs:
                 if list_name in obj_keys and obj_keys[list_name] != key:
                     print 'Using custom update for %s' % list_name
@@ -956,9 +960,9 @@ class Converter(object):
         frame_objs = defaultdict(list)
         for obj in special_objs:
             writers = list_to_writers[obj]
-            for writer in list_to_writers[obj]:
+            for (writer, key) in list_to_writers[obj]:
                 for frame_index in writer.get_used_frames():
-                    frame_objs[frame_index].append((writer, obj))
+                    frame_objs[frame_index].append((key, obj))
 
         if frame_objs:
             event_file.putln('ObjectList * special_list[1];')
@@ -967,13 +971,7 @@ class Converter(object):
             for frame_index, objs in frame_objs.iteritems():
                 event_file.putlnc('case %s:', frame_index)
                 event_file.indent()
-                for (writer, list_name) in objs:
-                    has_updates = writer.has_updates()
-                    has_movements = writer.has_movements()
-                    has_sleep = writer.has_sleep()
-                    has_kill = writer.has_kill()
-                    key = (writer.class_name, has_updates, has_movements,
-                           has_sleep, has_kill)
+                for (key, list_name) in objs:
                     updater = updaters[key]
                     event_file.putlnc('special_list[0] = &%s;', list_name)
                     event_file.putlnc('%s(special_list, 1);', updater)
@@ -1087,15 +1085,15 @@ class Converter(object):
         preload_file.close()
 
         strings_file = self.open_code('intern.cpp')
-        strings_file.putlnc('#include <string>')
+        strings_file.putlnc('#include "chowstring.h"')
         strings_file.putlnc('#include "image.h"')
         strings_header = self.open_code('intern.h')
         strings_header.start_guard('CHOWDREN_STRINGS_H')
-        strings_header.putln('#include <string>')
+        strings_header.putln('#include "chowstring.h"')
         for value, name in self.strings.iteritems():
-            strings_file.putlnc('std::string %s(%r, %s);', name, value,
+            strings_file.putlnc('chowstring %s(%r, %s);', name, value,
                                 len(value), cpp=False)
-            strings_header.putlnc('extern std::string %s;', name)
+            strings_header.putlnc('extern chowstring %s;', name)
 
         local_dict = self.config.get_locals()
         write_locals(local_dict, strings_file, strings_header, self)
@@ -1169,6 +1167,8 @@ class Converter(object):
             self.add_define('CHOWDREN_USE_GWEN')
         if self.config.use_subapp_frames():
             self.add_define('CHOWDREN_SUBAPP_FRAMES')
+
+        self.config.finish()
 
         for (name, value) in self.defines:
             if value is None:
@@ -1368,7 +1368,7 @@ class Converter(object):
                 extension = {'OGG' : 'ogg', 'WAV' : 'wav', 'MOD' : 'mp3'}[
                     sound_type]
                 filename = '%s.%s' % (sound.name, extension)
-                data = fix_sound(sound.data, extension)
+                data = fix_sound(self, sound.data, extension)
                 filename, data = self.platform.get_sound(filename, data)
                 new_extension = os.path.splitext(filename)[1].lower()[1:]
                 self.assets.add_sound(sound.name, new_extension, data)
@@ -1447,7 +1447,9 @@ class Converter(object):
             all_startup_infos.add(obj)
             try:
                 object_writer = self.get_object_writer(obj)
-                object_writer.set_used_frame(self.current_frame_index)
+                non_alias = self.non_alias_objects[self.filter_object_type(obj)
+                                                   + (self.game_index,)]
+                non_alias.set_used_frame(self.current_frame_index)
                 if object_writer not in object_writers:
                     object_writers.append(object_writer)
                 if object_writer.static:
@@ -1665,6 +1667,8 @@ class Converter(object):
                     new_group.local_id = len(generated_groups[key])+1
                     generated_groups[key].append(new_group)
 
+                self.config.init_group(new_group)
+
             new_always_groups.sort(key=lambda x: x.global_id)
             always_groups.extend(new_always_groups)
 
@@ -1680,11 +1684,22 @@ class Converter(object):
                 v.is_static = False
                 continue
             if v.inactive:
+                v.dead = True
+                print 'never activated:', v.name
                 # never activated!
                 continue
             if v.is_static is not None:
                 continue
             v.is_static = True
+
+        # for container in containers.itervalues():
+        #     for item in container.tree:
+        #         if not item.dead:
+        #             continue
+        #         container.dead = True
+        #         container.is_static = True
+        #         container.inactive = True
+        #         break
 
         for container in containers.values():
             if container.is_static:
@@ -2074,6 +2089,7 @@ class Converter(object):
                 self.add_define(define)
             self.application_writers.add(object_writer.write_application)
             self.all_objects[handle] = object_writer
+            self.non_alias_objects[handle] = object_writer
             type_handle = (handle[0], self.game_index)
             self.object_types[type_handle] = object_type
             if extra.is_special_object(name):
@@ -2104,6 +2120,7 @@ class Converter(object):
                 self.all_objects[handle] = other
                 self.object_types[type_handle] = other.object_type
                 self.object_names[handle] = class_name
+                object_writer.alias_obj = other
 
                 try:
                     self.object_lists[handle] = self.object_lists[other.handle]
@@ -2187,7 +2204,10 @@ class Converter(object):
             pass
 
         objects_file.putraw('#ifndef NDEBUG')
-        objects_file.putln(to_c('name = %r;', frameitem.name))
+        name = frameitem.name
+        if name is None:
+            name = class_name
+        objects_file.putlnc('name = %r;', name)
         objects_file.putraw('#endif')
 
         if object_writer.is_background():
@@ -2463,7 +2483,12 @@ class Converter(object):
             prefix = '%s = ' % object_name
         else:
             prefix = ''
-        writer.putlnc('%sadd_object(%s(%s), %s);', prefix,
+        object_writer = self.get_object_writer(obj)
+        if object_writer.is_background():
+            method = 'add_background_object'
+        else:
+            method = 'add_object'
+        writer.putlnc('%s%s(%s(%s), %s);', prefix, method,
                       obj_create_func, ', '.join(arguments), layer)
 
     def begin_events(self):
@@ -2712,25 +2737,33 @@ class Converter(object):
         writer.putmeth('void %s' % name)
         names.append(None)
         containers.append(None)
-        current_tree = set()
+        current_tree = []
         for event_index, event_name in enumerate(names):
-            container = containers[event_index]
-            if container is None:
-                container_tree = set()
+            event_container = containers[event_index]
+            if event_container is None:
+                container_tree = []
             else:    
-                container_tree = container.get_dynamics()
-            new_containers = container_tree - current_tree
-            old_containers = current_tree - container_tree
-            current_tree = container_tree
-            for container in old_containers:
+                container_tree = event_container.get_dynamics()
+
+            container_tree_set = set(container_tree)
+            current_tree_set = set(current_tree)
+            new_containers = container_tree_set - current_tree_set
+            old_containers = current_tree_set - container_tree_set
+            for container in current_tree:
+                if container not in old_containers:
+                    continue
                 writer.put_label(container.end_label)
-            for container in new_containers:
+            for container in container_tree:
+                if container not in new_containers:
+                    continue
                 writer.putlnc('if (!%s) goto %s;',
                               container.code_name,
                               container.end_label)
+            current_tree = container_tree
             if event_name is None:
                 continue
-            writer.putlnc('%s();', event_name)
+            if not event_container or not event_container.dead:
+                writer.putlnc('%s();', event_name)
         writer.end_brace()
         return name
 

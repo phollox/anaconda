@@ -191,7 +191,7 @@ bool read_file(const char * filename, char ** data, size_t * ret_size,
     return true;
 }
 
-bool read_file(const char * filename, std::string & dst, bool binary)
+bool read_file(const char * filename, chowstring & dst, bool binary)
 {
     BaseFile fp(filename, "r");
     if (!fp.is_open()) {

@@ -16,7 +16,7 @@
 // along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <limits>
-#include <string>
+#include "chowstring.h"
 #include <stdio.h>
 
 #define AT_END() (p >= end)
@@ -110,7 +110,7 @@ const char DIGITS[] =
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
 
-std::string fast_itoa(int value)
+chowstring fast_itoa(int value)
 {
     enum {BUFFER_SIZE = 16};
     char buffer[BUFFER_SIZE];
@@ -144,10 +144,10 @@ std::string fast_itoa(int value)
     if (negative)
       *--buffer_end = '-';
 
-    return std::string(buffer_end, buffer - buffer_end + BUFFER_SIZE - 1);
+    return chowstring(buffer_end, buffer - buffer_end + BUFFER_SIZE - 1);
 }
 
-std::string fast_lltoa(long long value)
+chowstring fast_lltoa(long long value)
 {
     enum {BUFFER_SIZE = 24};
     char buffer[BUFFER_SIZE];
@@ -181,10 +181,10 @@ std::string fast_lltoa(long long value)
     if (negative)
       *--buffer_end = '-';
 
-    return std::string(buffer_end, buffer - buffer_end + BUFFER_SIZE - 1);
+    return chowstring(buffer_end, buffer - buffer_end + BUFFER_SIZE - 1);
 }
 
-std::string fast_dtoa(double value)
+chowstring fast_dtoa(double value)
 {
     char buffer[16];
 
@@ -207,7 +207,7 @@ std::string fast_dtoa(double value)
     */
     if (value > thres_max) {
         sprintf(&buffer[0], "%e", neg ? -value : value);
-        return std::string(buffer);
+        return chowstring(buffer);
     }
 
     char* wstr = &buffer[15];
@@ -261,14 +261,14 @@ std::string fast_dtoa(double value)
     if (neg) {
         *wstr-- = '-';
     }
-    return std::string(wstr + 1, &buffer[15] - wstr);
+    return chowstring(wstr + 1, &buffer[15] - wstr);
 }
 
-int fast_atoi(const std::string & src)
+int fast_atoi(const chowstring & src)
 {
     if (src.empty())
         return 0;
-    const char * p = &src[0];
+    const char * p = src.data();
     const char * end = p + src.size();
     int value = 0;
     int sign = 1;

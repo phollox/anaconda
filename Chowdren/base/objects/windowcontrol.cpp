@@ -148,7 +148,7 @@ void WindowControl::set_placement(int value)
     std::cout << "Set window placement: " << value << std::endl;
 }
 
-void WindowControl::set_title(const std::string & title)
+void WindowControl::set_title(const chowstring & title)
 {
     std::cout << "Set window title: " << title << std::endl;
 #ifdef CHOWDREN_USE_GWEN
@@ -164,4 +164,35 @@ void WindowControl::set_frame_width(int width, bool adjust)
 void WindowControl::set_frame_height(int height, bool adjust)
 {
     manager.frame->set_height(height, adjust);
+}
+
+int WindowControl::get_mouse_x()
+{
+    return manager.mouse_x;
+}
+
+int WindowControl::get_mouse_y()
+{
+    return manager.mouse_y;
+}
+
+void WindowControl::set_mouse_x(int x)
+{
+    // std::cout << "Set mouse x: " << x << std::endl;
+}
+
+void WindowControl::set_mouse_y(int y)
+{
+    // std::cout << "Set mouse y: " << y << std::endl;
+}
+
+int WindowControl::get_mouse_speed()
+{
+    // std::cout << "Get mouse not implemented" << std::endl;
+    return 0;
+}
+
+void WindowControl::set_mouse_speed(int speed)
+{
+    // std::cout << "Set mouse speed: " << speed << std::endl;
 }

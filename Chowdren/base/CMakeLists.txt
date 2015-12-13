@@ -89,6 +89,13 @@ endif()
 
 if (ANDROID)
     add_definitions(-DCHOWDREN_IS_ANDROID -DUSE_ASSET_MANAGER)
+    option(USE_GAMECIRCLE OFF)
+    if (USE_GAMECIRCLE AND NOT ANDROID_ABI STREQUAL "x86")
+        add_definitions(-DCHOWDREN_USE_GAMECIRCLE)
+        include_directories("${CHOWDREN_BASE_DIR}/GameCircleSDK/jni/includes")
+        set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}
+            "${CHOWDREN_BASE_DIR}/GameCircleSDK/jni/libAmazonGamesJni.so")
+    endif()
     include(AndroidNdkGdb)
     android_ndk_gdb_enable()
 elseif (NOT CROSSCOMPILING)

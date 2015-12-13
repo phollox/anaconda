@@ -20,7 +20,7 @@
 
 #include "fileio.h"
 #include "assets.h"
-#include <string>
+#include "chowstring.h"
 
 #define OFFSET_SIZE(x) ((x)>1?(x):1)
 #define IMAGE_ARRAY_SIZE OFFSET_SIZE(IMAGE_COUNT)
@@ -62,9 +62,9 @@ public:
     {
     }
 
-    void read(std::string & data);
+    void read(chowstring & data);
 };
 
-TempPath create_temp_file(const std::string & path);
+TempPath create_temp_file(const chowstring & path);
 
 #endif // CHOWDREN_ASSETFILE_H

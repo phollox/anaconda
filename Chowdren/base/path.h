@@ -18,7 +18,7 @@
 #ifndef CHOWDREN_PATH_H
 #define CHOWDREN_PATH_H
 
-#include <string>
+#include "chowstring.h"
 #include <algorithm>
 #include "stringcommon.h"
 
@@ -30,59 +30,59 @@
 #define PATH_SEP_SINGLE "/"
 #endif
 
-inline std::string get_app_path()
+inline chowstring get_app_path()
 {
     return "./";
 }
 
-inline std::string get_app_drive()
+inline chowstring get_app_drive()
 {
     return "";
 }
 
-inline std::string get_app_dir()
+inline chowstring get_app_dir()
 {
     return "./";
 }
 
-inline std::string get_temp_path()
+inline chowstring get_temp_path()
 {
     return "./";
 }
 
-inline std::string get_path_filename(const std::string & path)
+inline chowstring get_path_filename(const chowstring & path)
 {
     size_t pos = path.find_last_of(PATH_SEP);
-    if (pos == std::string::npos)
+    if (pos == chowstring::npos)
         return path;
     return path.substr(pos + 1);
 }
 
-inline std::string get_path_dirname(const std::string & path)
+inline chowstring get_path_dirname(const chowstring & path)
 {
     size_t pos = path.find_last_of(PATH_SEP);
-    if (pos == std::string::npos)
+    if (pos == chowstring::npos)
         return "";
     return path.substr(0, pos + 1);
 }
 
-inline std::string get_path_basename(const std::string & path)
+inline chowstring get_path_basename(const chowstring & path)
 {
-    std::string path2 = get_path_filename(path);
+    chowstring path2 = get_path_filename(path);
     return path2.substr(0, path2.find_last_of("."));
 }
 
-inline std::string get_path_ext(const std::string & path)
+inline chowstring get_path_ext(const chowstring & path)
 {
-    std::string ext;
-    std::string::size_type pos = path.find_last_of(".");
-    if (pos != std::string::npos)
+    chowstring ext;
+    chowstring::size_type pos = path.find_last_of(".");
+    if (pos != chowstring::npos)
         ext = path.substr(pos + 1);
     to_lower(ext);
     return ext;
 }
 
-inline std::string join_path(const std::string & a, const std::string & b)
+inline chowstring join_path(const chowstring & a, const chowstring & b)
 {
     if (a.empty())
         return b;
@@ -92,9 +92,9 @@ inline std::string join_path(const std::string & a, const std::string & b)
     return a + PATH_SEP_SINGLE + b;
 }
 
-inline void make_ascii(std::string & path)
+inline void make_ascii(chowstring & path)
 {
-    std::string::iterator it;
+    chowstring::iterator it;
     for (it = path.begin(); it != path.end(); ++it) {
         unsigned char c = (unsigned char)*it;
         switch (c) {

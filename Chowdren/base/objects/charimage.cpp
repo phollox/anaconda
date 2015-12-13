@@ -106,7 +106,7 @@ void CharacterImageObject::draw()
     }
 }
 
-void CharacterImageObject::set_text(const std::string & text)
+void CharacterImageObject::set_text(const chowstring & text)
 {
     this->text = text;
     update_text();
@@ -191,7 +191,7 @@ void CharacterImageObject::update_text()
     if (text.empty())
         return;
 
-    char * data = &text[0];
+    char * data = text.data();
     char * end = data + text.size();
 
     char * start_text = NULL;
@@ -255,7 +255,7 @@ void CharacterImageObject::update_text()
         if (text_start != text_end) {
             int alias_index = attribs.values[ALIAS_ATTRIB];
             CharacterImageAlias & alias = aliases[alias_index];
-            std::string new_text(text_start, text_end - text_start);
+            chowstring new_text(text_start, text_end - text_start);
 
             for (int i = 0; i < int(new_text.size()); i++) {
                 unsigned char c = (unsigned char)new_text[i];
@@ -357,7 +357,7 @@ void CharacterImageObject::update_text()
             }
 
             if (!is_alignment) {
-                std::string value_str(value_start, value_end-value_start);
+                chowstring value_str(value_start, value_end-value_start);
                 value = string_to_int(value_str);
             }
         }
@@ -381,7 +381,7 @@ void CharacterImageObject::update_text()
             leading = value;
             continue;
         } else {
-            std::string tag(tag_start, tag_end - tag_start);
+            chowstring tag(tag_start, tag_end - tag_start);
             std::cout << "Unknown tag: " << tag << std::endl;
             continue;
         }
@@ -395,21 +395,21 @@ void CharacterImageObject::update_text()
     }
 }
 
-std::string CharacterImageObject::get_char(int index)
+chowstring CharacterImageObject::get_char(int index)
 {
     if (index < 0 || index >= int(unformatted.size()))
         return empty_string;
-    return std::string(&unformatted[index], 1);
+    return chowstring(&unformatted[index], 1);
 }
 
-int CharacterImageObject::get_char_width(int alias, const std::string & c)
+int CharacterImageObject::get_char_width(int alias, const chowstring & c)
 {
     CharacterImageAlias & a = aliases[alias];
     unsigned char cc = (unsigned char)c[0];
     return a.charmap[cc].width;
 }
 
-void CharacterImageObject::set_char_width(int alias, const std::string & c,
+void CharacterImageObject::set_char_width(int alias, const chowstring & c,
                                           int width)
 {
     CharacterImageAlias & a = aliases[alias];
@@ -417,7 +417,7 @@ void CharacterImageObject::set_char_width(int alias, const std::string & c,
     a.charmap[cc].width = width;
 }
 
-void CharacterImageObject::set_clipping_width(int alias, const std::string & c,
+void CharacterImageObject::set_clipping_width(int alias, const chowstring & c,
                                               int width)
 {
     std::cout << "Set clip width: " << alias << " " << c << " " << width
@@ -434,8 +434,8 @@ inline int get_load_point(int value, int max)
     return value;
 }
 
-void CharacterImageObject::load(int alias, const std::string & c,
-                                const std::string & path,
+void CharacterImageObject::load(int alias, const chowstring & c,
+                                const chowstring & path,
                                 int x_hotspot, int y_hotspot)
 {
     Image * new_image = get_image_cache(convert_path(path), 0, 0, 0, 0,

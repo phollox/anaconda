@@ -59,7 +59,7 @@ class StartForObject(ActionWriter):
             func_call = loop_names[real_name]
         except ValueError:
             raise NotImplementedError()
-            writer.putln('std::string name = %s;' % eval_name)
+            writer.putln('chowstring name = %s;' % eval_name)
             func_call = 'call_dynamic_foreach(name, '
             object_class = 'FrameObject*'
         obj_param = self.parameters[1].loader

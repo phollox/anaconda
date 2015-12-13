@@ -15,19 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include "chowstring.h"
 #include <iostream>
 #include "platform.h"
 #include <SDL_rwops.h>
 
-// void platform_walk_folder(const std::string & in_path,
+// void platform_walk_folder(const chowstring & in_path,
 //                           FolderCallback & callback)
 // {
 // }
 
 // size_t platform_get_file_size(const char * filename)
 // {
-//     std::string path = convert_path(filename);
+//     chowstring path = convert_path(filename);
 //     SDL_RWops * rw = SDL_RWFromFile(path.c_str(), "rb");
 //     if (rw == NULL)
 //         return 0;
@@ -36,14 +36,14 @@
 //     return size;
 // }
 
-// bool platform_is_directory(const std::string & value)
+// bool platform_is_directory(const chowstring & value)
 // {
 //     return false;
 // }
 
-// bool platform_is_file(const std::string & value)
+// bool platform_is_file(const chowstring & value)
 // {
-//     std::string path = convert_path(value);
+//     chowstring path = convert_path(value);
 //     SDL_RWops * rw = SDL_RWFromFile(path.c_str(), "rb");
 //     if (rw != NULL) {
 //         SDL_RWclose(rw);
@@ -52,18 +52,18 @@
 //     return false;
 // }
 
-// bool platform_path_exists(const std::string & value)
+// bool platform_path_exists(const chowstring & value)
 // {
 //     return platform_is_file(value);
 // }
 
-// void platform_create_directories(const std::string & value)
+// void platform_create_directories(const chowstring & value)
 // {
 // }
 
-// const std::string & platform_get_appdata_dir()
+// const chowstring & platform_get_appdata_dir()
 // {
-//     static std::string dir(".");
+//     static chowstring dir(".");
 //     return dir;
 // }
 

@@ -20,17 +20,17 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <string>
+#include "chowstring.h"
 
 class Blowfish {
 public:
-    void set_key(const std::string& key);
+    void set_key(const chowstring& key);
     void set_key(const char* key, size_t byte_length);
 
     // Buffer will be padded with PKCS #5 automatically
     // "dst" and "src" must be different instance
-    void encrypt(std::string* dst, const std::string& src) const;
-    void decrypt(std::string* dst, const std::string& src) const;
+    void encrypt(chowstring* dst, const chowstring& src) const;
+    void decrypt(chowstring* dst, const chowstring& src) const;
 
     // Buffer length must be a multiple of the block length (64bit)
     void encrypt(char* dst, const char* src, size_t byte_length) const;

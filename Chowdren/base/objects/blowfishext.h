@@ -18,18 +18,18 @@
 #ifndef CHOWDREN_BLOWFISHEXT_H
 #define CHOWDREN_BLOWFISHEXT_H
 
-#include <string>
+#include "chowstring.h"
 
 class BlowfishObject
 {
 public:
-    static void encrypt_file(const std::string & key,
-                             const std::string & filename);
-    static void decrypt_file(const std::string & key,
-                             const std::string & filename);
-    static const std::string & get_cache(const std::string & filename);
-    static bool set_cache(const std::string & filename,
-                          const std::string & data);
+    static void encrypt_file(const chowstring & key,
+                             const chowstring & filename);
+    static void decrypt_file(const chowstring & key,
+                             const chowstring & filename);
+    static const chowstring & get_cache(const chowstring & filename);
+    static bool set_cache(const chowstring & filename,
+                          const chowstring & data);
 };
 
 #endif // CHOWDREN_BLOWFISHEXT_H

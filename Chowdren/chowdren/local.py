@@ -32,14 +32,14 @@ class DictLocale(Locale):
         return self.values.get(source, None)
 
 def write_locals(locales, writer, header, converter):
-    header.putlnc('void set_local(const std::string & name);')
-    writer.putmeth('void set_local', 'const std::string & name')
+    header.putlnc('void set_local(const chowstring & name);')
+    writer.putmeth('void set_local', 'const chowstring & name')
 
     if not locales:
         writer.end_brace()
         return
 
-    writer.putln('static std::string current;')
+    writer.putln('static chowstring current;')
     writer.putln('if (name == current) return;')
     writer.putln('current = name;')
 

@@ -18,13 +18,13 @@
 #ifndef CHOWDREN_IMAGECONV_H
 #define CHOWDREN_IMAGECONV_H
 
-#include <string>
+#include "chowstring.h"
 
 class ImageManipulator
 {
 public:
-    static void load(const std::string & filename);
-    static void save(const std::string & filename);
+    static void load(const chowstring & filename);
+    static void save(const chowstring & filename);
     static void apply_gauss_blur();
 };
 

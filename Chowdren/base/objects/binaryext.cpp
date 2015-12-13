@@ -34,14 +34,14 @@ BinaryObject::~BinaryObject()
     free(data);
 }
 
-void BinaryObject::load_file(const std::string & filename)
+void BinaryObject::load_file(const chowstring & filename)
 {
     free(data);
     std::cout << "Load binary array: " << filename << std::endl;
     read_file_c(convert_path(filename).c_str(), &data, &size);
 }
 
-void BinaryObject::save_file(const std::string & filename)
+void BinaryObject::save_file(const chowstring & filename)
 {
     std::cout << "Save binary array: " << filename << std::endl;
     FSFile fp(convert_path(filename).c_str(), "w");

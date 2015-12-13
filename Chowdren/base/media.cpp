@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "chowconfig.h"
+
 // #define TEST_SDL_AUDIO
 
 #ifdef CHOWDREN_IS_DESKTOP
@@ -34,12 +36,18 @@
 #include "media.h"
 #include "datastream.h"
 
+#ifdef CHOWDREN_USE_MODFUSION
+#define MAX_CHANNELS 31
+#else
+#define MAX_CHANNELS 32
+#endif
+
 inline double clamp_sound(double val)
 {
     return std::max(0.0, std::min(val, 100.0));
 }
 
-Media::AudioType get_audio_type(const std::string & filename)
+Media::AudioType get_audio_type(const chowstring & filename)
 {
     Media::AudioType type;
     if (get_path_ext(filename) == "wav")
@@ -67,10 +75,10 @@ class SoundFile : public SoundData
 {
 public:
     Media::AudioType type;
-    std::string filename;
+    chowstring filename;
     size_t size;
 
-    SoundFile(unsigned int id, const std::string & filename,
+    SoundFile(unsigned int id, const chowstring & filename,
               Media::AudioType type, size_t size)
     : SoundData(id), type(type), filename(filename), size(size)
     {
@@ -313,19 +321,19 @@ void Media::play(SoundData * data, int channel, int loop)
 {
     if (channel == -1) {
         Channel * channelp;
-        for (channel = 0; channel < 32; channel++) {
+        for (channel = 0; channel < MAX_CHANNELS; channel++) {
             channelp = &channels[channel];
             if (channelp->is_stopped() && !channelp->locked)
                 break;
         }
-        if (channel == 32) {
-            for (channel = 0; channel < 32; channel++) {
+        if (channel == MAX_CHANNELS) {
+            for (channel = 0; channel < MAX_CHANNELS; channel++) {
                 channelp = &channels[channel];
                 if (!channelp->locked)
                     break;
 
             }
-            if (channel == 32)
+            if (channel == MAX_CHANNELS)
                 return;
         }
         // unspecified channel does not inherit settings
@@ -336,9 +344,9 @@ void Media::play(SoundData * data, int channel, int loop)
     channels[channel].play(data, loop);
 }
 
-void Media::play(const std::string & in, int channel, int loop)
+void Media::play(const chowstring & in, int channel, int loop)
 {
-    std::string filename = convert_path(in);
+    chowstring filename = convert_path(in);
     size_t size;
 #ifdef USE_FILE_PRELOAD
     ChowdrenAudio::AudioPreload * preload;
@@ -425,7 +433,7 @@ Channel * Media::get_sample(unsigned int id)
 {
     if (id == INVALID_ASSET_ID)
         return NULL;
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < MAX_CHANNELS; i++) {
         if (channels[i].id != id)
             continue;
         return &channels[i];
@@ -489,6 +497,14 @@ double Media::get_sample_duration(unsigned int id)
     return channel->get_duration();
 }
 
+double Media::get_sample_frequency(unsigned int id)
+{
+    Channel * channel = get_sample(id);
+    if (channel == NULL)
+        return 0.0;
+    return channel->get_frequency();
+}
+
 void Media::stop_sample(unsigned int id)
 {
     Channel * channel = get_sample(id);
@@ -497,23 +513,39 @@ void Media::stop_sample(unsigned int id)
     channel->stop();
 }
 
+void Media::pause_sample(unsigned int id)
+{
+    Channel * channel = get_sample(id);
+    if (channel == NULL)
+        return;
+    channel->pause();
+}
+
+void Media::resume_sample(unsigned int id)
+{
+    Channel * channel = get_sample(id);
+    if (channel == NULL)
+        return;
+    channel->resume();
+}
+
 void Media::stop_samples()
 {
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < MAX_CHANNELS; i++) {
         stop_channel(i);
     }
 }
 
 void Media::pause_samples()
 {
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < MAX_CHANNELS; i++) {
         pause_channel(i);
     }
 }
 
 void Media::resume_samples()
 {
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < MAX_CHANNELS; i++) {
         resume_channel(i);
     }
 }
@@ -569,7 +601,7 @@ bool Media::is_channel_playing(unsigned int channel)
 
 bool Media::is_sample_playing(unsigned int id)
 {
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < MAX_CHANNELS; i++) {
         if (channels[i].is_stopped())
             continue;
         if (channels[i].id == id)
@@ -596,9 +628,9 @@ bool Media::is_channel_valid(unsigned int channel)
 #define OGG_STREAM_THRESHOLD (OGG_STREAM_THRESHOLD_MB * 1024 * 1024)
 #define WAV_STREAM_THRESHOLD (WAV_STREAM_THRESHOLD_MB * 1024 * 1024)
 
-void Media::add_file(unsigned int id, const std::string & fn)
+void Media::add_file(unsigned int id, const chowstring & fn)
 {
-    std::string filename = convert_path(fn);
+    chowstring filename = convert_path(fn);
     AudioType type = get_audio_type(filename);
     size_t size = platform_get_file_size(filename.c_str());
 

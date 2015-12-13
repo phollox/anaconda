@@ -258,7 +258,7 @@ namespace {
         return gcd;
     }
 
-    size_t PKCS5PaddingLength(const std::string& data) {
+    size_t PKCS5PaddingLength(const chowstring& data) {
         if (data.empty()) return 0;
         char length = data[data.size() - 1];
         if (length > 0 && length <= 8) {
@@ -277,7 +277,7 @@ namespace {
 
 }; // anonymous namespace
 
-void Blowfish::set_key(const std::string& key)
+void Blowfish::set_key(const chowstring& key)
 {
     set_key(key.data(), key.size());
 }
@@ -335,11 +335,11 @@ void Blowfish::set_key(const char* key, size_t byte_length)
     }
 }
 
-void Blowfish::encrypt(std::string* dst, const std::string& src) const
+void Blowfish::encrypt(chowstring* dst, const chowstring& src) const
 {
-    std::string padded_data = src;
+    chowstring padded_data = src;
 
-    size_t padding_length = src.length() % sizeof(uint64_t);
+    size_t padding_length = src.size() % sizeof(uint64_t);
     if (padding_length == 0)
         padding_length = sizeof(uint64_t);
     else
@@ -352,7 +352,7 @@ void Blowfish::encrypt(std::string* dst, const std::string& src) const
     encrypt(&(*dst)[0], padded_data.data(), padded_data.size());
 }
 
-void Blowfish::decrypt(std::string* dst, const std::string& src) const
+void Blowfish::decrypt(chowstring* dst, const chowstring& src) const
 {
     dst->resize(src.size());
     decrypt(&(*dst)[0], src.data(), src.size());

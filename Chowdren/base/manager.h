@@ -68,7 +68,7 @@ public:
     InputList mouse;
 
 #if defined(CHOWDREN_USE_EDITOBJ) || defined(CHOWDREN_USE_GWEN)
-    std::string input;
+    chowstring input;
 #endif
 
     // player controls
@@ -126,10 +126,10 @@ public:
     SimulateKey simulate_keys[InputList::STATE_COUNT];
 
     void set_deadzone(float deadzone);
-    void simulate_key(const std::string & key);
+    void simulate_key(const chowstring & key);
     void simulate_key(int key);
-    void map_button(int button, const std::string & key);
-    void map_axis(int axis, const std::string & neg, const std::string & pos);
+    void map_button(int button, const chowstring & key);
+    void map_axis(int axis, const chowstring & neg, const chowstring & pos);
     void reset_map();
 #endif
 };

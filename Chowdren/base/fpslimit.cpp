@@ -47,7 +47,7 @@ void FPSLimiter::finish()
 {
     double current_time = platform_get_time();
 
-#if defined(CHOWDREN_IS_DESKTOP) || defined(CHOWDREN_IS_ANDROID)
+#if defined(CHOWDREN_IS_DESKTOP)
     if (framerate < 100) {
         double t = normalize(next_update - current_time);
         platform_sleep(t);

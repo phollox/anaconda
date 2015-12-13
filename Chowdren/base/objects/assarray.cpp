@@ -46,22 +46,22 @@ AssociateArray::~AssociateArray()
                  arrays.end());
 }
 
-void AssociateArray::set_key(const std::string & key)
+void AssociateArray::set_key(const chowstring & key)
 {
     cipher.set_key(key);
 }
 
-void AssociateArray::load_encrypted(const std::string & filename,
+void AssociateArray::load_encrypted(const chowstring & filename,
                                     int method)
 {
     clear();
 
-    std::string src;
+    chowstring src;
 
     if (!read_file(filename.c_str(), src))
         return;
 
-    std::string dst;
+    chowstring dst;
 
     cipher.decrypt(&dst, src);
 
@@ -74,19 +74,37 @@ void AssociateArray::load_encrypted(const std::string & filename,
     load_data(dst.substr(sizeof(ARRAY_MAGIC)-1), method);
 }
 
-inline void decode_method(std::string & str, int method)
+void AssociateArray::load(const chowstring & filename, int method)
 {
-    for (std::string::iterator i = str.begin(); i != str.end(); ++i)
+    clear();
+
+    chowstring data;
+
+    if (!read_file(filename.c_str(), data))
+        return;
+
+    if (data.compare(0, sizeof(ARRAY_MAGIC)-1,
+                     ARRAY_MAGIC, sizeof(ARRAY_MAGIC)-1) != 0) {
+        std::cout << "Invalid magic for " << filename << std::endl;
+        return;
+    }
+
+    load_data(data.substr(sizeof(ARRAY_MAGIC)-1), method);
+}
+
+inline void decode_method(chowstring & str, int method)
+{
+    for (chowstring::iterator i = str.begin(); i != str.end(); ++i)
         *i = char(*i - method);
 }
 
-inline void encode_method(std::string & str, int method)
+inline void encode_method(chowstring & str, int method)
 {
-    for (std::string::iterator i = str.begin(); i != str.end(); ++i)
+    for (chowstring::iterator i = str.begin(); i != str.end(); ++i)
         *i = char(*i + method);
 }
 
-void AssociateArray::load_data(const std::string & data, int method)
+void AssociateArray::load_data(const chowstring & data, int method)
 {
     unsigned int pos = 0;
 
@@ -105,7 +123,7 @@ void AssociateArray::load_data(const std::string & data, int method)
         start = pos;
         while (data[pos] != '\x00')
             pos++;
-        std::string key = data.substr(start, pos-start);
+        chowstring key = data.substr(start, pos-start);
         decode_method(key, method);
         pos++;
         len -= key.size();
@@ -114,13 +132,13 @@ void AssociateArray::load_data(const std::string & data, int method)
         start = pos;
         while (data[pos] != '\x00')
             pos++;
-        std::string string = data.substr(start, pos-start);
+        chowstring string = data.substr(start, pos-start);
         decode_method(string, method);
         pos++;
         len -= string.size();
 
         // read value
-        std::string value = data.substr(pos, len);
+        chowstring value = data.substr(pos, len);
         decode_method(value, method);
         pos += len;
 
@@ -130,28 +148,28 @@ void AssociateArray::load_data(const std::string & data, int method)
     }
 }
 
-void AssociateArray::set_value(const std::string & key, int value)
+void AssociateArray::set_value(const chowstring & key, int value)
 {
     (*map)[key].value = value;
 }
 
-void AssociateArray::add_value(const std::string & key, int value)
+void AssociateArray::add_value(const chowstring & key, int value)
 {
     (*map)[key].value += value;
 }
 
-void AssociateArray::sub_value(const std::string & key, int value)
+void AssociateArray::sub_value(const chowstring & key, int value)
 {
     (*map)[key].value -= value;
 }
 
-void AssociateArray::set_string(const std::string & key,
-                                const std::string & value)
+void AssociateArray::set_string(const chowstring & key,
+                                const chowstring & value)
 {
     (*map)[key].string = value;
 }
 
-int AssociateArray::get_value(const std::string & key)
+int AssociateArray::get_value(const chowstring & key)
 {
     ArrayMap::const_iterator it = map->find(key);
     if (it == map->end())
@@ -159,7 +177,7 @@ int AssociateArray::get_value(const std::string & key)
     return it->second.value;
 }
 
-const std::string & AssociateArray::get_string(const std::string & key)
+const chowstring & AssociateArray::get_string(const chowstring & key)
 {
     ArrayMap::const_iterator it = map->find(key);
     if (it == map->end())
@@ -182,29 +200,29 @@ void AssociateArray::clear()
     }
 }
 
-bool AssociateArray::has_key(const std::string & key)
+bool AssociateArray::has_key(const chowstring & key)
 {
     return map->find(key) != map->end();
 }
 
-bool AssociateArray::count_prefix(const std::string & key, int count)
+bool AssociateArray::count_prefix(const chowstring & key, int count)
 {
     return count_prefix(key) >= count;
 }
 
-int AssociateArray::count_prefix(const std::string & key)
+int AssociateArray::count_prefix(const chowstring & key)
 {
     int n = 0;
     ArrayMap::const_iterator it;
     for (it = map->begin(); it != map->end(); it++) {
-        const std::string & other = it->first;
+        const chowstring & other = it->first;
         if (other.compare(0, key.size(), key) == 0)
             n++;
     }
     return n;
 }
 
-void AssociateArray::remove_key(const std::string & key)
+void AssociateArray::remove_key(const chowstring & key)
 {
     ArrayMap::iterator it = map->find(key);
     if (it == map->end())
@@ -228,7 +246,7 @@ ArrayAddress AssociateArray::get_first()
     return ArrayAddress(it);
 }
 
-ArrayAddress AssociateArray::get_prefix(const std::string & prefix, int index,
+ArrayAddress AssociateArray::get_prefix(const chowstring & prefix, int index,
                                         ArrayAddress start)
 {
     ArrayMap::const_iterator it;
@@ -238,7 +256,7 @@ ArrayAddress AssociateArray::get_prefix(const std::string & prefix, int index,
         it = start.it;
 
     for (; it != map->end(); it++) {
-        const std::string & other = it->first;
+        const chowstring & other = it->first;
         if (other.compare(0, prefix.size(), prefix) != 0)
             continue;
         if (index == 0)
@@ -248,7 +266,7 @@ ArrayAddress AssociateArray::get_prefix(const std::string & prefix, int index,
     return ArrayAddress();
 }
 
-const std::string & AssociateArray::get_key(ArrayAddress addr)
+const chowstring & AssociateArray::get_key(ArrayAddress addr)
 {
     if (addr.null)
         return empty_string;
@@ -263,11 +281,11 @@ inline void save_assarray(AssociateArray & array, T & stream, int method)
     ArrayMap::iterator it;
     for (it = array.map->begin(); it != array.map->end(); it++) {
         AssociateArrayItem & item = it->second;
-        std::string key = it->first;
+        chowstring key = it->first;
         encode_method(key, method);
-        std::string string = item.string;
+        chowstring string = item.string;
         encode_method(string, method);
-        std::string value = number_to_string(item.value);
+        chowstring value = number_to_string(item.value);
         encode_method(value, method);
 
         int len = key.size() + string.size() + value.size();
@@ -281,7 +299,7 @@ inline void save_assarray(AssociateArray & array, T & stream, int method)
     }
 }
 
-void AssociateArray::save(const std::string & path, int method)
+void AssociateArray::save(const chowstring & path, int method)
 {
     FSFile fp(path.c_str(), "w");
     if (!fp.is_open()) {
@@ -294,13 +312,13 @@ void AssociateArray::save(const std::string & path, int method)
     fp.close();
 }
 
-void AssociateArray::save_encrypted(const std::string & path, int method)
+void AssociateArray::save_encrypted(const chowstring & path, int method)
 {
     std::stringstream ss;
     DataStream stream(ss);
     save_assarray(*this, stream, method);
-    std::string src = ss.str();
-    std::string dst;
+    chowstring src = ss.str();
+    chowstring dst;
     cipher.encrypt(&dst, src);
 
     FSFile fp(path.c_str(), "w");
@@ -308,13 +326,13 @@ void AssociateArray::save_encrypted(const std::string & path, int method)
         std::cout << "Could not save file " << path << std::endl;
         return;
     }
-    fp.write(&dst[0], dst.size());
+    fp.write(dst.data(), dst.size());
     fp.close();
 }
 
 // set/get with store
 
-void AssociateArray::set_value(int index, const std::string & key, int value)
+void AssociateArray::set_value(int index, const chowstring & key, int value)
 {
     AssociateArrayItem * item = store[index];
     if (item == NULL) {
@@ -324,7 +342,7 @@ void AssociateArray::set_value(int index, const std::string & key, int value)
     item->value = value;
 }
 
-void AssociateArray::add_value(int index, const std::string & key, int value)
+void AssociateArray::add_value(int index, const chowstring & key, int value)
 {
     AssociateArrayItem * item = store[index];
     if (item == NULL) {
@@ -334,7 +352,7 @@ void AssociateArray::add_value(int index, const std::string & key, int value)
     item->value += value;
 }
 
-void AssociateArray::sub_value(int index, const std::string & key, int value)
+void AssociateArray::sub_value(int index, const chowstring & key, int value)
 {
     AssociateArrayItem * item = store[index];
     if (item == NULL) {
@@ -344,8 +362,8 @@ void AssociateArray::sub_value(int index, const std::string & key, int value)
     item->value -= value;
 }
 
-void AssociateArray::set_string(int index, const std::string & key,
-                                const std::string & value)
+void AssociateArray::set_string(int index, const chowstring & key,
+                                const chowstring & value)
 {
     AssociateArrayItem * item = store[index];
     if (item == NULL) {
@@ -355,7 +373,7 @@ void AssociateArray::set_string(int index, const std::string & key,
     item->string = value;
 }
 
-int AssociateArray::get_value(int index, const std::string & key)
+int AssociateArray::get_value(int index, const chowstring & key)
 {
     AssociateArrayItem * item = store[index];
     if (item != NULL)
@@ -367,8 +385,8 @@ int AssociateArray::get_value(int index, const std::string & key)
     return it->second.value;
 }
 
-const std::string & AssociateArray::get_string(int index,
-                                               const std::string & key)
+const chowstring & AssociateArray::get_string(int index,
+                                               const chowstring & key)
 {
     AssociateArrayItem * item = store[index];
     if (item != NULL)
@@ -380,7 +398,7 @@ const std::string & AssociateArray::get_string(int index,
     return it->second.string;
 }
 
-bool AssociateArray::has_key(int index, const std::string & key)
+bool AssociateArray::has_key(int index, const chowstring & key)
 {
     if (store[index] != NULL)
         return true;

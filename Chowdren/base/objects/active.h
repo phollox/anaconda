@@ -20,7 +20,7 @@
 
 #include "frameobject.h"
 #include "collision.h"
-#include <string>
+#include "chowstring.h"
 #include "color.h"
 
 struct Direction
@@ -121,7 +121,7 @@ public:
     bool is_animation_finished(int anim);
     void destroy();
     bool has_animation(int anim);
-    void load(const std::string & filename, int anim, int dir, int frame,
+    void load(const chowstring & filename, int anim, int dir, int frame,
               int hot_x, int hot_y, int action_x, int action_y,
               TransparentColor transparent_color);
     void replace_color(const Color & from, const Color & to);

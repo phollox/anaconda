@@ -18,7 +18,7 @@
 #ifndef CHOWDREN_FILEIO_H
 #define CHOWDREN_FILEIO_H
 
-#include <string>
+#include "chowstring.h"
 #include <stdio.h>
 
 // #define CHOWDREN_FILE_BUFFERING
@@ -88,7 +88,7 @@ typedef BaseFile FSFile;
 
 bool read_file(const char * filename, char ** data, size_t * ret_size,
                bool binary = true);
-bool read_file(const char * filename, std::string & dst,
+bool read_file(const char * filename, chowstring & dst,
                bool binary = true);
 bool read_file_c(const char * filename, char ** data, size_t * ret_size,
                  bool binary = true);

@@ -19,7 +19,7 @@
 #define CHOWDREN_STRINGTOKENIZER_H
 
 #include "frameobject.h"
-#include <string>
+#include "chowstring.h"
 #include "types.h"
 
 class StringTokenizer : public FrameObject
@@ -27,11 +27,11 @@ class StringTokenizer : public FrameObject
 public:
     FRAMEOBJECT_HEAD(StringTokenizer)
 
-    vector<std::string> elements;
+    vector<chowstring> elements;
 
     StringTokenizer(int x, int y, int type_id);
-    void split(const std::string & text, const std::string & delims);
-    const std::string & get(int index);
+    void split(const chowstring & text, const chowstring & delims);
+    const chowstring & get(int index);
 
     int get_count()
     {

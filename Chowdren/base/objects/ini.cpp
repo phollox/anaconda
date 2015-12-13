@@ -28,7 +28,7 @@
 #ifdef CHOWDREN_CACHE_INI
 #include "types.h"
 
-typedef hash_map<std::string, SectionMap> INICache;
+typedef hash_map<chowstring, SectionMap> INICache;
 static INICache ini_cache;
 #endif
 
@@ -36,8 +36,8 @@ static INICache ini_cache;
 #include "objects/blowfishext.h"
 #endif
 
-inline bool match_wildcard(const std::string & pattern,
-                           const std::string & value)
+inline bool match_wildcard(const chowstring & pattern,
+                           const chowstring & value)
 {
     if (pattern.empty() || value.empty())
         return pattern == value;
@@ -61,7 +61,7 @@ inline bool match_wildcard(const std::string & pattern,
     return value == pattern;
 }
 
-static void encrypt_ini_data(std::string & data, const std::string & key)
+static void encrypt_ini_data(chowstring & data, const chowstring & key)
 {
     char v5[256];
     char v10[256];
@@ -133,8 +133,8 @@ int INI::_parse_handler(void* user, const char* section, const char* name,
     return 1;
 }
 
-void INI::parse_handler(const std::string & section, const std::string & name,
-                        const std::string & value)
+void INI::parse_handler(const chowstring & section, const chowstring & name,
+                        const chowstring & value)
 {
     if (!overwrite && has_item(section, name))
         return;
@@ -147,22 +147,22 @@ void INI::parse_handler(const std::string & section, const std::string & name,
     (*data)[section][name] = value;
 }
 
-void INI::set_group(const std::string & name)
+void INI::set_group(const chowstring & name)
 {
     set_group(name, true);
 }
 
-void INI::set_group(const std::string & name, bool new_group)
+void INI::set_group(const chowstring & name, bool new_group)
 {
     current_group = name;
 }
 
-void INI::set_item(const std::string & name)
+void INI::set_item(const chowstring & name)
 {
     current_item = name;
 }
 
-inline std::string trim_spaces(const std::string & value)
+inline chowstring trim_spaces(const chowstring & value)
 {
     int i;
     for (i = 0; i < int(value.size()); ++i) {
@@ -172,14 +172,14 @@ inline std::string trim_spaces(const std::string & value)
     return value.substr(i);
 }
 
-inline bool can_trim(const std::string & value)
+inline bool can_trim(const chowstring & value)
 {
     return !value.empty() && value[0] == ' ';
 }
 
-const std::string & INI::get_string_default(const std::string & group,
-                                            const std::string & item,
-                                            const std::string & def)
+const chowstring & INI::get_string_default(const chowstring & group,
+                                            const chowstring & item,
+                                            const chowstring & def)
 {
     if (can_trim(group) || can_trim(item))
         return get_string_default(trim_spaces(group), trim_spaces(item), def);
@@ -192,24 +192,24 @@ const std::string & INI::get_string_default(const std::string & group,
     return (*new_it).second;
 }
 
-const std::string & INI::get_string_default(const std::string & item,
-                                            const std::string & def)
+const chowstring & INI::get_string_default(const chowstring & item,
+                                            const chowstring & def)
 {
     return get_string_default(current_group, item, def);
 }
 
-const std::string & INI::get_string(const std::string & item)
+const chowstring & INI::get_string(const chowstring & item)
 {
     return get_string_default(item, empty_string);
 }
 
-const std::string & INI::get_string(const std::string & group,
-                                    const std::string & item)
+const chowstring & INI::get_string(const chowstring & group,
+                                    const chowstring & item)
 {
     return get_string_default(group, item, empty_string);
 }
 
-const std::string & INI::get_string_index(const std::string & group,
+const chowstring & INI::get_string_index(const chowstring & group,
                                           unsigned int index)
 {
     SectionMap::const_iterator it = data->find(group);
@@ -226,12 +226,12 @@ const std::string & INI::get_string_index(const std::string & group,
     return empty_string;
 }
 
-const std::string & INI::get_string_index(unsigned int index)
+const chowstring & INI::get_string_index(unsigned int index)
 {
     return get_string_index(current_group, index);
 }
 
-const std::string & INI::get_item_name(const std::string & group,
+const chowstring & INI::get_item_name(const chowstring & group,
                                        unsigned int index)
 {
     SectionMap::const_iterator it = data->find(group);
@@ -248,12 +248,12 @@ const std::string & INI::get_item_name(const std::string & group,
     return empty_string;
 }
 
-const std::string & INI::get_item_name(unsigned int index)
+const chowstring & INI::get_item_name(unsigned int index)
 {
     return get_item_name(current_group, index);
 }
 
-const std::string & INI::get_group_name(unsigned int index)
+const chowstring & INI::get_group_name(unsigned int index)
 {
     SectionMap::const_iterator it = data->begin();
     int current_index = 0;
@@ -266,7 +266,7 @@ const std::string & INI::get_group_name(unsigned int index)
     return empty_string;
 }
 
-double INI::get_value(const std::string & group, const std::string & item,
+double INI::get_value(const chowstring & group, const chowstring & item,
                       double def)
 {
     SectionMap::const_iterator it = data->find(group);
@@ -278,12 +278,12 @@ double INI::get_value(const std::string & group, const std::string & item,
     return string_to_double((*new_it).second);
 }
 
-double INI::get_value(const std::string & item, double def)
+double INI::get_value(const chowstring & item, double def)
 {
     return get_value(current_group, item, def);
 }
 
-int INI::get_value_int(const std::string & group, const std::string & item,
+int INI::get_value_int(const chowstring & group, const chowstring & item,
                        int def)
 {
     SectionMap::const_iterator it = data->find(group);
@@ -295,12 +295,12 @@ int INI::get_value_int(const std::string & group, const std::string & item,
     return string_to_int((*new_it).second);
 }
 
-int INI::get_value_int(const std::string & item, int def)
+int INI::get_value_int(const chowstring & item, int def)
 {
     return get_value_int(current_group, item, def);
 }
 
-double INI::get_value_index(const std::string & group, unsigned int index)
+double INI::get_value_index(const chowstring & group, unsigned int index)
 {
     SectionMap::const_iterator it = data->find(group);
     if (it == data->end())
@@ -321,44 +321,44 @@ double INI::get_value_index(unsigned int index)
     return get_value_index(current_group, index);
 }
 
-void INI::set_value(const std::string & group, const std::string & item,
+void INI::set_value(const chowstring & group, const chowstring & item,
                     double value)
 {
     set_string(group, item, number_to_string(value));
 }
 
-void INI::set_value(const std::string & item, double value)
+void INI::set_value(const chowstring & item, double value)
 {
     set_value(current_group, item, value);
 }
 
-void INI::set_value_int(const std::string & group, const std::string & item,
+void INI::set_value_int(const chowstring & group, const chowstring & item,
                         int value)
 {
     set_string(group, item, number_to_string(value));
 }
 
-void INI::set_value_int(const std::string & item, int value)
+void INI::set_value_int(const chowstring & item, int value)
 {
     set_value_int(current_group, item, value);
 }
 
-void INI::set_string(const std::string & group, const std::string & item,
-                     const std::string & value)
+void INI::set_string(const chowstring & group, const chowstring & item,
+                     const chowstring & value)
 {
     (*data)[group][item] = value;
     save_auto();
 }
 
-void INI::set_string(const std::string & item, const std::string & value)
+void INI::set_string(const chowstring & item, const chowstring & value)
 {
     set_string(current_group, item, value);
 }
 
-void INI::load_file(const std::string & fn, bool read_only, bool merge,
+void INI::load_file(const chowstring & fn, bool read_only, bool merge,
                     bool overwrite)
 {
-    std::string new_filename = convert_path(fn);
+    chowstring new_filename = convert_path(fn);
 #ifdef CHOWDREN_CACHE_INI
     if (new_filename == filename)
         return;
@@ -373,7 +373,7 @@ void INI::load_file(const std::string & fn, bool read_only, bool merge,
     filename = new_filename;
 
 #ifdef CHOWDREN_USE_BLOWFISH_CACHE
-    const std::string & cache = BlowfishObject::get_cache(filename);
+    const chowstring & cache = BlowfishObject::get_cache(filename);
     if (!cache.empty()) {
         std::cout << "Using Blowfish cache for " << filename << std::endl;
         load_string(cache, merge);
@@ -382,7 +382,7 @@ void INI::load_file(const std::string & fn, bool read_only, bool merge,
 #endif
 
 #ifdef CHOWDREN_CACHE_INI
-    std::string cache_key = filename;
+    chowstring cache_key = filename;
     to_lower(cache_key);
     data = &ini_cache[cache_key];
     is_global = true;
@@ -397,7 +397,7 @@ void INI::load_file(const std::string & fn, bool read_only, bool merge,
         << std::endl;
     platform_create_directories(get_path_dirname(filename));
 
-    std::string new_data;
+    chowstring new_data;
     if (!encrypt_key.empty() || use_compression) {
         bool decompressed = false;
 
@@ -428,12 +428,12 @@ void INI::load_file(const std::string & fn, bool read_only, bool merge,
 
 void INI::load_file(TempPath path)
 {
-    std::string data;
+    chowstring data;
     path.read(data);
     load_string(data, false);
 }
 
-void INI::load_string(const std::string & data, bool merge)
+void INI::load_string(const chowstring & data, bool merge)
 {
 #ifndef CHOWDREN_AUTOSAVE_ON_CHANGE
     if (auto_save && changed)
@@ -448,7 +448,7 @@ void INI::load_string(const std::string & data, bool merge)
     }
 }
 
-void INI::merge_file(const std::string & fn, bool overwrite)
+void INI::merge_file(const chowstring & fn, bool overwrite)
 {
     load_file(fn, false, true, overwrite);
 }
@@ -467,7 +467,7 @@ void INI::get_data(std::stringstream & out)
     }
 }
 
-void INI::set_encryption_key(const std::string & key)
+void INI::set_encryption_key(const chowstring & key)
 {
     encrypt_key = key;
 }
@@ -477,7 +477,7 @@ void INI::set_compression(bool value)
     use_compression = value;
 }
 
-void INI::save_file(const std::string & fn, bool force)
+void INI::save_file(const chowstring & fn, bool force)
 {
     if (fn.empty() || (read_only && !force))
         return;
@@ -487,7 +487,7 @@ void INI::save_file(const std::string & fn, bool force)
     platform_create_directories(get_path_dirname(filename));
     std::stringstream out;
     get_data(out);
-    std::string outs = out.str();
+    chowstring outs = out.str();
 
     if (!encrypt_key.empty())
         encrypt_ini_data(outs, encrypt_key);
@@ -512,7 +512,7 @@ void INI::save_file(const std::string & fn, bool force)
     fp.close();
 }
 
-std::string INI::as_string()
+chowstring INI::as_string()
 {
     std::stringstream out;
     get_data(out);
@@ -535,7 +535,7 @@ void INI::save_auto()
 #endif
 }
 
-int INI::get_item_count(const std::string & section)
+int INI::get_item_count(const chowstring & section)
 {
     return (*data)[section].size();
 }
@@ -550,7 +550,7 @@ int INI::get_group_count()
     return data->size();
 }
 
-bool INI::has_group(const std::string & group)
+bool INI::has_group(const chowstring & group)
 {
     SectionMap::const_iterator it = data->find(group);
     if (it == data->end())
@@ -558,7 +558,7 @@ bool INI::has_group(const std::string & group)
     return true;
 }
 
-bool INI::has_item(const std::string & group, const std::string & option)
+bool INI::has_item(const chowstring & group, const chowstring & option)
 {
     SectionMap::const_iterator it = data->find(group);
     if (it == data->end())
@@ -569,13 +569,13 @@ bool INI::has_item(const std::string & group, const std::string & option)
     return true;
 }
 
-bool INI::has_item(const std::string & option)
+bool INI::has_item(const chowstring & option)
 {
     return has_item(current_group, option);
 }
 
-void INI::search(const std::string & group, const std::string & item,
-                 const std::string & value)
+void INI::search(const chowstring & group, const chowstring & item,
+                 const chowstring & value)
 {
     search_results.clear();
     search_time = frame->loop_count;
@@ -591,7 +591,7 @@ void INI::search(const std::string & group, const std::string & item,
             if (!match_wildcard(value, (*it2).second))
                 continue;
             search_results.push_back(
-                std::pair<std::string, std::string>(
+                std::pair<chowstring, chowstring>(
                     (*it1).first,
                     (*it2).first
                 ));
@@ -599,8 +599,8 @@ void INI::search(const std::string & group, const std::string & item,
     }
 }
 
-void INI::delete_pattern(const std::string & group, const std::string & item,
-                         const std::string & value)
+void INI::delete_pattern(const chowstring & group, const chowstring & item,
+                         const chowstring & value)
 {
     SectionMap::iterator it1;
     OptionMap::iterator it2;
@@ -621,12 +621,12 @@ void INI::delete_pattern(const std::string & group, const std::string & item,
     save_auto();
 }
 
-void INI::sort_group_by_name(const std::string & group)
+void INI::sort_group_by_name(const chowstring & group)
 {
     std::cout << "Sort by name not implemented" << std::endl;
 }
 
-void INI::sort_group_by_value(const std::string & group)
+void INI::sort_group_by_value(const chowstring & group)
 {
     std::cout << "Sort by value not implemented" << std::endl;
 }
@@ -644,7 +644,7 @@ void INI::reset(bool save)
         save_auto();
 }
 
-void INI::delete_group(const std::string & group)
+void INI::delete_group(const chowstring & group)
 {
     data->erase(group);
     save_auto();
@@ -655,13 +655,13 @@ void INI::delete_group()
     delete_group(current_group);
 }
 
-void INI::delete_item(const std::string & group, const std::string & item)
+void INI::delete_item(const chowstring & group, const chowstring & item)
 {
     (*data)[group].erase(item);
     save_auto();
 }
 
-void INI::delete_item(const std::string & item)
+void INI::delete_item(const chowstring & item)
 {
     delete_item(current_group, item);
 }
@@ -671,8 +671,8 @@ void INI::merge_object(INI * other, bool overwrite)
     merge_map(*other->data, overwrite);
 }
 
-void INI::merge_group(INI * other, const std::string & src_group,
-                     const std::string & dst_group, bool overwrite)
+void INI::merge_group(INI * other, const chowstring & src_group,
+                     const chowstring & dst_group, bool overwrite)
 {
     merge_map(*other->data, src_group, dst_group, overwrite);
 }
@@ -692,8 +692,8 @@ void INI::merge_map(const SectionMap & data2, bool overwrite)
     save_auto();
 }
 
-void INI::merge_map(SectionMap & data2, const std::string & src_group,
-                    const std::string & dst_group, bool overwrite)
+void INI::merge_map(SectionMap & data2, const chowstring & src_group,
+                    const chowstring & dst_group, bool overwrite)
 {
     OptionMap & items = data2[src_group];
     OptionMap::const_iterator it;
@@ -717,24 +717,24 @@ size_t INI::get_search_count()
     return search_results.size();
 }
 
-const std::string & INI::get_search_result_group(int index)
+const chowstring & INI::get_search_result_group(int index)
 {
     return search_results[index].first;
 }
 
-const std::string & INI::get_search_result_item(int index)
+const chowstring & INI::get_search_result_item(int index)
 {
     return search_results[index].second;
 }
 
-std::string INI::get_item_part(const std::string & group,
-                               const std::string & item, int index,
-                               const std::string & def)
+chowstring INI::get_item_part(const chowstring & group,
+                               const chowstring & item, int index,
+                               const chowstring & def)
 {
     if (index < 0)
         return def;
-    const std::string & value = get_string_default(group, item, empty_string);
-    vector<std::string> elem;
+    const chowstring & value = get_string_default(group, item, empty_string);
+    vector<chowstring> elem;
     split_string(value, ',', elem);
     if (index >= (int)elem.size())
         return def;
@@ -761,4 +761,4 @@ INI::~INI()
 	}
 }
 
-hash_map<std::string, SectionMap> INI::global_data;
+hash_map<chowstring, SectionMap> INI::global_data;

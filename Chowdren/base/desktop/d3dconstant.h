@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include "chowstring.h"
 #include "types.h"
 
 enum EREGISTER_SET
@@ -28,7 +28,7 @@ enum EREGISTER_SET
 
 struct ConstantDesc
 {
-    std::string Name;
+    chowstring Name;
     EREGISTER_SET RegisterSet;
     int RegisterIndex;
     int RegisterCount;
@@ -141,7 +141,7 @@ int ConstantTable::get_constant(const char * name)
 {
     vector<ConstantDesc>::const_iterator it;
     for(it = constants.begin(); it != constants.end(); ++it) {
-        if (it->Name.compare(1, std::string::npos, name) == 0)
+        if (it->Name.compare(1, chowstring::npos, name) == 0)
             return it->RegisterIndex;
     }
     return -1;

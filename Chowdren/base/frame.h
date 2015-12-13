@@ -184,7 +184,7 @@ public:
     }
 };
 
-typedef hash_map<std::string, DynamicLoop> DynamicLoops;
+typedef hash_map<chowstring, DynamicLoop> DynamicLoops;
 
 class GameManager;
 class GlobalValues;
@@ -194,7 +194,7 @@ class Backdrop;
 class FrameData
 {
 public:
-    std::string name;
+    chowstring name;
 
     FrameData();
     virtual void event_callback(Frame * frame, int id);
@@ -265,9 +265,9 @@ public:
     void draw(int remote);
     FrameObject * add_object(FrameObject * object, int layer_index);
     FrameObject * add_object(FrameObject * object, Layer * layer);
-    void add_background_object(FrameObject * object, int layer_index);
+    FrameObject * add_background_object(FrameObject * object, int layer_index);
     void set_object_layer(FrameObject * object, int new_layer);
-    int get_loop_index(const std::string & name);
+    int get_loop_index(const chowstring & name);
     void set_timer(double value);
     void set_lives(int lives);
     void set_score(int score);

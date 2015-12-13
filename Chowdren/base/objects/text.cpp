@@ -35,7 +35,7 @@ Text::~Text()
     delete layout;
 }
 
-void Text::add_line(const std::string & text)
+void Text::add_line(const chowstring & text)
 {
     paragraphs.push_back(text);
     if (initialized)
@@ -117,7 +117,7 @@ void Text::draw()
     }
 }
 
-void Text::set_string(const std::string & value)
+void Text::set_string(const chowstring & value)
 {
     if (text == value)
         return;
@@ -161,7 +161,7 @@ void Text::set_bold(bool value)
     bold = value;
 }
 
-const std::string & Text::get_paragraph(int index)
+const chowstring & Text::get_paragraph(int index)
 {
     if (index < 0)
         index = 0;
@@ -183,7 +183,7 @@ void Text::update_draw_text()
 #endif
     if (layout != NULL)
         return;
-    if (draw_text.find('\n') == std::string::npos)
+    if (draw_text.find('\n') == chowstring::npos)
         return;
     layout = new FTSimpleLayout;
     layout->SetFont(font);
@@ -225,7 +225,7 @@ int Text::get_height()
     return (int)(bb.Upper().Y() - bb.Lower().Y());
 }
 
-const std::string & Text::get_font_name()
+const chowstring & Text::get_font_name()
 {
     return font_name;
 }
@@ -253,7 +253,7 @@ void FontInfo::set_scale(FrameObject * obj, float scale)
 }
 
 
-std::string FontInfo::vertical_tab("\x0B");
+chowstring FontInfo::vertical_tab("\x0B");
 
 class DefaultText : public Text
 {

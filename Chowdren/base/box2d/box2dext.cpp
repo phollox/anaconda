@@ -245,7 +245,7 @@ void Box2D::create_body(float x, float y, float angle)
     lastBody = n;
 }
 
-void Box2D::create_shape(FrameObject * obj, const std::string & value)
+void Box2D::create_shape(FrameObject * obj, const chowstring & value)
 {
     if (!obj)
         return;
@@ -280,7 +280,7 @@ void Box2D::create_shape(FrameObject * obj, const std::string & value)
         b->SetMassFromShapes();
 }
 
-void Box2D::create_shape(FrameObject * obj, const std::string & value,
+void Box2D::create_shape(FrameObject * obj, const chowstring & value,
                          float x, float y, float density, float friction,
                          float elasticity)
 {
@@ -464,7 +464,7 @@ void Box2D::create_box(FrameObject * obj, float width, float height,
         b->SetMassFromShapes();
 }
 
-void Box2D::create_edge_chain(int id, const std::string & v, int loop,
+void Box2D::create_edge_chain(int id, const chowstring & v, int loop,
                               float x, float y, float friction,
                               float elasticity)
 {

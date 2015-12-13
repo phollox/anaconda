@@ -24,7 +24,7 @@
 #include "collision.h"
 #include "common.h"
 #include "font.h"
-#include <string>
+#include "chowstring.h"
 #endif
 
 #ifdef CHOWDREN_USE_GWEN
@@ -45,8 +45,8 @@ public:
     };
 
     EditObject(int x, int y, int type_id);
-    void set_text(const std::string & value);
-    const std::string & get_text();
+    void set_text(const chowstring & value);
+    const chowstring & get_text();
     bool get_focus();
     void enable_focus();
     void disable_focus();
@@ -57,7 +57,7 @@ public:
 #ifdef CHOWDREN_USE_EDITOBJ
     int edit_flags;
     InstanceBox edit_col;
-    std::string text;
+    chowstring text;
     FTTextureFont * font;
     int limit;
 
@@ -65,7 +65,7 @@ public:
     Gwen::Controls::TextBox * text_box;
     Gwen::Controls::ScrollControl * scroller;
     Gwen::Controls::Base * base_control;
-    std::string new_text;
+    chowstring new_text;
 
     void init_control();
     void update_text();

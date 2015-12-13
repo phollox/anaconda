@@ -20,7 +20,7 @@
 
 #include "frameobject.h"
 #include "chowconfig.h"
-#include <string>
+#include "chowstring.h"
 #include "color.h"
 #include "image.h"
 
@@ -50,7 +50,7 @@ public:
     Image ** images;
     double value;
     int minimum, maximum;
-    std::string cached_string;
+    chowstring cached_string;
     int type;
     float flash_time, flash_interval;
     int gradient_type;

@@ -200,7 +200,7 @@ void Movement::set_directions(unsigned int directions)
     this->directions = directions;
 }
 
-void Movement::set_node(const std::string & node)
+void Movement::set_node(const chowstring & node)
 {
 }
 
@@ -659,7 +659,7 @@ void PathMovement::add_node(int speed, int x, int y, float dir_x, float dir_y,
     nodes.push_back(node);
 }
 
-void PathMovement::add_named_node(int i, const std::string & name)
+void PathMovement::add_named_node(int i, const chowstring & name)
 {
     NamedNode node;
     node.index = i;
@@ -751,7 +751,7 @@ bool PathMovement::is_node_reached()
     return node_changed;
 }
 
-void PathMovement::set_node(const std::string & value)
+void PathMovement::set_node(const chowstring & value)
 {
 }
 

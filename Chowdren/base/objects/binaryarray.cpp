@@ -28,7 +28,7 @@ Workspace::Workspace(FileStream & stream)
     stream.read(data, stream.read_uint32());
 }
 
-Workspace::Workspace(const std::string & name)
+Workspace::Workspace(const chowstring & name)
 : name(name)
 {
 }
@@ -41,7 +41,7 @@ BinaryArray::BinaryArray(int x, int y, int type_id)
 
 }
 
-void BinaryArray::load_workspaces(const std::string & filename)
+void BinaryArray::load_workspaces(const chowstring & filename)
 {
     FSFile fp(convert_path(filename).c_str(), "r");
     FileStream stream(fp);
@@ -61,7 +61,7 @@ BinaryArray::~BinaryArray()
         delete it->second;
 }
 
-void BinaryArray::create_workspace(const std::string & name)
+void BinaryArray::create_workspace(const chowstring & name)
 {
     if (workspaces.find(name) != workspaces.end())
         return;
@@ -69,7 +69,7 @@ void BinaryArray::create_workspace(const std::string & name)
     workspaces[name] = workspace;
 }
 
-void BinaryArray::switch_workspace(const std::string & name)
+void BinaryArray::switch_workspace(const chowstring & name)
 {
     WorkspaceMap::const_iterator it = workspaces.find(name);
     if (it == workspaces.end())
@@ -82,12 +82,12 @@ void BinaryArray::switch_workspace(Workspace * workspace)
     current = workspace;
 }
 
-bool BinaryArray::has_workspace(const std::string & name)
+bool BinaryArray::has_workspace(const chowstring & name)
 {
     return workspaces.count(name) > 0;
 }
 
-void BinaryArray::load_file(const std::string & filename)
+void BinaryArray::load_file(const chowstring & filename)
 {
     size_t size;
     char * data;
@@ -96,11 +96,11 @@ void BinaryArray::load_file(const std::string & filename)
     delete[] data;
 }
 
-std::string BinaryArray::read_string(int pos, size_t size)
+chowstring BinaryArray::read_string(int pos, size_t size)
 {
     DataStream stream(current->data);
     stream.seek(pos);
-    std::string v;
+    chowstring v;
     stream.read_string(v, size);
     return v;
 }

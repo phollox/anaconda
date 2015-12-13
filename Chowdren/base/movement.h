@@ -18,7 +18,7 @@
 #ifndef CHOWDREN_MOVEMENT_H
 #define CHOWDREN_MOVEMENT_H
 
-#include <string>
+#include "chowstring.h"
 #include "types.h"
 #include "frameobject.h"
 
@@ -60,7 +60,7 @@ public:
     virtual bool is_stopped();
     virtual void reverse();
     virtual int get_speed();
-    virtual void set_node(const std::string & node);
+    virtual void set_node(const chowstring & node);
     virtual bool is_path_finished();
     virtual bool is_node_reached();
     virtual void set_direction(int value);
@@ -98,7 +98,7 @@ class NamedNode
 {
 public:
     int index;
-    std::string name;
+    chowstring name;
 };
 
 typedef vector<PathNode> PathNodes;
@@ -121,9 +121,9 @@ public:
     void set_path(bool loop, bool reverse, int end_x, int end_y);
     void add_node(int speed, int x, int y, float dir_x, float dir_y,
                   int length, int dir, float pause);
-    void add_named_node(int i, const std::string & name);
+    void add_named_node(int i, const chowstring & name);
     void set_current_node(int i);
-    void set_node(const std::string & node);
+    void set_node(const chowstring & node);
     void update();
     void start();
     void stop(bool collision);

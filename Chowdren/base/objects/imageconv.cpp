@@ -18,12 +18,12 @@
 #include "objects/imageconv.h"
 #include <iostream>
 
-void ImageManipulator::load(const std::string & filename)
+void ImageManipulator::load(const chowstring & filename)
 {
     std::cout << "Load imageconv image: " << filename << std::endl;
 }
 
-void ImageManipulator::save(const std::string & filename)
+void ImageManipulator::save(const chowstring & filename)
 {
     std::cout << "Save imageconv image: " << filename << std::endl;
 }

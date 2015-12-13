@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include "chowstring.h"
 #include "frameobject.h"
 
 class HTTPObject : public FrameObject
@@ -24,13 +24,13 @@ public:
     FRAMEOBJECT_HEAD(HTTPObject)
 
     bool done;
-    std::string value;
-    std::string args;
+    chowstring value;
+    chowstring args;
 
     HTTPObject(int x, int y, int type_id);
     ~HTTPObject();
-    void add_post(const std::string & name, const std::string & value);
-    void get(const std::string & url);
+    void add_post(const chowstring & name, const chowstring & value);
+    void get(const chowstring & url);
     void update();
 
 };

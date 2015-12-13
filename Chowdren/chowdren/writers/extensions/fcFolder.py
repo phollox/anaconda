@@ -45,7 +45,7 @@ class FolderObject(ObjectWriter):
 
         if len(groups) or add_members:
             writer.add_member('int folder_search_id')
-            writer.add_member('std::string folder_search_name')
+            writer.add_member('chowstring folder_search_name')
 
 class StartWalk(StaticActionWriter):
     custom = True

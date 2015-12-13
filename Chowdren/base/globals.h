@@ -20,37 +20,63 @@
 
 #include "types.h"
 #include "stringcommon.h"
-#include <string>
+#include "chowstring.h"
 #include "dynnum.h"
+#include "chowconfig.h"
+
+#ifndef NDEBUG
+#include <iostream>
+#endif
+
+#ifndef CHOWDREN_MAX_GLOBAL_VALUES
+#define CHOWDREN_MAX_GLOBAL_VALUES 256
+#endif
+
+#ifndef CHOWDREN_MAX_GLOBAL_STRINGS
+#define CHOWDREN_MAX_GLOBAL_STRINGS 256
+#endif
 
 class GlobalValues
 {
 public:
-    vector<DynamicNumber> values;
+    DynamicNumber values[CHOWDREN_MAX_GLOBAL_VALUES];
 
     GlobalValues()
     {
+        for (int i = 0; i < CHOWDREN_MAX_GLOBAL_VALUES; ++i)
+            values[i] = 0;
     }
 
     DynamicNumber get(size_t index)
     {
-        if (index >= values.size())
+#ifndef NDEBUG
+        if (index >= CHOWDREN_MAX_GLOBAL_VALUES) {
+            std::cout << "Global value out of bounds: " << index << std::endl;
             return 0;
+        }
+#endif
         return values[index];
     }
 
     int get_int(size_t index)
     {
-        if (index >= values.size())
+#ifndef NDEBUG
+        if (index >= CHOWDREN_MAX_GLOBAL_VALUES) {
+            std::cout << "Global value out of bounds: " << index << std::endl;
             return 0;
+        }
+#endif
         return int(values[index]);
     }
 
     void set(size_t index, DynamicNumber value)
     {
-        if (index >= values.size()) {
-            values.resize(index + 1);
+#ifndef NDEBUG
+        if (index >= CHOWDREN_MAX_GLOBAL_VALUES) {
+            std::cout << "Global value out of bounds: " << index << std::endl;
+			return;
         }
+#endif
         values[index] = value;
     }
 
@@ -68,24 +94,31 @@ public:
 class GlobalStrings
 {
 public:
-    vector<std::string> values;
+    chowstring values[CHOWDREN_MAX_GLOBAL_STRINGS];
 
     GlobalStrings()
     {
     }
 
-    const std::string & get(size_t index)
+    const chowstring & get(size_t index)
     {
-        if (index >= values.size()) {
+#ifndef NDEBUG
+        if (index >= CHOWDREN_MAX_GLOBAL_STRINGS) {
+            std::cout << "Global string out of bounds: " << index << std::endl;
             return empty_string;
         }
+#endif
         return values[index];
     }
 
-    void set(size_t index, const std::string & value)
+    void set(size_t index, const chowstring & value)
     {
-        if (index >= values.size())
-            values.resize(index + 1);
+#ifndef NDEBUG
+        if (index >= CHOWDREN_MAX_GLOBAL_STRINGS) {
+            std::cout << "Global string out of bounds: " << index << std::endl;
+			return;
+        }
+#endif
         values[index] = value;
     }
 };

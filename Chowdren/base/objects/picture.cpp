@@ -35,21 +35,21 @@ ActivePicture::~ActivePicture()
     image = NULL;
 }
 
-void ActivePicture::load(const std::string & fn)
+void ActivePicture::load(const chowstring & fn)
 {
 #ifndef NDEBUG
     if (fn != filename)
         std::cout << "load filename: " << fn << std::endl;
 #endif
     filename = fn;
-    std::string path;
+    chowstring path;
 #if defined(CHOWDREN_IS_WIIU) || defined(CHOWDREN_EMULATE_WIIU)
     // small hack to load language-specific files for menu
     size_t dir_end = fn.find_last_of(PATH_SEP);
     size_t dir_start = fn.find_last_of(PATH_SEP, dir_end-1);
-    std::string dir = fn.substr(dir_start+1, dir_end-dir_start-1);
+    chowstring dir = fn.substr(dir_start+1, dir_end-dir_start-1);
     if (dir == "Menu") {
-        std::string name = fn.substr(dir_end + 1);
+        chowstring name = fn.substr(dir_end + 1);
         path = convert_path(fn.substr(0, dir_end+1) +
                             platform_get_language() + "/" + name);
 

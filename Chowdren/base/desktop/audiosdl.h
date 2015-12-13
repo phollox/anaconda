@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include "chowstring.h"
 #include <algorithm>
 
 #ifdef CHOWDREN_IS_EMSCRIPTEN
@@ -752,11 +752,11 @@ struct AudioPreload
     size_t size;
 };
 
-static hash_map<std::string, AudioPreload> audio_preloads;
+static hash_map<chowstring, AudioPreload> audio_preloads;
 
-void create_audio_preload(const std::string & in_path)
+void create_audio_preload(const chowstring & in_path)
 {
-    std::string path = convert_path(in_path);
+    chowstring path = convert_path(in_path);
     std::cout << "Preload: " << path << std::endl;
     FSFile fp(path.c_str(), "r");
     size_t size = platform_get_file_size(path.c_str());
@@ -771,9 +771,9 @@ void create_audio_preload(const std::string & in_path)
     delete decoder;
 }
 
-AudioPreload * get_audio_preload(const std::string & path)
+AudioPreload * get_audio_preload(const chowstring & path)
 {
-    hash_map<std::string, AudioPreload>::iterator it = audio_preloads.find(path);
+    hash_map<chowstring, AudioPreload>::iterator it = audio_preloads.find(path);
     if (it == audio_preloads.end()) {
         std::cout << "No preloads for " << path << std::endl;
         return NULL;
@@ -798,7 +798,7 @@ public:
 #ifdef USE_FILE_PRELOAD
     volatile Media::AudioType decoder_type;
     volatile size_t decoder_size;
-    std::string decoder_filename;
+    chowstring decoder_filename;
 #endif 
 
     SoundStream(size_t offset, Media::AudioType type, size_t size)
@@ -810,7 +810,7 @@ public:
     }
 
 #ifdef USE_FILE_PRELOAD
-    SoundStream(const std::string & path, Media::AudioType type, size_t size)
+    SoundStream(const chowstring & path, Media::AudioType type, size_t size)
     : SoundBase()
     {
         AudioPreload * preload = get_audio_preload(path);
@@ -845,7 +845,7 @@ public:
         // UNLOCK_STREAM;
     }
 #else
-    SoundStream(const std::string & path, Media::AudioType type, size_t size)
+    SoundStream(const chowstring & path, Media::AudioType type, size_t size)
     : SoundBase()
     {
         fp.open(path.c_str(), "r");

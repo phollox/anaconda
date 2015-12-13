@@ -25,7 +25,7 @@
 #include "keyconv.h"
 #include "manager.h"
 #include "platform.h"
-#include <string>
+#include "chowstring.h"
 #include <list>
 #include <map>
 #include <iostream>
@@ -55,57 +55,57 @@
 
 // string helpers
 
-inline int string_find(const std::string & a, const std::string & b,
+inline int string_find(const chowstring & a, const chowstring & b,
                        int pos)
 {
     if (pos == -1)
         pos = 0;
     size_t ret = a.find(b, pos);
-    if (ret == std::string::npos)
+    if (ret == chowstring::npos)
         return -1;
     return ret;
 }
 
-inline int string_rfind(const std::string & a, const std::string & b,
+inline int string_rfind(const chowstring & a, const chowstring & b,
                         int pos)
 {
     if (pos == -1)
         pos = 0;
     size_t ret = a.rfind(b, pos);
-    if (ret == std::string::npos)
+    if (ret == chowstring::npos)
         return -1;
     return ret;
 }
 
-inline int string_size(const std::string & a)
+inline int string_size(const chowstring & a)
 {
     return a.size();
 }
 
-inline std::string lowercase_string(const std::string & str)
+inline chowstring lowercase_string(const chowstring & str)
 {
-	std::string v(str);
+	chowstring v(str);
     std::transform(v.begin(), v.end(), v.begin(),
                    static_cast<int (*)(int)>(tolower));
     return v;
 }
 
-inline std::string uppercase_string(const std::string & str)
+inline chowstring uppercase_string(const chowstring & str)
 {
-	std::string v(str);
+	chowstring v(str);
     std::transform(v.begin(), v.end(), v.begin(),
                    static_cast<int(*)(int)>(toupper));
     return v;
 }
 
-inline std::string right_string(const std::string & v, int count)
+inline chowstring right_string(const chowstring & v, int count)
 {
     count = clamp(count, 0, int(v.size()));
     int index = int(v.size()) - count;
     return v.substr(index, count);
 }
 
-inline std::string mid_string(const std::string & v, int index, int count)
+inline chowstring mid_string(const chowstring & v, int index, int count)
 {
     int size = int(v.size());
     index = clamp(index, 0, size);
@@ -113,7 +113,7 @@ inline std::string mid_string(const std::string & v, int index, int count)
     return v.substr(index, count);
 }
 
-inline std::string left_string(const std::string & v, int count)
+inline chowstring left_string(const chowstring & v, int count)
 {
     count = clamp(count, 0, int(v.size()));
     return v.substr(0, count);
@@ -122,13 +122,13 @@ inline std::string left_string(const std::string & v, int count)
 class Font
 {
 public:
-    std::string name;
+    chowstring name;
     int size;
     bool bold;
     bool italic;
     bool underline;
 
-    Font(const std::string & name, int size, bool bold, bool italic, bool underline);
+    Font(const char * name, int size, bool bold, bool italic, bool underline);
 };
 
 // static objects
@@ -136,7 +136,7 @@ public:
 class FTTextureFont;
 FTTextureFont * get_font(int size, int flags = 0);
 void set_font_path(const char * path);
-void set_font_path(const std::string & path);
+void set_font_path(const chowstring & path);
 bool init_font();
 
 #define NONE_GRADIENT 0
@@ -413,7 +413,7 @@ inline void set_random_seed(int seed)
     cross_srand(seed);
 }
 
-inline void open_process(const std::string & exe, const std::string & cmd,
+inline void open_process(const chowstring & exe, const chowstring & cmd,
                          int pad)
 {
 
@@ -439,13 +439,13 @@ inline void set_cursor_visible(bool value)
         platform_hide_mouse();
 }
 
-inline std::string get_command_arg(const std::string & arg)
+inline chowstring get_command_arg(const chowstring & arg)
 {
     // XXX implement, maybe
     return "";
 }
 
-std::string get_md5(const std::string & value);
+chowstring get_md5(const chowstring & value);
 
 template <typename T, typename T1>
 inline T get_event_dummy(T value, T1 other)
@@ -459,18 +459,18 @@ inline T get_event_dummy(T value, T1 a, T2 b)
     return value;
 }
 
-inline int get_zero_dummy(const std::string value)
+inline int get_zero_dummy(const chowstring value)
 {
     return 0;
 }
 
-std::string get_joytokey_name(int value);
+chowstring get_joytokey_name(int value);
 
 void create_joystick_rumble(int n, float delay, float duration,
-                            float l, float r, const std::string & name);
-void start_joystick_rumble(int n, const std::string & name, int times);
+                            float l, float r, const chowstring & name);
+void start_joystick_rumble(int n, const chowstring & name, int times);
 
-inline int get_ascii(const std::string & value)
+inline int get_ascii(const chowstring & value)
 {
     if (value.empty())
         return 0;
@@ -487,7 +487,7 @@ inline int reverse_color(int value)
     return color.get_int();
 }
 
-const std::string & get_platform();
+const chowstring & get_platform();
 
 #ifdef CHOWDREN_EMULATE_MENU
 

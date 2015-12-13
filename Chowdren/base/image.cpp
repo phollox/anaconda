@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include "chowstring.h"
 #include "image.h"
 #include "string.h"
 #include "color.h"
@@ -220,7 +220,7 @@ void Image::replace(const Color & from, const Color & to)
     }
 }
 
-void Image::replace(const std::string & path)
+void Image::replace(const chowstring & path)
 {
     Image * other = get_image_cache(path, 0, 0, 0, 0, TransparentColor());
     other->upload_texture();
@@ -476,7 +476,7 @@ void Image::set_transparent_color(TransparentColor color)
 
 // FileImage
 
-FileImage::FileImage(const std::string & filename, int hot_x, int hot_y,
+FileImage::FileImage(const chowstring & filename, int hot_x, int hot_y,
                      int act_x, int act_y, TransparentColor color)
 : filename(filename), transparent(color), Image(hot_x, hot_y, act_x, act_y)
 {
@@ -544,7 +544,7 @@ void FileImage::load_file()
 
 static Image * internal_images[IMAGE_COUNT];
 
-typedef hash_map<std::string, FileImage*> ImageCache;
+typedef hash_map<chowstring, FileImage*> ImageCache;
 static ImageCache image_cache;
 
 Image * get_internal_image(unsigned int i)
@@ -560,7 +560,7 @@ Image * get_internal_image(unsigned int i)
     return internal_images[i];
 }
 
-Image * get_image_cache(const std::string & filename, int hot_x, int hot_y,
+Image * get_image_cache(const chowstring & filename, int hot_x, int hot_y,
                         int act_x, int act_y, TransparentColor color)
 {
     FileImage * image;
@@ -582,12 +582,12 @@ Image * get_image_cache(const std::string & filename, int hot_x, int hot_y,
     return image;
 }
 
-bool has_image_cache(const std::string & filename)
+bool has_image_cache(const chowstring & filename)
 {
     return image_cache.find(filename) != image_cache.end();
 }
 
-void set_image_cache(const std::string & filename, FileImage * image)
+void set_image_cache(const chowstring & filename, FileImage * image)
 {
     image_cache[filename] = image;
 }

@@ -67,6 +67,8 @@ FLAGS_NOREDRAW = 128
 FLAGS_VARIABLEWIDTH = 256
 FLAGS_EDGEFADE = 1024
 
+BEGIN_CALLBACK_CONDITION = 4
+BEGIN_LINE_CALLBACK_CONDITION = 6
 CHAR_CALLBACK_CONDITION = 8
 
 class TextBlitter(ObjectWriter):
@@ -78,23 +80,39 @@ class TextBlitter(ObjectWriter):
     filename = 'textblitter'
 
     def initialize(self):
-        self.has_callback = False
+        self.has_char_callback = False
+        self.has_line_callback = False
+        self.has_begin_callback = False
         self.read_data()
         if not self.converter.config.use_blitter_callback(self):
             return
-        if not self.flags & (FLAGS_CALLBACK | FLAGS_CALLBACK_ONCHAR):
+        if not self.flags & FLAGS_CALLBACK:
             return
-        self.has_callback = True
-        self.add_event_callback('call_char_callback')
+        if self.flags & FLAGS_CALLBACK_ONCHAR:
+            self.has_char_callback = True
+            self.add_event_callback('call_char_callback')
+        if self.flags & FLAGS_CALLBACK_ONBEGINL:
+            self.has_line_callback = True
+            self.add_event_callback('call_line_callback')
+        if self.flags & FLAGS_CALLBACK_ONBEGIN:
+            self.has_begin_callback = True
+            self.add_event_callback('call_begin_callback')
 
     def write_frame(self, writer):
-        if not self.has_callback:
-            return
         if not self.converter.config.use_blitter_callback(self):
             return
-        self.write_event_callback(
-            'call_char_callback', writer,
-            self.get_object_conditions(CHAR_CALLBACK_CONDITION))
+        if self.has_char_callback:
+            self.write_event_callback(
+                'call_char_callback', writer,
+                self.get_object_conditions(CHAR_CALLBACK_CONDITION))
+        if self.has_line_callback:
+            self.write_event_callback(
+                'call_line_callback', writer,
+                self.get_object_conditions(BEGIN_LINE_CALLBACK_CONDITION))
+        if self.has_begin_callback:
+            self.write_event_callback(
+                'call_begin_callback', writer,
+                self.get_object_conditions(BEGIN_CALLBACK_CONDITION))
 
     def read_data(self):
         data = self.get_data()
@@ -204,7 +222,18 @@ class TextBlitter(ObjectWriter):
         writer.putlnc('wrap = %s;', bool(self.flags & FLAGS_WORDWRAPPING))
         writer.putlnc('set_text(%s);', self.converter.intern_string(self.text))
 
-        writer.putlnc('has_callback = %s;', self.has_callback)
+        flags = []
+        if self.has_char_callback:
+            flags.append('CHAR_CALLBACK')
+        if self.has_line_callback:
+            flags.append('LINE_CALLBACK')
+        if self.has_begin_callback:
+            flags.append('BEGIN_CALLBACK')
+        flags = ' | '.join(flags)
+        if not flags:
+            flags = '0'
+
+        writer.putlnc('callback_flags = %s;', flags)
 
     def is_static_background(self):
         return False
@@ -239,6 +268,9 @@ actions = make_table(ActionMethodWriter, {
     57 : 'replace_color',
     58 : 'set_width',
     59 : 'set_height',
+    60 : '.callback_char_dst_x = %s',
+    63 : '.callback_char_src_y = %s',
+    64 : '.callback_char_width = %s',
     66 : '.callback_transparency = %s'
 })
 
@@ -268,7 +300,10 @@ expressions = make_table(ExpressionMethodWriter, {
     42 : 'get_map_char',
     43 : '.callback_char',
     44 : '.callback_line',
-    46 : '.callback_line_count'
+    46 : '.callback_line_count',
+    50 : '.callback_char_src_y',
+    51 : '.callback_char_width',
+    54 : '.callback_character_char'
 })
 
 def get_object():

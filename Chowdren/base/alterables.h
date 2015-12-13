@@ -4,7 +4,7 @@
 // for size_t
 #include <stdlib.h>
 #include <string.h>
-#include <string>
+#include "chowstring.h"
 #include <iostream>
 #include "dynnum.h"
 #include "pool.h"
@@ -268,20 +268,20 @@ public:
 class AlterableStrings
 {
 public:
-    std::string values[ALT_STRINGS];
+    chowstring values[ALT_STRINGS];
 
     AlterableStrings()
     {
     }
 
-    const std::string & get(size_t index)
+    const chowstring & get(size_t index)
     {
         if (index >= ALT_STRINGS)
             return empty_string;
         return values[index];
     }
 
-    void set(size_t index, const std::string & value)
+    void set(size_t index, const chowstring & value)
     {
         if (index >= ALT_STRINGS)
             return;

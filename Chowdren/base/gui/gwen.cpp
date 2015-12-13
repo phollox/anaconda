@@ -130,7 +130,7 @@ void GwenData::update()
         }
     }
 
-    std::string::const_iterator it;
+    chowstring::const_iterator it;
     for (it = manager.input.begin(); it != manager.input.end(); ++it) {
         switch (*it) {
             case '\n':

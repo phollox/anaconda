@@ -19,7 +19,7 @@
 #define CHOWDREN_IMAGE_H
 
 #include "path.h"
-#include <string>
+#include "chowstring.h"
 #include "color.h"
 #include "types.h"
 #include "platform.h"
@@ -65,7 +65,7 @@ public:
     void destroy();
     Image * copy();
     void replace(const Color & from, const Color & to);
-    void replace(const std::string & path);
+    void replace(const chowstring & path);
     void load();
     void set_static();
     void upload_texture();
@@ -102,20 +102,20 @@ public:
 class FileImage : public Image
 {
 public:
-    std::string filename;
+    chowstring filename;
     TransparentColor transparent;
 
-    FileImage(const std::string & filename, int hot_x, int hot_y,
+    FileImage(const chowstring & filename, int hot_x, int hot_y,
               int act_x, int act_y, TransparentColor transparent);
     void load_file();
     void load_data(unsigned char * data, int size);
 };
 
 Image * get_internal_image(unsigned int i);
-Image * get_image_cache(const std::string & filename, int hot_x, int hot_y,
+Image * get_image_cache(const chowstring & filename, int hot_x, int hot_y,
                         int act_x, int act_y, TransparentColor color);
-bool has_image_cache(const std::string & filename); 
-void set_image_cache(const std::string & filename, FileImage * image);
+bool has_image_cache(const chowstring & filename); 
+void set_image_cache(const chowstring & filename, FileImage * image);
 
 void reset_image_cache();
 void flush_image_cache();

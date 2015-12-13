@@ -110,12 +110,12 @@ unsigned int AssetFile::get_size(AssetType type)
 
 // temp files
 
-TempPath create_temp_file(const std::string & path)
+TempPath create_temp_file(const chowstring & path)
 {
     return TempPath(get_file_id(get_path_filename(path)));
 }
 
-void TempPath::read(std::string & data)
+void TempPath::read(chowstring & data)
 {
     AssetFile fp;
     fp.open();

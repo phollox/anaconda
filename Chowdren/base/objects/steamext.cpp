@@ -30,7 +30,7 @@
 
 // SteamGlobal
 
-static std::string steam_language("English");
+static chowstring steam_language("English");
 
 #ifdef CHOWDREN_ENABLE_STEAM
 #include "steam/steam_api.h"
@@ -60,7 +60,7 @@ static SteamGlobal global_steam_obj;
 
 // export for platform_get_language
 
-const std::string & get_steam_language()
+const chowstring & get_steam_language()
 {
     return steam_language;
 }
@@ -287,7 +287,7 @@ struct SubCallback
     }
 };
 
-inline std::string trim_spaces(const std::string & value)
+inline chowstring trim_spaces(const chowstring & value)
 {
     int i;
     for (i = 0; i < int(value.size()); ++i) {
@@ -306,13 +306,13 @@ struct UploadCallback
 {
     bool has_id;
     PublishedFileId_t current_id;
-    std::string file;
-    std::string cloud_file;
-    std::string preview;
-    std::string preview_cloud_file;
+    chowstring file;
+    chowstring cloud_file;
+    chowstring preview;
+    chowstring preview_cloud_file;
     unsigned int appid;
-    std::string title;
-    std::string description;
+    chowstring title;
+    chowstring description;
     int visibility;
 
     enum {
@@ -336,9 +336,9 @@ struct UploadCallback
 
     Frame::EventFunction done_callback, fail_callback;
 
-    std::string error;
+    chowstring error;
 
-    vector<std::string> tags;
+    vector<chowstring> tags;
     vector<const char*> tags_c;
 
     SteamParamStringArray_t steam_tags;
@@ -364,20 +364,20 @@ struct UploadCallback
         fail_callback = fail;
     }
 
-    void set_title(const std::string & value)
+    void set_title(const chowstring & value)
     {
         flags |= SET_TITLE;
         title = value;
     }
 
-    void set_file(const std::string & value)
+    void set_file(const chowstring & value)
     {
         flags |= SET_FILE;
         file = value;
         cloud_file = get_path_filename(file);
     }
 
-    void set_preview(const std::string & value)
+    void set_preview(const chowstring & value)
     {
         if (value.empty())
             return;
@@ -393,7 +393,7 @@ struct UploadCallback
         visibility = value;
     }
 
-    void set_tags(const std::string & value)
+    void set_tags(const chowstring & value)
     {
         flags |= SET_TAGS;
         tags.clear();
@@ -401,7 +401,7 @@ struct UploadCallback
         split_string(value, ',', tags);
         tags_c.resize(tags.size());
         int i = 0;
-        vector<std::string>::iterator it;
+        vector<chowstring>::iterator it;
         for (it = tags.begin(); it != tags.end(); ++it) {
             *it = trim_spaces(*it);
             tags_c[i] = (*it).c_str();
@@ -413,7 +413,7 @@ struct UploadCallback
         steam_tags.m_nNumStrings = tags_c.size();
     }
 
-    void set_description(const std::string & value)
+    void set_description(const chowstring & value)
     {
         flags |= SET_DESCRIPTION;
         description = value;
@@ -432,14 +432,14 @@ struct UploadCallback
             return;
         }
 
-        std::string data;
+        chowstring data;
         if (!read_file(preview.c_str(), data)) {
             error = "File not found";
             call_fail();
             return;
         }
         SteamRemoteStorage()->FileWrite(preview_cloud_file.c_str(),
-                                        &data[0], data.size());
+                                        data.data(), data.size());
         SteamAPICall_t call_handle;
         call_handle = SteamRemoteStorage()->FileShare(
             preview_cloud_file.c_str());
@@ -528,14 +528,14 @@ struct UploadCallback
             return;
         }
 
-        std::string data;
+        chowstring data;
         if (!read_file(file.c_str(), data)) {
             error = "File not found";
             call_fail();
             return;
         }
         SteamRemoteStorage()->FileWrite(cloud_file.c_str(),
-                                        &data[0], data.size());
+                                        data.data(), data.size());
         SteamAPICall_t call_handle;
         call_handle = SteamRemoteStorage()->FileShare(cloud_file.c_str());
         share_call.Set(call_handle, this, &UploadCallback::share_callback);
@@ -634,7 +634,7 @@ void SteamObject::update()
 #endif
 }
 
-int SteamObject::get_int(const std::string & name)
+int SteamObject::get_int(const chowstring & name)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     if (!global_steam_obj.initialized)
@@ -648,7 +648,7 @@ int SteamObject::get_int(const std::string & name)
 #endif
 }
 
-void SteamObject::set_int(const std::string & name, int value)
+void SteamObject::set_int(const chowstring & name, int value)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     if (!global_steam_obj.initialized)
@@ -658,7 +658,7 @@ void SteamObject::set_int(const std::string & name, int value)
 #endif
 }
 
-void SteamObject::unlock_achievement(const std::string & name)
+void SteamObject::unlock_achievement(const chowstring & name)
 {
 #ifndef NDEBUG
     std::cout << "Unlock achievement: " << name << std::endl;
@@ -712,7 +712,7 @@ bool SteamObject::get_content(Frame::EventFunction loop,
 #endif
 }
 
-void SteamObject::clear_achievement(const std::string & name)
+void SteamObject::clear_achievement(const chowstring & name)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     if (!global_steam_obj.initialized)
@@ -732,7 +732,7 @@ void SteamObject::clear_achievements()
 #endif
 }
 
-bool SteamObject::is_achievement_unlocked(const std::string & name)
+bool SteamObject::is_achievement_unlocked(const chowstring & name)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     if (!global_steam_obj.initialized)
@@ -745,17 +745,17 @@ bool SteamObject::is_achievement_unlocked(const std::string & name)
 #endif
 }
 
-int SteamObject::get_unlocked(const std::string & name)
+int SteamObject::get_unlocked(const chowstring & name)
 {
     return (int)is_achievement_unlocked(name);
 }
 
-void SteamObject::upload(const std::string & name)
+void SteamObject::upload(const chowstring & name)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     if (!global_steam_obj.initialized)
         return;
-    std::string filename = get_path_filename(name);
+    chowstring filename = get_path_filename(name);
     const char * filename_c = filename.c_str();
     char * data;
     size_t size;
@@ -765,24 +765,24 @@ void SteamObject::upload(const std::string & name)
 #endif
 }
 
-void SteamObject::download(const std::string & name)
+void SteamObject::download(const chowstring & name)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     if (!global_steam_obj.initialized)
         return;
-    std::string filename = get_path_filename(name);
+    chowstring filename = get_path_filename(name);
     const char * filename_c = filename.c_str();
     if (!SteamRemoteStorage()->FileExists(filename_c))
         return;
 
     int32 size = SteamRemoteStorage()->GetFileSize(filename_c);
-    std::string value;
+    chowstring value;
     value.resize(size);
     SteamRemoteStorage()->FileRead(filename_c, &value[0], size);
     FSFile fp(name.c_str(), "w");
     if (!fp.is_open())
         return;
-    fp.write(&value[0], value.size());
+    fp.write(value.data(), value.size());
     fp.close();
 #endif
 }
@@ -812,7 +812,7 @@ struct DownloadCall
 
 #endif
 
-void SteamObject::download(const std::string & name, int priority,
+void SteamObject::download(const chowstring & name, int priority,
                            int content_id,
                            Frame::EventFunction success,
                            Frame::EventFunction fail)
@@ -820,7 +820,7 @@ void SteamObject::download(const std::string & name, int priority,
 #ifdef CHOWDREN_ENABLE_STEAM
     global_steam_obj.download_success = success;
     global_steam_obj.download_fail = fail;
-    std::string filename = convert_path(name);
+    chowstring filename = convert_path(name);
     SteamAPICall_t handle;
     UGCHandle_t id = ugc_list_callback.details[content_id].m_hFile;
     handle = SteamRemoteStorage()->UGCDownloadToLocation(id, filename.c_str(),
@@ -832,12 +832,12 @@ void SteamObject::download(const std::string & name, int priority,
 #endif
 }
 
-const std::string & SteamObject::get_user_name()
+const chowstring & SteamObject::get_user_name()
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     if (!global_steam_obj.initialized)
         return empty_string;
-    static std::string name;
+    static chowstring name;
     name = SteamFriends()->GetPersonaName();
     return name;
 #else
@@ -873,7 +873,7 @@ bool SteamObject::is_activated()
 #endif
 }
 
-bool SteamObject::is_active(const std::string & session_id)
+bool SteamObject::is_active(const chowstring & session_id)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     return ugc_upload.uploading;
@@ -913,8 +913,8 @@ void SteamObject::reset_changes()
     std::cout << "reset_changes not implementd" << std::endl;
 }
 
-void SteamObject::set_preview_latest(const std::string & local_path,
-                                     const std::string & cloud_path,
+void SteamObject::set_preview_latest(const chowstring & local_path,
+                                     const chowstring & cloud_path,
                                      bool overwrite)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
@@ -932,7 +932,7 @@ void SteamObject::upload_changes(Frame::EventFunction done,
 #endif
 }
 
-const std::string & SteamObject::get_error()
+const chowstring & SteamObject::get_error()
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     return ugc_upload.error;
@@ -941,7 +941,7 @@ const std::string & SteamObject::get_error()
 #endif
 }
 
-void SteamObject::set_tags(const std::string & tags)
+void SteamObject::set_tags(const chowstring & tags)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     ugc_upload.set_tags(tags);
@@ -949,7 +949,7 @@ void SteamObject::set_tags(const std::string & tags)
 #endif
 }
 
-void SteamObject::set_description(const std::string & value)
+void SteamObject::set_description(const chowstring & value)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     ugc_upload.set_description(value);
@@ -957,8 +957,8 @@ void SteamObject::set_description(const std::string & value)
 #endif
 }
 
-void SteamObject::set_file(const std::string & local_path,
-                           const std::string & cloud_path,
+void SteamObject::set_file(const chowstring & local_path,
+                           const chowstring & cloud_path,
                            bool overwrite)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
@@ -967,7 +967,7 @@ void SteamObject::set_file(const std::string & local_path,
 #endif
 }
 
-void SteamObject::set_content_title(const std::string & title)
+void SteamObject::set_content_title(const chowstring & title)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     ugc_upload.set_title(title);
@@ -991,7 +991,7 @@ void SteamObject::set_content_visibility(int value)
 }
 
 void SteamObject::start_content_change(unsigned int content_id,
-                                       const std::string & session_id)
+                                       const chowstring & session_id)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     PublishedFileId_t id;
@@ -1001,7 +1001,7 @@ void SteamObject::start_content_change(unsigned int content_id,
 #endif
 }
 
-void SteamObject::start_publish(const std::string & session_id)
+void SteamObject::start_publish(const chowstring & session_id)
 {
 #ifdef CHOWDREN_ENABLE_STEAM
     ugc_upload.has_id = false;
@@ -1010,7 +1010,8 @@ void SteamObject::start_publish(const std::string & session_id)
 
 bool SteamObject::is_enabled()
 {
-#ifdef CHOWDREN_ENABLE_STEAM
+    // XXX stupid dumb hack, remove IS_ANDROID
+#if defined(CHOWDREN_ENABLE_STEAM) || defined(CHOWDREN_IS_ANDROID)
     return true;
 #else
     return false;

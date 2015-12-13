@@ -49,7 +49,7 @@
 #include <cstdarg>
 #include <assert.h>
 
-#include <string>
+#include "chowstring.h"
 #include "types.h"
 #include <algorithm>
 #include <iostream>
@@ -171,7 +171,7 @@ bool datawaiting( int sock )
 }
 
 
-// Try to work out address from std::string
+// Try to work out address from chowstring
 // returns 0 if bad
 struct in_addr *atoaddr( const char* address)
 {
@@ -220,7 +220,7 @@ void Connection::setcallbacks(
 	m_UserData = userdata;
 }
 
-void Connection::set_host(const std::string & host, int port)
+void Connection::set_host(const chowstring & host, int port)
 {
 	m_Host = host;
 	m_Port = port;
@@ -388,7 +388,7 @@ void Connection::putheader( const char* header, const char* value )
 		printf( "putheader() failed" );
 		return;
 	}
-	m_Buffer.push_back( std::string(header) + ": " + std::string( value ) );
+	m_Buffer.push_back( chowstring(header) + ": " + chowstring( value ) );
 }
 
 void Connection::putheader( const char* header, int numericvalue )
@@ -408,8 +408,8 @@ bool Connection::endheaders()
 
 	m_Buffer.push_back( "" );
 
-	std::string msg;
-	vector< std::string>::const_iterator it;
+	chowstring msg;
+	vector< chowstring>::const_iterator it;
 	for( it = m_Buffer.begin(); it != m_Buffer.end(); ++it )
 		msg += (*it) + "\r\n";
 
@@ -532,14 +532,14 @@ Response::Response( const char* method, Connection& conn ) :
 
 const char* Response::getheader( const char* name ) const
 {
-	std::string lname( name );
+	chowstring lname( name );
 #ifdef _MSC_VER
 	std::transform( lname.begin(), lname.end(), lname.begin(), tolower );
 #else
 	std::transform( lname.begin(), lname.end(), lname.begin(), ::tolower );
 #endif
 
-	std::map< std::string, std::string >::const_iterator it = m_Headers.find( lname );
+	std::map< chowstring, chowstring >::const_iterator it = m_Headers.find( lname );
 	if( it == m_Headers.end() )
 		return 0;
 	else
@@ -656,7 +656,7 @@ int Response::pump( const unsigned char* data, int datasize )
 
 
 
-void Response::ProcessChunkLenLine( std::string const& line )
+void Response::ProcessChunkLenLine( chowstring const& line )
 {
 	// chunklen in hex at beginning of line
 	m_ChunkLeft = strtol( line.c_str(), NULL, 16 );
@@ -737,7 +737,7 @@ void Response::Finish()
 }
 
 
-void Response::ProcessStatusLine( std::string const& line )
+void Response::ProcessStatusLine( chowstring const& line )
 {
 	const char* p = line.c_str();
 
@@ -752,7 +752,7 @@ void Response::ProcessStatusLine( std::string const& line )
 		++p;
 
 	// get status code
-	std::string status;
+	chowstring status;
 	while( *p && *p != ' ' )
 		status += *p++;
 	while( *p && *p == ' ' )
@@ -799,8 +799,8 @@ void Response::FlushHeader()
 
 	const char* p = m_HeaderAccum.c_str();
 
-	std::string header;
-	std::string value;
+	chowstring header;
+	chowstring value;
 	while( *p && *p != ':' )
 		header += tolower( *p++ );
 
@@ -821,7 +821,7 @@ void Response::FlushHeader()
 }
 
 
-void Response::ProcessHeaderLine( std::string const& line )
+void Response::ProcessHeaderLine( chowstring const& line )
 {
 	const char* p = line.c_str();
 	if( line.empty() )
@@ -856,7 +856,7 @@ void Response::ProcessHeaderLine( std::string const& line )
 }
 
 
-void Response::ProcessTrailerLine( std::string const& line )
+void Response::ProcessTrailerLine( chowstring const& line )
 {
 	if( line.empty() )
 		Finish();

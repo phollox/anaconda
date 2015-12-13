@@ -981,7 +981,7 @@ def main():
     writer = CodeWriter(os.path.join(get_base_path(), 'keyconv.cpp'))
 
     # write keys file
-    writer.putln('#include <string>')
+    writer.putln('#include "chowstring.h"')
     writer.putln('#include "keydef.h"')
     writer.putln('#include "stringcommon.h"')
     writer.putln('')
@@ -1007,7 +1007,7 @@ def main():
                                     'get_key_string_hash',
                                     string_map, False))
 
-    writer.putmeth('std::string translate_vk_to_string',
+    writer.putmeth('chowstring translate_vk_to_string',
                    'int vk')
     writer.putln('switch (vk) {')
     writer.indent()
@@ -1021,7 +1021,7 @@ def main():
     writer.end_brace()
     writer.putln('')
 
-    writer.putmeth('std::string translate_key_to_string',
+    writer.putmeth('chowstring translate_key_to_string',
                    'int key')
     writer.putln('switch (key) {')
     writer.indent()

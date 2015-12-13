@@ -8,6 +8,9 @@ def init(converter):
     converter.add_define('CHOWDREN_FORCE_TEXT_LAYOUT')
     converter.add_define('CHOWDREN_TEXT_USE_UTF8')
 
+def finish(converter):
+    pass
+
 def use_gwen(converter):
     return False
 
@@ -15,6 +18,9 @@ def use_subapp_frames(converter):
     return False
 
 def init_container(converter, container):
+    pass
+
+def init_group(converter, group):
     pass
 
 def init_frame(converter, frame):
@@ -62,6 +68,9 @@ def use_counter_int(converter, expression):
 
 def use_safe_division(converter):
     return True
+
+def use_transparency_shader_reset(converter):
+    return False
 
 def get_startup_instances(converter, instances):
     return instances
@@ -150,5 +159,11 @@ def get_images(converter):
 def get_audio_preloads(converter):
     return []
 
+def get_wave_sound(converter, data):
+    return None
+
 def write_loop(converter, loop_name, event_writer, writer):
     pass
+
+def prepare_loop_body(converter, loop_name, writer, groups):
+    return None

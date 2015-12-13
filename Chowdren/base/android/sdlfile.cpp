@@ -18,7 +18,7 @@
 #ifdef USE_ASSET_MANAGER
 
 extern AAssetManager * global_asset_manager;
-extern std::string internal_path;
+extern chowstring internal_path;
 
 enum ExtraFlags
 {
@@ -39,8 +39,8 @@ void BaseFile::open(const char * filename, const char * mode)
             break;
     }
 
-    std::string file_string = convert_path(filename);
-    std::string new_path = internal_path + "/" + file_string;
+    chowstring file_string = convert_path(filename);
+    chowstring new_path = internal_path + "/" + file_string;
     FILE * fp = fopen(new_path.c_str(), new_mode);
     if (fp != NULL) {
         handle = (void*)fp;
@@ -135,7 +135,7 @@ void BaseFile::open(const char * filename, const char * mode)
             break;
     }
 
-    std::string file_string = convert_path(filename);
+    chowstring file_string = convert_path(filename);
     const char * file_string_c = file_string.c_str();
     SDL_RWops * new_handle = SDL_RWFromFile(file_string_c, new_mode);
     if (new_handle == NULL) {

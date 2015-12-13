@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include "chowstring.h"
 #include <iostream>
 #include <android/log.h>
 #include "platform.h"
@@ -27,7 +27,7 @@ namespace ChowdrenAudio
     void resume_audio();
 }
 
-static std::string current_log_line;
+static chowstring current_log_line;
 
 class LogBuffer : public std::streambuf
 {
@@ -58,11 +58,13 @@ extern "C" {
 #define __cplusplus
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
+#include <android/configuration.h>
 }
 #include <SDL_system.h>
 static jobject java_asset_manager;
 AAssetManager * global_asset_manager;
-static std::string internal_path;
+static chowstring internal_path;
+static chowstring android_language("English");
 
 extern "C" JNIEnv *Android_JNI_GetEnv(void);
 
@@ -93,6 +95,37 @@ void init_asset_manager()
     (*env)->PopLocalFrame(env, NULL);
 
     internal_path = SDL_AndroidGetInternalStoragePath();
+
+    AConfiguration * config = AConfiguration_new();
+    AConfiguration_fromAssetManager(config, global_asset_manager);
+    char lang[2];
+    AConfiguration_getLanguage(config, lang);
+    AConfiguration_delete(config);
+    #define MAKE_LANG(a, b) (a | (b << 8))
+    unsigned int lang_id = MAKE_LANG(lang[0], lang[1]);
+
+    switch (lang_id) {
+        case MAKE_LANG('e', 'n'):
+            android_language = "English";
+            break;
+        case MAKE_LANG('i', 't'):
+            android_language = "Italian";
+            break;
+        case MAKE_LANG('e', 's'):
+            android_language = "Spanish";
+            break;
+        case MAKE_LANG('d', 'e'):
+            android_language = "German";
+            break;
+        case MAKE_LANG('f', 'r'):
+            android_language = "French";
+            break;
+        default:
+            android_language = "English";
+            break;
+    }
+
+    #undef MAKE_LANG
 }
 #endif
 
@@ -107,9 +140,14 @@ void platform_init_android()
 #endif
 }
 
+const chowstring & platform_get_language()
+{
+    return android_language;
+}
+
 #ifdef USE_ASSET_MANAGER
 
-void platform_walk_folder(const std::string & in_path,
+void platform_walk_folder(const chowstring & in_path,
                           FolderCallback & callback)
 {
 }
@@ -122,12 +160,12 @@ size_t platform_get_file_size(const char * filename)
     return fp.get_size();
 }
 
-bool platform_is_directory(const std::string & value)
+bool platform_is_directory(const chowstring & value)
 {
     return false;
 }
 
-bool platform_is_file(const std::string & value)
+bool platform_is_file(const chowstring & value)
 {
     FSFile fp(value.c_str(), "r");
     if (!fp.is_open())
@@ -135,24 +173,25 @@ bool platform_is_file(const std::string & value)
     return fp.get_size();
 }
 
-bool platform_path_exists(const std::string & value)
+bool platform_path_exists(const chowstring & value)
 {
     return platform_is_file(value);
 }
 
-void platform_create_directories(const std::string & value)
+void platform_create_directories(const chowstring & value)
 {
 }
 
 #else
-void platform_walk_folder(const std::string & in_path,
+
+void platform_walk_folder(const chowstring & in_path,
                           FolderCallback & callback)
 {
 }
 
 size_t platform_get_file_size(const char * filename)
 {
-    std::string path = convert_path(filename);
+    chowstring path = convert_path(filename);
     SDL_RWops * rw = SDL_RWFromFile(path.c_str(), "rb");
     if (rw == NULL)
         return 0;
@@ -161,14 +200,14 @@ size_t platform_get_file_size(const char * filename)
     return size;
 }
 
-bool platform_is_directory(const std::string & value)
+bool platform_is_directory(const chowstring & value)
 {
     return false;
 }
 
-bool platform_is_file(const std::string & value)
+bool platform_is_file(const chowstring & value)
 {
-    std::string path = convert_path(value);
+    chowstring path = convert_path(value);
     SDL_RWops * rw = SDL_RWFromFile(path.c_str(), "rb");
     if (rw != NULL) {
         SDL_RWclose(rw);
@@ -177,20 +216,38 @@ bool platform_is_file(const std::string & value)
     return false;
 }
 
-bool platform_path_exists(const std::string & value)
+bool platform_path_exists(const chowstring & value)
 {
     return platform_is_file(value);
 }
 
-void platform_create_directories(const std::string & value)
+void platform_create_directories(const chowstring & value)
 {
 }
 #endif
 
-const std::string & platform_get_appdata_dir()
+const chowstring & platform_get_appdata_dir()
 {
-    static std::string dir(".");
+    static chowstring dir(".");
     return dir;
 }
+
+#ifdef CHOWDREN_USE_GAMECIRCLE
+
+#include "AchievementsClientInterface.h"
+
+void platform_unlock_achievement(const chowstring & name)
+{
+    AmazonGames::AchievementsClientInterface::updateProgress(
+        name.c_str(), 100.0f, 0);
+}
+
+#else
+
+void platform_unlock_achievement(const chowstring & name)
+{
+}
+
+#endif
 
 #include "../desktop/platform.cpp"

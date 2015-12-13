@@ -19,21 +19,21 @@
 #define CHOWDREN_BINARYARRAY_H
 
 #include "frameobject.h"
-#include <string>
+#include "chowstring.h"
 #include "datastream.h"
 #include "types.h"
 
 class Workspace
 {
 public:
-    std::string name;
+    chowstring name;
     std::stringstream data;
 
     Workspace(FileStream & stream);
-    Workspace(const std::string & name);
+    Workspace(const chowstring & name);
 };
 
-typedef hash_map<std::string, Workspace*> WorkspaceMap;
+typedef hash_map<chowstring, Workspace*> WorkspaceMap;
 
 class BinaryArray : public FrameObject
 {
@@ -45,13 +45,13 @@ public:
 
     BinaryArray(int x, int y, int type_id);
     ~BinaryArray();
-    void load_workspaces(const std::string & filename);
-    void create_workspace(const std::string & name);
-    void switch_workspace(const std::string & name);
+    void load_workspaces(const chowstring & filename);
+    void create_workspace(const chowstring & name);
+    void switch_workspace(const chowstring & name);
     void switch_workspace(Workspace * workspace);
-    bool has_workspace(const std::string & name);
-    void load_file(const std::string & filename);
-    std::string read_string(int pos, size_t size);
+    bool has_workspace(const chowstring & name);
+    void load_file(const chowstring & filename);
+    chowstring read_string(int pos, size_t size);
     size_t get_size();
 };
 

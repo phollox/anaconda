@@ -36,6 +36,7 @@ class ObjectWriter(BaseWriter):
     has_collision_events = False
     disable_kill = False
     used_frames = 0
+    alias_obj = None
 
     def __init__(self, *arg, **kw):
         self.event_callbacks = {}
@@ -322,6 +323,8 @@ class ObjectWriter(BaseWriter):
         self.converter.global_object_header.putlnc('extern %s %s;', typ, name)
         self.converter.global_object_code.putlnc('%s %s;', typ, name)
         return name
+
+    # note: used_frames is only valid on the non-aliased object.
 
     def set_used_frame(self, frame):
         self.used_frames |= 1 << frame

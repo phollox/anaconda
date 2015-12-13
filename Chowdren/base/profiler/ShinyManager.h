@@ -203,13 +203,13 @@ SHINY_API void ShinyManager_outputToWriteStream(ShinyManager *self,
 #ifdef __cplusplus
 } /* end of extern "C" */
 
-SHINY_INLINE std::string ShinyManager_outputTreeToString(ShinyManager *self) {
+SHINY_INLINE chowstring ShinyManager_outputTreeToString(ShinyManager *self) {
 	const char* error = ShinyManager_getOutputErrorString(self);
 	if (error) return error;
 	else return ShinyNodesToString(&self->rootNode, self->nodeCount);
 }
 
-SHINY_INLINE std::string ShinyManager_outputFlatToString(ShinyManager *self) {
+SHINY_INLINE chowstring ShinyManager_outputFlatToString(ShinyManager *self) {
 	const char* error = ShinyManager_getOutputErrorString(self);
 	if (error) return error;
 

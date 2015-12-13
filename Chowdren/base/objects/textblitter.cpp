@@ -32,7 +32,7 @@ TextBlitter::TextBlitter(int x, int y, int type_id)
     collision = new InstanceBox(this);
 }
 
-void TextBlitter::load(const std::string & filename)
+void TextBlitter::load(const chowstring & filename)
 {
     Image * new_image = get_image_cache(filename, 0, 0, 0, 0,
                                         transparent_color);
@@ -54,7 +54,7 @@ TextBlitter::~TextBlitter()
     delete collision;
 }
 
-void TextBlitter::initialize(const std::string & map_string)
+void TextBlitter::initialize(const chowstring & map_string)
 {
     for (int i = 0; i < 256; i++) {
         charmap[i] = -1;
@@ -155,7 +155,7 @@ void TextBlitter::set_height(int h)
     collision->update_aabb();
 }
 
-void TextBlitter::set_text(const std::string & value)
+void TextBlitter::set_text(const chowstring & value)
 {
     if (value == text && !lines.empty())
         return;
@@ -163,7 +163,7 @@ void TextBlitter::set_text(const std::string & value)
     update_lines();
 }
 
-void TextBlitter::append_text(const std::string & value)
+void TextBlitter::append_text(const chowstring & value)
 {
     text += value;
     update_lines();
@@ -180,7 +180,7 @@ void TextBlitter::update_lines()
 
     int x_add = char_width + x_spacing;
 
-    char * text_c = &text[0];
+    const char * text_c = text.data();
 
     bool force_char = false;
 
@@ -242,14 +242,14 @@ int TextBlitter::get_line_count()
     return int(lines.size());
 }
 
-std::string TextBlitter::get_line(int index)
+chowstring TextBlitter::get_line(int index)
 {
     if (index < 0 || index >= int(lines.size()))
         return empty_string;
-    return std::string(lines[index].start, lines[index].size);
+    return chowstring(lines[index].start, lines[index].size);
 }
 
-std::string TextBlitter::get_map_char(int i)
+chowstring TextBlitter::get_map_char(int i)
 {
     if (charmap_str->empty())
         return empty_string;
@@ -318,12 +318,12 @@ void TextBlitter::set_animation_parameter(int index, int value)
     }
 }
 
-const std::string & TextBlitter::get_charmap()
+const chowstring & TextBlitter::get_charmap()
 {
     return *charmap_str;
 }
 
-void TextBlitter::set_charmap(const std::string & charmap)
+void TextBlitter::set_charmap(const chowstring & charmap)
 {
     if (charmap_ref) {
         this->charmap = new int[256];
@@ -331,7 +331,7 @@ void TextBlitter::set_charmap(const std::string & charmap)
     } else {
         delete charmap_str;
     }
-    charmap_str = new std::string(charmap);
+    charmap_str = new chowstring(charmap);
     initialize(charmap);
 }
 
@@ -339,8 +339,24 @@ void TextBlitter::call_char_callback()
 {
 }
 
+void TextBlitter::call_line_callback()
+{
+}
+
+void TextBlitter::call_begin_callback()
+{
+}
+
 void TextBlitter::draw()
 {
+    bool has_char_callback = callback_flags & CHAR_CALLBACK;
+
+#ifdef CHOWDREN_BLITTER_EXT_CALLBACKS
+    bool has_line_callback = (callback_flags & LINE_CALLBACK) != 0;
+    if (callback_flags & BEGIN_CALLBACK)
+        call_begin_callback();
+#endif
+
     callback_line_count = int(lines.size());
 
     Image * image;
@@ -379,6 +395,11 @@ void TextBlitter::draw()
             continue;
         }
 
+#ifdef CHOWDREN_BLITTER_EXT_CALLBACKS
+        if (has_line_callback)
+            call_line_callback();
+#endif
+
         const LineReference & line = lines[line_index];
 
         int xx = x + x_scroll;
@@ -392,37 +413,57 @@ void TextBlitter::draw()
         // draw line
         for (int i = 0; i < line.size; i++) {
             unsigned char c = (unsigned char)line.start[i];
-            c -= char_offset;
-            int ci = charmap[c];
+
+            int ci = charmap[c - char_offset];
             int img_x = (ci * char_width) % img_width;
             img_x = clamp(img_x + x_off, 0, image->width);
             int img_y = ((ci * char_width) / img_width) * char_height;
             img_y = clamp(img_y + y_off, 0, image->height);
 
-            float t_x1 = float(img_x) / float(image->width);
-            float t_x2 = float(img_x+char_width) / float(image->width);
-            float t_y1 = float(img_y) / float(image->height);
-            float t_y2 = float(img_y+char_height) / float(image->height);
+            int x_add_now = x_add;
+            int char_width_now = char_width;
 
             Color color = blend_color;
+            int xxx = xx;
             int yyy = yy;
             if (anim_type == BLITTER_ANIMATION_SINWAVE) {
                 double t = double(anim_frame / anim_speed + x_add * i);
                 t /= double(wave_freq);
                 yyy += int(sin(t) * wave_height);
-            } else if (has_callback) {
+            } else if (has_char_callback) {
                 callback_line = line_index;
                 callback_char = i;
                 callback_transparency = 0;
+#ifdef CHOWDREN_BLITTER_EXT_CALLBACKS
+                callback_character_char = c;
+                callback_char_width = char_width;
+                callback_char_src_y = img_y;
+                callback_char_dst_x = xxx;
+#endif
+
                 call_char_callback();
+
+#ifdef CHOWDREN_BLITTER_EXT_CALLBACKS
+                char_width_now = callback_char_width;
+                x_add_now -= char_width - char_width_now;
+                // xxx = callback_char_dst_x;
+                img_y = callback_char_src_y;
+#endif
 
                 color.set_semi_transparency(callback_transparency);
             }
 
-            Render::draw_tex(xx, yyy, xx + char_width, yyy + char_height,
+
+            float t_x1 = float(img_x) / float(image->width);
+            float t_x2 = float(img_x+char_width_now) / float(image->width);
+            float t_y1 = float(img_y) / float(image->height);
+            float t_y2 = float(img_y+char_height) / float(image->height);
+
+
+            Render::draw_tex(xxx, yyy, xxx + char_width_now, yyy + char_height,
                              color, image->tex, t_x1, t_y1, t_x2, t_y2);
 
-            xx += x_add;
+            xx += x_add_now;
         }
 
         yy += y_add;

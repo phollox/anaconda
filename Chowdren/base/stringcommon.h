@@ -18,7 +18,7 @@
 #ifndef CHOWDREN_STRINGCOMMON_H
 #define CHOWDREN_STRINGCOMMON_H
 
-#include <string>
+#include "chowstring.h"
 #include <sstream>
 #include <ctype.h>
 #include "types.h"
@@ -26,31 +26,31 @@
 #include "dynnum.h"
 #include <boost/algorithm/string/replace.hpp>
 
-int fast_atoi(const std::string & value);
+int fast_atoi(const chowstring & value);
 double fast_atof(const char * p, const char * end);
-std::string fast_itoa(int value);
-std::string fast_lltoa(long long value);
-std::string fast_dtoa(double value);
+chowstring fast_itoa(int value);
+chowstring fast_lltoa(long long value);
+chowstring fast_dtoa(double value);
 
-extern std::string empty_string;
-extern std::string newline_character;
-extern std::string unix_newline_character;
+extern chowstring empty_string;
+extern chowstring newline_character;
+extern chowstring unix_newline_character;
 
-inline double string_to_double(const std::string & in)
+inline double string_to_double(const chowstring & in)
 {
     if (in.empty())
         return 0.0;
-    const char * start = &in[0];
+    const char * start = in.data();
     const char * end = start + in.size();
     return fast_atof(start, end);
 }
 
-inline int string_to_int(const std::string & in)
+inline int string_to_int(const chowstring & in)
 {
     return fast_atoi(in);
 }
 
-inline double string_to_number(const std::string & in)
+inline double string_to_number(const chowstring & in)
 {
 #ifdef CHOWDREN_USE_DYNAMIC_NUMBER
     double ret = string_to_double(in);
@@ -63,92 +63,102 @@ inline double string_to_number(const std::string & in)
 #endif
 }
 
-inline const std::string & number_to_string(const std::string & value)
+inline const chowstring & number_to_string(const chowstring & value)
 {
     return value;
 }
 
-inline std::string number_to_string(double value)
+inline chowstring number_to_string(double value)
 {
     return fast_dtoa(value);
 }
 
-inline std::string number_to_string(int value)
+inline chowstring number_to_string(int value)
 {
     return fast_itoa(value);
 }
 
-inline std::string number_to_string(unsigned int value)
+inline chowstring number_to_string(unsigned int value)
 {
     return fast_itoa(value);
 }
 
-inline std::string number_to_string(long long value)
+inline chowstring number_to_string(long long value)
 {
     return fast_lltoa(value);
 }
 
-inline std::string number_to_string(uint64_t value)
+inline chowstring number_to_string(uint64_t value)
 {
     return fast_lltoa(value);
 }
 
-inline void to_lower(std::string & str)
+inline void to_lower(chowstring & str)
 {
     std::transform(str.begin(), str.end(), str.begin(),
                    static_cast<int(*)(int)>(tolower));
 }
 
-inline void replace_substring(std::string & str,
-                              const std::string & from,
-                              const std::string & to)
+inline void replace_substring(chowstring & str,
+                              const chowstring & from,
+                              const chowstring & to)
 {
     if (from.empty())
         return;
+#ifdef USE_CHOWSTRING
+    if (str.empty())
+        return;
+    str.make_unique();
+    unsigned int from_size = from.size();
+    unsigned int to_size = to.size();
+#else
     boost::algorithm::replace_all(str, from, to);
+#endif
 }
 
-// case-insensitive version
-inline void ireplace_substring(std::string & str,
-                               const std::string & from,
-                               const std::string & to)
+inline void split_string(const chowstring & s, char delim,
+                         vector<chowstring> & elems)
 {
-    if (from.empty())
-        return;
-    boost::algorithm::ireplace_all(str, from, to);
-}
-
-inline void split_string(const std::string & s, char delim,
-                         vector<std::string> & elems)
-{
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        elems.push_back(item);
+    chowstring item;
+    unsigned int pos = 0;
+    while (pos < s.size()) {
+        unsigned int end = pos;
+        while (end < s.size() && s[end] != delim)
+            end++;
+        elems.push_back(s.substr(pos, end - pos));
+        pos = end + 1;
     }
 }
 
-inline void split_string(const std::string & str, const std::string & delims,
-                         vector<std::string> & elems)
+inline void split_string(const chowstring & str, const chowstring & delims,
+                         vector<chowstring> & elems)
 {
-    std::string::size_type last_pos = str.find_first_not_of(delims, 0);
-    std::string::size_type pos = str.find_first_of(delims, last_pos);
-
-    while (std::string::npos != pos || std::string::npos != last_pos) {
-        elems.push_back(str.substr(last_pos, pos - last_pos));
-        last_pos = str.find_first_not_of(delims, pos);
-        pos = str.find_first_of(delims, last_pos);
+    unsigned int pos = 0;
+    while (pos < str.size()) {
+        unsigned int end = pos;
+        while (end < str.size()) {
+            char c = str[end];
+            for (unsigned int i = 0; i < delims.size(); ++i) {
+                if (delims[i] == c) {
+                    goto quit;
+                }
+            }
+            end++;
+        }
+    quit:
+        elems.push_back(str.substr(pos, end - pos));
+        pos = end + 1;
     }
 }
 
-inline bool ends_with(const std::string & str, const std::string & suffix)
+inline bool ends_with(const chowstring & str, const chowstring & suffix)
 {
     if (str.size() < suffix.size())
         return false;
     return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-inline bool starts_with(const std::string & str, const std::string & prefix)
+inline bool starts_with(const chowstring & str, const chowstring & prefix)
 {
     if (str.size() < prefix.size())
         return false;

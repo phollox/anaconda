@@ -20,7 +20,7 @@
 
 #include "frameobject.h"
 #include "color.h"
-#include <string>
+#include "chowstring.h"
 
 class LayerObject : public FrameObject
 {

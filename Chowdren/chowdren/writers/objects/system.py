@@ -371,7 +371,6 @@ class Text(ObjectWriter):
 
     def write_init(self, writer):
         text = self.common.text
-        lines = [paragraph.value for paragraph in text.items]
         writer.putln('width = %s;' % text.width)
         writer.putln('height = %s;' % text.height)
         writer.putln('blend_color = %s;' % make_color(text.items[0].color))
@@ -408,7 +407,8 @@ class Text(ObjectWriter):
             vertical = 'ALIGN_TOP'
         writer.putln('alignment = %s | %s;' % (horizontal, vertical))
         for paragraph in text.items:
-            writer.putln(to_c('add_line(%r);', paragraph.value))
+            text = self.converter.config.get_string(paragraph.value)
+            writer.putln(to_c('add_line(%r);', text))
 
     def is_background(self):
         return False

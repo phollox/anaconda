@@ -21,7 +21,7 @@
 #include "frameobject.h"
 #include "color.h"
 #include "font.h"
-#include <string>
+#include "chowstring.h"
 
 #ifdef CHOWDREN_USE_GWEN
 #include "Gwen/Controls/Button.h"
@@ -46,7 +46,7 @@ public:
 
     Image * image;
     int type;
-    std::string text;
+    chowstring text;
     FTSimpleLayout * layout;
     Color box_color;
     int box_flags;
@@ -61,7 +61,7 @@ public:
 
     SystemBox(int x, int y, int type_id);
     ~SystemBox();
-    void set_text(const std::string & text);
+    void set_text(const chowstring & text);
     void set_size(int w, int h);
     void draw();
     void hide_border_1();
@@ -73,7 +73,7 @@ public:
     void check();
     void uncheck();
     void disable();
-    const std::string & get_font_name();
+    const chowstring & get_font_name();
     bool is_clicked();
 };
 

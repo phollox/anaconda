@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
+#include "chowstring.h"
 #include <algorithm>
 
 #ifdef CHOWDREN_IS_EMSCRIPTEN
@@ -52,14 +52,14 @@ typedef ALvoid (AL_APIENTRY*PFNALBUFFERSUBDATASOFTPROC)(ALuint, ALenum,
 PFNALBUFFERSUBDATASOFTPROC alBufferSubDataSOFT;
 #endif
 
-void _al_check(const std::string& file, unsigned int line)
+void _al_check(const chowstring& file, unsigned int line)
 {
     // Get the last error
     ALenum error_num = alGetError();
 
     if (error_num != AL_NO_ERROR)
     {
-        std::string error, description;
+        chowstring error, description;
 
         // Decode the error code
         switch (error_num)
@@ -547,7 +547,7 @@ public:
         init(create_decoder(fp, type, size));
     }
 
-    SoundStream(const std::string & path, Media::AudioType type, size_t size)
+    SoundStream(const chowstring & path, Media::AudioType type, size_t size)
     : SoundBase()
     {
         fp.open(path.c_str(), "r");

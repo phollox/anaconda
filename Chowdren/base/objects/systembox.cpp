@@ -194,7 +194,7 @@ void SystemBox::set_size(int w, int h)
     layout->SetLineLength(width);
 }
 
-void SystemBox::set_text(const std::string & text)
+void SystemBox::set_text(const chowstring & text)
 {
 #ifdef CHOWDREN_USE_GWEN
     if (button != NULL) {
@@ -261,7 +261,7 @@ void SystemBox::init_button()
 
 #endif
 
-const std::string & SystemBox::get_font_name()
+const chowstring & SystemBox::get_font_name()
 {
     return empty_string;
 }

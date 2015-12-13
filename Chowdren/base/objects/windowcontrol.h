@@ -19,7 +19,7 @@
 #define CHOWDREN_WINDOWCONTROL_H
 
 #include "frameobject.h"
-#include <string>
+#include "chowstring.h"
 
 class WindowControl : public FrameObject
 {
@@ -47,9 +47,15 @@ public:
     static void set_visible(bool value);
     static void minimize();
     static void set_placement(int value);
-    static void set_title(const std::string & title);
+    static void set_title(const chowstring & title);
     static void set_frame_width(int width, bool adjust);
     static void set_frame_height(int height, bool adjust);
+    static void set_mouse_x(int x);
+    static void set_mouse_y(int y);
+    static void set_mouse_speed(int speed);
+    static int get_mouse_speed();
+    static int get_mouse_x();
+    static int get_mouse_y();
 };
 
 #endif // CHOWDREN_WINDOWCONTROL_H

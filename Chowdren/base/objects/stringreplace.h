@@ -18,16 +18,16 @@
 #ifndef CHOWDREN_STRINGREPLACE_H
 #define CHOWDREN_STRINGREPLACE_H
 
-#include <string>
+#include "chowstring.h"
 #include "types.h"
 #include "frameobject.h"
 
 class StringReplacement
 {
 public:
-    std::string from, to;
+    chowstring from, to;
 
-    StringReplacement(const std::string & from, const std::string & to)
+    StringReplacement(const chowstring & from, const chowstring & to)
     : from(from), to(to)
     {
     }
@@ -42,13 +42,13 @@ public:
 
     StringReplace(int x, int y, int id);
 
-    void add_replacement(const std::string & from,
-                         const std::string & to);
+    void add_replacement(const chowstring & from,
+                         const chowstring & to);
 
-    static std::string replace(const std::string & src,
-                               const std::string & from,
-                               const std::string & to);
-    std::string replace(const std::string & src);
+    static chowstring replace(const chowstring & src,
+                               const chowstring & from,
+                               const chowstring & to);
+    chowstring replace(const chowstring & src);
 };
 
 #endif // CHOWDREN_STRINGREPLACE_H

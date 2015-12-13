@@ -78,7 +78,7 @@ void PythonInterpreter::print_errors()
     }
 }
 
-void PythonInterpreter::run_string(std::string str)
+void PythonInterpreter::run_string(chowstring str)
 {
     str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
     PyObject * globals = PyModule_GetDict(main_module);
@@ -114,7 +114,7 @@ double PythonInterpreter::to_double(PyObject * value)
     return *((double*)&value);
 }
 
-PyObject * PythonInterpreter::create_object(const std::string & v)
+PyObject * PythonInterpreter::create_object(const chowstring & v)
 {
     return PyString_FromStringAndSize(v.data(), v.size());
 }
@@ -124,7 +124,7 @@ PyObject * PythonInterpreter::create_object(int value)
     return PyInt_FromLong(value);
 }
 
-PyObject * PythonInterpreter::eval(std::string str)
+PyObject * PythonInterpreter::eval(chowstring str)
 {
     str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
     PyObject * globals = PyModule_GetDict(main_module);
@@ -146,7 +146,7 @@ double PythonInterpreter::create_list()
     return to_double(PyList_New(0));
 }
 
-void PythonInterpreter::call_global(const std::string & name)
+void PythonInterpreter::call_global(const chowstring & name)
 {
 /*        std::cout << "Calling " << name << " from application" << std::endl;*/
     print_errors();
@@ -188,12 +188,12 @@ void PythonInterpreter::call_global(const std::string & name)
     Py_DECREF(parameters);
 }
 
-std::string PythonInterpreter::as_string(PyObject * v)
+chowstring PythonInterpreter::as_string(PyObject * v)
 {
     char * buf;
     Py_ssize_t len;
     PyString_AsStringAndSize(PyObject_Str(v), &buf, &len);
-    return std::string(buf, len);
+    return chowstring(buf, len);
 }
 
 int PythonInterpreter::as_number(PyObject * v)
@@ -201,7 +201,7 @@ int PythonInterpreter::as_number(PyObject * v)
     return PyInt_AsLong(v);
 }
 
-std::string PythonInterpreter::as_string(double v)
+chowstring PythonInterpreter::as_string(double v)
 {
     return as_string(to_object(v));
 }

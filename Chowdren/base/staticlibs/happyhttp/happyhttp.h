@@ -29,7 +29,7 @@
 #define HAPPYHTTP_H
 
 
-#include <string>
+#include "chowstring.h"
 #include <map>
 #include "types.h"
 #include <deque>
@@ -135,7 +135,7 @@ public:
 	Connection();
 	~Connection();
 
-	void set_host(const std::string & host, int port);
+	void set_host(const chowstring & host, int port);
 
 	// Set up the response handling callbacks. These will be invoked during
 	// calls to pump().
@@ -208,10 +208,10 @@ protected:
 
 private:
 	enum { IDLE, REQ_STARTED, REQ_SENT } m_State;
-	std::string m_Host;
+	chowstring m_Host;
 	int m_Port;
 	int m_Sock;
-	vector< std::string > m_Buffer;	// lines of request
+	vector< chowstring > m_Buffer;	// lines of request
 
 	std::deque< Response* > m_Outstanding;	// responses for outstanding requests
 };
@@ -275,16 +275,16 @@ private:
 	} m_State;
 
 	Connection& m_Connection;	// to access callback ptrs
-	std::string m_Method;		// req method: "GET", "POST" etc...
+	chowstring m_Method;		// req method: "GET", "POST" etc...
 
 	// status line
-	std::string	m_VersionString;	// HTTP-Version
+	chowstring	m_VersionString;	// HTTP-Version
 	int	m_Version;			// 10: HTTP/1.0    11: HTTP/1.x (where x>=1)
 	int m_Status;			// Status-Code
-	std::string m_Reason;	// Reason-Phrase
+	chowstring m_Reason;	// Reason-Phrase
 
 	// header/value pairs
-	std::map<std::string,std::string> m_Headers;
+	std::map<chowstring,chowstring> m_Headers;
 
 	int		m_BytesRead;		// body bytes read so far
 	bool	m_Chunked;			// response is chunked?
@@ -292,15 +292,15 @@ private:
 	int		m_Length;			// -1 if unknown
 	bool	m_WillClose;		// connection will close at response end?
 
-	std::string m_LineBuf;		// line accumulation for states that want it
-	std::string m_HeaderAccum;	// accumulation buffer for headers
+	chowstring m_LineBuf;		// line accumulation for states that want it
+	chowstring m_HeaderAccum;	// accumulation buffer for headers
 
 
 	void FlushHeader();
-	void ProcessStatusLine( std::string const& line );
-	void ProcessHeaderLine( std::string const& line );
-	void ProcessTrailerLine( std::string const& line );
-	void ProcessChunkLenLine( std::string const& line );
+	void ProcessStatusLine( chowstring const& line );
+	void ProcessHeaderLine( chowstring const& line );
+	void ProcessTrailerLine( chowstring const& line );
+	void ProcessChunkLenLine( chowstring const& line );
 
 	int ProcessDataChunked( const unsigned char* data, int count );
 	int ProcessDataNonChunked( const unsigned char* data, int count );

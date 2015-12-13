@@ -107,7 +107,7 @@ int get_huffman_tree(HuffmanNode in_nodes[], bool set_codes = true)
 
 #define HUFFMAN_MAGIC 0xE482B83C
 
-bool compress_huffman(const std::string & in_data, const char * filename)
+bool compress_huffman(const chowstring & in_data, const char * filename)
 {
     FSFile fp(filename, "w");
     if (!fp.is_open()) {
@@ -168,7 +168,7 @@ bool compress_huffman(const std::string & in_data, const char * filename)
     return true;
 }
 
-bool decompress_huffman(const char * filename, std::string & out)
+bool decompress_huffman(const char * filename, chowstring & out)
 {
     FSFile fp(filename, "r");
     if (!fp.is_open()) {

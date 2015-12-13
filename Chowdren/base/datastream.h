@@ -33,15 +33,15 @@ public:
 
     // read
 
-    void read_string(std::string & str, size_t len)
+    void read_string(chowstring & str, size_t len)
     {
-        str.resize(len, 0);
+        str.resize(len);
         read(&str[0], len);
     }
 
     void read(std::stringstream & out, size_t len)
     {
-        std::string data;
+        chowstring data;
         read_string(data, len);
         out << data;
     }
@@ -93,7 +93,7 @@ public:
         return f;
     }
 
-    void read_c_string(std::string & str)
+    void read_c_string(chowstring & str)
     {
         read_delim(str, '\0');
     }
@@ -139,12 +139,12 @@ public:
     }
 
 
-    void write_string(const std::string & str)
+    void write_string(const chowstring & str)
     {
-        write(&str[0], str.size());
+        write(str.data(), str.size());
     }
 
-    void read_delim(std::string & line, char delim)
+    void read_delim(chowstring & line, char delim)
     {
         while (true) {
             char c;
@@ -156,7 +156,7 @@ public:
         }
     }
 
-    void read_line(std::string & str)
+    void read_line(chowstring & str)
     {
         read_delim(str, '\n');
     }
@@ -300,27 +300,27 @@ public:
     {
     }
 
-    std::string get_string()
+    chowstring get_string()
     {
         return stream.str();
     }
 
     void save(FSFile & fp)
     {
-        std::string data = stream.str();
+        chowstring data = stream.str();
         if (data.empty())
             return;
-        fp.write(&data[0], data.size());
+        fp.write(data.data(), data.size());
     }
 };
 
 class StringStream : public BaseStream<StringStream>
 {
 public:
-    const std::string & str;
+    const chowstring & str;
     size_t pos;
 
-    StringStream(const std::string & str)
+    StringStream(const chowstring & str)
     : str(str), pos(0)
     {
     }

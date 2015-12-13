@@ -30,7 +30,7 @@ class MaskedText : public FrameObject
 public:
     FRAMEOBJECT_HEAD(MaskedText)
 
-    std::string text;
+    chowstring text;
 
     MaskedText(int x, int y, int type_id);
 };

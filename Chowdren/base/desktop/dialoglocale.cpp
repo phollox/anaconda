@@ -27,7 +27,7 @@ void init_dialog_locale()
 {
     if (has_dialog_locale) return;
     has_dialog_locale = true;
-    const std::string & lang = platform_get_language();
+    const chowstring & lang = platform_get_language();
     if (lang == "Swedish") {
         dialog_locale_ok = "OK";
         dialog_locale_yes = "Ja";

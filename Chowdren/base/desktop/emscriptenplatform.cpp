@@ -181,9 +181,9 @@ void platform_hide_mouse()
     SDL_ShowCursor(0);
 }
 
-const std::string & platform_get_language()
+const chowstring & platform_get_language()
 {
-    static std::string language("English");
+    static chowstring language("English");
     return language;
 }
 
@@ -205,13 +205,13 @@ size_t get_file_size(const char * filename)
     return st.st_size;
 }
 
-void create_directories(const std::string & value)
+void create_directories(const chowstring & value)
 {
 }
 
-const std::string & platform_get_appdata_dir()
+const chowstring & platform_get_appdata_dir()
 {
-    static std::string dir(".");
+    static chowstring dir(".");
     return dir;
 }
 
@@ -253,13 +253,13 @@ float get_joystick_axis(int n, int axis)
 
 // url open
 
-void open_url(const std::string & name)
+void open_url(const chowstring & name)
 {
 }
 
 // file
 
-bool platform_remove_file(const std::string & file)
+bool platform_remove_file(const chowstring & file)
 {
     return remove(convert_path(file).c_str()) == 0;
 }
@@ -382,7 +382,7 @@ void FSFile::close()
 
 // path
 
-std::string convert_path(const std::string & v)
+chowstring convert_path(const chowstring & v)
 {
     return v;
 }
@@ -396,7 +396,7 @@ void platform_print_stats()
 
 // wiiu dummies
 
-void platform_set_remote_setting(const std::string & v)
+void platform_set_remote_setting(const chowstring & v)
 {
 
 }
@@ -413,9 +413,9 @@ void platform_set_border(bool v)
 
 
 
-static std::string remote_string("TV");
+static chowstring remote_string("TV");
 
-const std::string & platform_get_remote_setting()
+const chowstring & platform_get_remote_setting()
 {
     return remote_string;
 }

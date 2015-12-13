@@ -74,12 +74,14 @@ actions = make_table(ActionMethodWriter, {
     2 : 'remove_key',
     3 : 'clear',
     8 : 'save',
+    9 : 'load',
     42 : 'save_encrypted',
     43 : 'load_encrypted',
     44 : 'set_key',
     25 : EmptyAction, # set_file_saving_interval
     24 : EmptyAction, # set_file_loading_interval
     26 : EmptyAction, # file_progress_set_to_load_entire_file_all_at_once
+    27 : EmptyAction, # file_progress_set_to_save_entire_file_all_at_once
     28 : create_key_action('add_value'),
     29 : create_key_action('sub_value')
 })

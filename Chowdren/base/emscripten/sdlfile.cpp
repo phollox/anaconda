@@ -31,7 +31,7 @@ void BaseFile::open(const char * filename, const char * mode)
             break;
     }
 
-    std::string file_string = convert_path(filename);
+    chowstring file_string = convert_path(filename);
     const char * file_string_c = file_string.c_str();
     std::cout << "Opening " << file_string_c << std::endl;
     SDL_RWops * new_handle = SDL_RWFromFile(file_string_c, new_mode);
