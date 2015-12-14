@@ -20,7 +20,7 @@ from mmfparser.player.event.common cimport ACBase, ACEBase, ExpressionList
 
 DEF DEBUG = 0
 
-cdef class Action(ACBase):
+class Action(ACBase):
     cdef void initialize(self, loader):
         self._initialize(loader)
         self._execute = getattr(self, 'execute', None)
@@ -63,7 +63,7 @@ cdef class Action(ACBase):
         else:
             self.execute()
 
-cdef class EmptyAction(Action):
+class EmptyAction(Action):
     cdef void initialize(self, loader):
         pass
 

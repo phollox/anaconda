@@ -154,7 +154,7 @@ def direction_from(x1, y1, x2, y2, f = False):
         value = int(value)
     return value
 
-cpdef list get_directions(int value):
+def list get_directions(int value):
     cdef int i
     cdef list directions = []
     for i in range(32):
@@ -162,7 +162,7 @@ cpdef list get_directions(int value):
             directions.append(i)
     return directions
 
-cpdef list make_ellipse_vertices(width, height, step = 5):
+def list make_ellipse_vertices(width, height, step = 5):
     x = width / 2
     y = -height / 2
     r1 = width / 2
@@ -182,7 +182,7 @@ def python_get_point(x, y, angle, x_scale, y_scale):
         &new_x, &new_y)
     return new_x, new_y
 
-cdef class PlayerChild:
+class PlayerChild:
     def __init__(self, object player, PlayerChild parent = None):
         self.init(player, parent)
     
@@ -191,7 +191,7 @@ cdef class PlayerChild:
         self.parent = parent
         self._childs = []
     
-    cpdef PlayerChild new(self, type childClass):
+    def PlayerChild new(self, type childClass):
         cdef PlayerChild newChild = childClass.__new__(childClass)
         newChild.init(self.player, self)
         self._childs.append(newChild)
@@ -209,10 +209,10 @@ cdef class PlayerChild:
             self.parent._childs.remove(self)
         self._childs = None
     
-    cpdef detach(self):
+    def detach(self):
         self._detach()
     
-    cpdef on_detach(self):
+    def on_detach(self):
         pass
 
 # because I'm the laziest guy on earth, I think this is useful

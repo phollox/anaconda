@@ -53,7 +53,10 @@ def main():
     parser.add_argument('--zlib', action='store_true',
                         help='use zlib instead of zopfli')
     args = parser.parse_args()
-    Converter(args)
+
+    import cProfile
+    cProfile.runctx('Converter(args)', globals(), locals(), 'out.prof')
+    # Converter(args)
 
 if __name__ == '__main__':
     main()

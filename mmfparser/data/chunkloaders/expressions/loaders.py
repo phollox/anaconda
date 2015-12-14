@@ -16,38 +16,38 @@
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
 from mmfparser.data.chunkloaders.common import Empty
-from mmfparser.loader cimport DataLoader
-from mmfparser.bytereader cimport ByteReader
+from mmfparser.loader import DataLoader
+from mmfparser.bytereader import ByteReader
 
 class End(Empty):
     pass
 
-cdef class String(DataLoader):
-    cdef public:
-        bytes value
+class String(DataLoader):
+    # cdef public:
+    #     bytes value
 
-    cpdef read(self, ByteReader reader):
+    def read(self, reader):
         self.value = self.readString(reader)
 
     def write(self, reader):
         reader.writeString(self.value)
 
-cdef class Long(DataLoader):
-    cdef public:
-        int value
+class Long(DataLoader):
+    # cdef public:
+    #     int value
 
-    cpdef read(self, ByteReader reader):
+    def read(self, reader):
         self.value = reader.readInt()
 
     def write(self, reader):
         reader.writeInt(self.value)
 
-cdef class Double(DataLoader):
-    cdef public:
-        double value
-        float floatValue
+class Double(DataLoader):
+    # cdef public:
+    #     double value
+    #     float floatValue
 
-    cpdef read(self, ByteReader reader):
+    def read(self, reader):
         self.value = reader.readDouble()
         self.floatValue = reader.readFloat()
 
@@ -55,11 +55,11 @@ cdef class Double(DataLoader):
         reader.writeDouble(self.value)
         reader.writeFloat(self.floatValue)
 
-cdef class GlobalCommon(DataLoader):
-    cdef public:
-        short value
+class GlobalCommon(DataLoader):
+    # cdef public:
+    #     short value
 
-    cpdef read(self, ByteReader reader):
+    def read(self, reader):
         # Oi et OIlist qui servent a rien
         # I does not translate. Sorry. Failure. :(
         reader.skipBytes(4)
@@ -75,11 +75,11 @@ class GlobalString(GlobalCommon):
 class GlobalValue(GlobalCommon):
     pass
 
-cdef class ExtensionCommon(DataLoader):
-    cdef public:
-        short value
+class ExtensionCommon(DataLoader):
+    # cdef public:
+    #     short value
 
-    cpdef read(self, ByteReader reader):
+    def read(self, reader):
         self.value = reader.readShort()
 
     def write(self, reader):

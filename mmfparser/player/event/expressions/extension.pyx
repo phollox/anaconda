@@ -20,85 +20,85 @@ from mmfparser.player.instance cimport Instance
 from mmfparser.player.common cimport make_color_number
 cimport cython
 
-cdef class ActionX(Expression):
+class ActionX(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance is None:
             return 0
         return <int>instance.objectPlayer.get_action_point()[0]
 
-cdef class ActionY(Expression):
+class ActionY(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance is None:
             return 0
         return <int>instance.objectPlayer.get_action_point()[1]
 
-cdef class XPosition(Expression):
+class XPosition(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance is None:
             return 0
         return <int>instance.x
 
-cdef class YPosition(Expression):
+class YPosition(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance is None:
             return 0
         return <int>instance.y
 
-cdef class Speed(Expression):
+class Speed(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance is None:
             return 0
         return <int>instance.currentMovement.speed
 
-cdef class ObjectLeft(Expression):
+class ObjectLeft(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance is None:
             return 0
         return instance.x1
 
-cdef class ObjectTop(Expression):
+class ObjectTop(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance is None:
             return 0
         return instance.y1
 
-cdef class ObjectRight(Expression):
+class ObjectRight(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance is None:
             return 0
         return instance.x2
         
-cdef class ObjectBottom(Expression):
+class ObjectBottom(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance is None:
             return 0
         return instance.y2
 
-cdef class ObjectLayer(Expression):
+class ObjectLayer(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance is None:
             return 0
         return instance.layerIndex + 1
 
-cdef class SemiTransparency(Expression):
+class SemiTransparency(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance is None:
             return 0
         return int(128 - instance.transparency)
 
-cdef class GetDirection(Expression):
+class GetDirection(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance is None:
             return 0
         return instance.get_direction()
 
-cdef class FixedValue(Expression):
+class FixedValue(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance is None:
             return 0
         return id(instance)
 
-cdef class GetFlag(Expression):
+class GetFlag(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance is None:
             return 0
@@ -108,7 +108,7 @@ cdef class GetFlag(Expression):
             return 0
 
 @cython.final
-cdef class AlterableValue(Expression):
+class AlterableValue(Expression):
     cdef object index
 
     cdef void created(self):
@@ -120,7 +120,7 @@ cdef class AlterableValue(Expression):
         return instance.alterables.get_value(self.index)
 
 @cython.final
-cdef class AlterableString(Expression):
+class AlterableString(Expression):
     cdef object index
 
     cdef void created(self):
@@ -132,7 +132,7 @@ cdef class AlterableString(Expression):
         return instance.alterables.get_string(self.index)
 
 @cython.final
-cdef class AlterableStringIndex(Expression):
+class AlterableStringIndex(Expression):
     cdef object evaluate_instance(self, Instance instance):
         index = self.next_argument()
         if instance is None:
@@ -140,62 +140,62 @@ cdef class AlterableStringIndex(Expression):
         return instance.alterables.get_string(index)
 
 @cython.final
-cdef class AlterableValueIndex(Expression):
+class AlterableValueIndex(Expression):
     cdef object evaluate_instance(self, Instance instance):
         index = self.next_argument()
         if instance is None:
             return 0
         return instance.alterables.get_value(index)
 
-cdef class ObjectCount(Expression):
+class ObjectCount(Expression):
     iterateObjects = False
 
     cdef object evaluate(self):
         return len(self.get_all_instances())
 
-cdef class MovementNumber(Expression):
+class MovementNumber(Expression):
     cdef object evaluate_instance(self, Instance instance):
         return instance.movementPlayers.index(instance.currentMovement)
 
-cdef class GetGravity(Expression):
+class GetGravity(Expression):
     cdef object evaluate_instance(self, Instance instance):
         try:
             return int(instance.currentMovement.gravityAcceleration * 8)
         except AttributeError:
             return 0
 
-cdef class GetDeceleration(Expression):
+class GetDeceleration(Expression):
     cdef object evaluate_instance(self, Instance instance):
         try:
             return instance.currentMovement.decelerationValue
         except AttributeError:
             return 0
 
-cdef class GetAcceleration(Expression):
+class GetAcceleration(Expression):
     cdef object evaluate_instance(self, Instance instance):
         try:
             return instance.currentMovement.accelerationValue
         except AttributeError:
             return 0
 
-cdef class FontName(Expression):
+class FontName(Expression):
     cdef object evaluate_instance(self, Instance instance):
         return instance.objectPlayer.get_font()[0]
         
-cdef class FontSize(Expression):
+class FontSize(Expression):
     cdef object evaluate_instance(self, Instance instance):
         return instance.objectPlayer.get_font()[1]
         
-cdef class FontColor(Expression):
+class FontColor(Expression):
     cdef object evaluate_instance(self, Instance instance):
         r, g, b = instance.objectPlayer.get_font()[6]
         return make_color_number(r, g, b)
 
-cdef class AlphaCoefficient(Expression):
+class AlphaCoefficient(Expression):
     cdef object evaluate_instance(self, Instance instance):
         return int(255 - ((instance.transparency) / 128.0) * 255)
 
-cdef class RGBCoefficient(Expression):
+class RGBCoefficient(Expression):
     cdef object evaluate_instance(self, Instance instance):
         if instance.colorCoefficient is None:
             r, g, b = (0, 0, 0)
@@ -203,7 +203,7 @@ cdef class RGBCoefficient(Expression):
             r, g, b = instance.colorCoefficient
         return make_color_number(int(r * 255), int(g * 255), int(b * 255))
 
-cdef class EffectParameter(Expression):
+class EffectParameter(Expression):
     cdef object evaluate_instance(self, Instance instance):
         name = self.next_argument()
         return instance.inkEffect.parameters[name].value

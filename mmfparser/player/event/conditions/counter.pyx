@@ -18,7 +18,7 @@
 from mmfparser.player.event.conditions.common cimport Condition
 from mmfparser.player.instance cimport Instance
 
-cdef class CompareCounter(Condition):
+class CompareCounter(Condition):
     cdef bint check_instance(self, Instance instance):
         value = self.evaluate_index(0)
         return self.compare(instance.objectPlayer.value, value)

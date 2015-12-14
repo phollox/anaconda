@@ -29,7 +29,7 @@ from mmfparser.data.chunkloaders.objects import (ANIMATION_NAMES, STOPPED,
     WALKING, RUNNING, APPEARING, DISAPPEARING, BOUNCING, SHOOTING, JUMPING,
     FALLING, CLIMBING, CROUCH_DOWN, STAND_UP)
 
-cdef class Active(ObjectPlayer):
+class Active(ObjectPlayer):
     cdef public:
         object sprite
         object fade
@@ -217,7 +217,7 @@ cdef class Active(ObjectPlayer):
         except KeyError:
             return
         
-    cpdef set_frame(self, int frame, bint force = False):
+    def set_frame(self, int frame, bint force = False):
         if self.detached:
             return
         oldFrame = self.frameIndex
@@ -384,7 +384,7 @@ cdef class Active(ObjectPlayer):
             self.currentState = STAND_UP
             self.set_animation_index(STAND_UP)
     
-    cpdef update_animation_speed(self):
+    def update_animation_speed(self):
         self.update_walking()
         self.update_speed()
     
@@ -435,7 +435,7 @@ cdef class Active(ObjectPlayer):
                     speed = delta
         self.speed = speed
 
-    cpdef update(self):
+    def update(self):
         if self.detached or self.stopped or self.frameForced:
             return
         self.counter += <int>(self.speed * self.player.multiplier)
@@ -473,7 +473,7 @@ cdef class Active(ObjectPlayer):
     def get_frame(self):
         return self.currentDirection.frames[self.frameIndex]
 
-    cpdef set_position(self, double x, double y):
+    def set_position(self, double x, double y):
         if self.fade:
             self.fade.set_position(x, y)
         self.sprite.xy = x, y
@@ -481,13 +481,13 @@ cdef class Active(ObjectPlayer):
     def set_transparency(self, value):
         self.sprite.alpha = value / 128.0
     
-    cpdef bint draw(self):
+    def draw(self):
         if self.fade:
             self.fade.draw()
         else:
             self.sprite.render()
     
-    cpdef on_detach(self):
+    def on_detach(self):
         cdef dict storage
         if self.isGlobal:
             storage = self.get_storage()

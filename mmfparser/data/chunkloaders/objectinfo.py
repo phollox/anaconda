@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-from mmfparser.bytereader cimport ByteReader
+from mmfparser.bytereader import ByteReader
 from mmfparser.bitdict import BitDict
 from mmfparser.data.chunkloaders.stringchunk import StringChunk
-from mmfparser.loader cimport DataLoader
+from mmfparser.loader import DataLoader
 from mmfparser.data.chunkloaders.common import _ObjectTypeMixin
 from mmfparser import byteflag
 
@@ -60,7 +60,7 @@ class ObjectProperties(DataLoader, _ObjectTypeMixin):
     isCommon = None
     _loadReader = None
 
-    def read(self, ByteReader reader):
+    def read(self, reader):
         self._loadReader = reader
 
     def load(self, objectType):
@@ -78,7 +78,7 @@ class ObjectProperties(DataLoader, _ObjectTypeMixin):
             self.isCommon = True
             self.loader = self.new(ObjectCommon, reader)
 
-    def write(self, ByteReader reader):
+    def write(self, reader):
         self.loader.write(reader)
 
 class ObjectName(StringChunk):
@@ -124,7 +124,7 @@ OBJECT_FLAGS = BitDict(
 
 class ObjectEffects(DataLoader):
     items = None
-    def read(self, ByteReader reader):
+    def read(self, reader):
         self.id = reader.readInt(True)
         self.items = [reader.readReader(4)
             for _ in xrange(reader.readInt(True))]
@@ -139,7 +139,7 @@ class ObjectHeader(DataLoader, _ObjectTypeMixin):
     def initialize(self):
         self.flags = OBJECT_FLAGS.copy()
 
-    def read(self, ByteReader reader):
+    def read(self, reader):
         self.handle = reader.readShort()
         self.objectType = reader.readShort()
         self.flags.setFlags(reader.readShort(True))
@@ -147,7 +147,7 @@ class ObjectHeader(DataLoader, _ObjectTypeMixin):
         self.inkEffect = reader.readInt(True)
         self.inkEffectParameter = reader.readInt(True)
 
-    def write(self, ByteReader reader):
+    def write(self, reader):
         reader.writeShort(self.handle)
         reader.writeShort(self.objectType)
         reader.writeShort(self.flags.getFlags(), True)
@@ -170,7 +170,7 @@ class ObjectInfo(DataLoader, _ObjectTypeMixin):
     shaderId = None
     items = None
 
-    def read(self, ByteReader reader):
+    def read(self, reader):
         infoChunks = self.new(ChunkList, reader)
         properties = None
         for chunk in infoChunks.items:
@@ -197,7 +197,7 @@ class ObjectInfo(DataLoader, _ObjectTypeMixin):
         properties.load(self.objectType)
         self.properties = properties
 
-    def write(self, ByteReader reader):
+    def write(self, reader):
         newChunks = self.new(ChunkList)
         newHeader = self.new(ObjectHeader)
         newHeader.handle = self.handle

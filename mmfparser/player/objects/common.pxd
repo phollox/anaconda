@@ -15,15 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-cdef class BaseObject
-cdef class BackgroundPlayer
-cdef class ObjectPlayer
+class BaseObject
+class BackgroundPlayer
+class ObjectPlayer
 
 from mmfparser.player.collision cimport CollisionBase
 from mmfparser.player.frame cimport Frame
 from mmfparser.player.common cimport PlayerChild
 
-cdef class BaseObject(PlayerChild):
+class BaseObject(PlayerChild):
     cdef public:
         double x, y
         int width, height, actionX, actionY, hotspotX, hotspotY
@@ -33,13 +33,13 @@ cdef class BaseObject(PlayerChild):
         bint updateEnabled
     
     cdef void initialize(self, loader, frame)
-    cpdef update(self)
-    cpdef bint draw(self)
-    cpdef set_position(self, double x, double y)
+    def update(self)
+    def draw(self)
+    def set_position(self, double x, double y)
 
-cdef class BackgroundPlayer(BaseObject):
+class BackgroundPlayer(BaseObject):
     pass
 
-cdef class ObjectPlayer(BaseObject):
+class ObjectPlayer(BaseObject):
     cdef public:
         bint isGlobal

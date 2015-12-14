@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-cdef class Image:
+class Image:
     cdef public:
         bytes data
         unsigned char * c_data

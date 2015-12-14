@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-cdef class DataContainer
+class DataContainer
 
 cdef extern from "Main.cpp":
     ctypedef struct RUNDATA:
@@ -153,7 +153,7 @@ cdef void changePosition(RUNDATA * rdPtr, int fixed, int x, int y):
         return
     instance.set_position(x, y)
 
-cdef class DataContainer:
+class DataContainer:
     cdef object parent
     cdef RUNDATA * rdPtr
     def __init__(self, parent, data):

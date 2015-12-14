@@ -17,20 +17,20 @@
 
 from cpython cimport PyObject
 
-cdef class Value
-cdef class Evaluater
+class Value
+class Evaluater
 
 from mmfparser.player.event.expressions.common cimport Expression
 from mmfparser.player.event.common cimport ExpressionList
 from mmfparser.player.common cimport PlayerChild
 
-cdef class Value:
+class Value:
     cdef object value
     
     cdef void set(self, value)
     cdef object get(self)
 
-cdef class Evaluater(PlayerChild):
+class Evaluater(PlayerChild):
     cdef public:
         bint finished
         int pilePosition

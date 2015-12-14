@@ -38,7 +38,7 @@ cdef void initialize_expressions():
         from mmfparser.player.event.expressions.all import EXPRESSIONS
 
 @cython.final
-cdef class Value:
+class Value:
     cdef void set(self, value):
         self.value = value
         
@@ -46,7 +46,7 @@ cdef class Value:
         return self.value
 
 @cython.final
-cdef class Evaluater(PlayerChild):
+class Evaluater(PlayerChild):
     def initialize(self):
         initialize_expressions()
 
@@ -118,7 +118,7 @@ cdef class Evaluater(PlayerChild):
     cdef inline Expression get_next(self):
         return <Expression>self.items[self.stackPosition]
     
-    cpdef on_detach(self):
+    def on_detach(self):
         cdef int i
         for i in range(128):
             Py_DECREF(<object>self.results[i])

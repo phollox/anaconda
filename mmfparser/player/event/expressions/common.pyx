@@ -22,13 +22,13 @@ from mmfparser.player.event.common cimport ACEBase
 
 DEF DEBUG = 0
 
-cdef class Expression(ACEBase):
+class Expression(ACEBase):
     cdef void initialize(self, loader):
         self.group = self.parent.parent.parent
         self._initialize(loader)
         self._get = getattr(self, 'get', None)
     
-    cpdef next_argument(self):
+    def next_argument(self):
         self.evaluater.go_forward()
         return self.evaluater.evaluate()
         
@@ -52,6 +52,6 @@ cdef class Expression(ACEBase):
             result = self.evaluate()
         value.set(result)
 
-cdef class DummyExpression(Expression):
+class DummyExpression(Expression):
     cdef void execute(self, Value value):
         pass

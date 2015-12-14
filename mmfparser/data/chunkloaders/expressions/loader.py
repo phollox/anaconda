@@ -16,22 +16,22 @@
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
 from mmfparser.data.chunkloaders.expressions.names import *
-from mmfparser.data.chunkloaders.common cimport _AceCommon
-from mmfparser.bytereader cimport ByteReader
-from mmfparser.loader cimport DataLoader
+from mmfparser.data.chunkloaders.common import _AceCommon
+from mmfparser.bytereader import ByteReader
+from mmfparser.loader import DataLoader
 
-cdef class Expression(_AceCommon):
-    cpdef initialize(self):
+class Expression(_AceCommon):
+    def initialize(self):
         self.systemDict = systemDict
         self.extensionDict = extensionDict
 
-    cpdef read(self, ByteReader reader):
-        cdef int currentPosition = reader.tell()
+    def read(self, reader):
+        currentPosition = reader.tell()
         self.objectType = reader.readShort()
         self.num = reader.readShort()
         if self.objectType == 0 and self.num == 0:
             return
-        cdef int size = reader.readShort(True)
+        size = reader.readShort(True)
         if self.objectType in systemLoaders and self.num in systemLoaders[self.objectType]:
             self.loader = self.new(
                 systemLoaders[self.objectType][self.num], reader)

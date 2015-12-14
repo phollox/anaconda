@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-from mmfparser.bytereader cimport ByteReader
+from mmfparser.bytereader import ByteReader
 from mmfparser import byteflag
+from mmfparser.loader import DataLoader
 
 def isQualifier(objectInfo):
     return byteflag.getFlag(objectInfo, 15)
@@ -24,10 +25,10 @@ def isQualifier(objectInfo):
 def getQualifier(objectInfo):
     return objectInfo & 0b11111111111
     
-cdef int EXTENSION_BASE = -1
-cdef inline void initialize():
+EXTENSION_BASE = -1
+def initialize():
+    global EXTENSION_BASE
     if EXTENSION_BASE == -1:
-        global EXTENSION_BASE
         from mmfparser.data.chunkloaders.objectinfo import EXTENSION_BASE
 
 class Empty(DataLoader):
@@ -96,46 +97,55 @@ class _ObjectTypeMixin:
         return extensionChunk.fromHandle(
             self.objectType - EXTENSION_BASE)
 
-cdef inline int getType(_AceCommon self):
+def getType(self):
     initialize()
     if self.objectType < EXTENSION_BASE:
         return self.objectType
     return EXTENSION_BASE
 
-cdef class _AceCommon(DataLoader):
-    cpdef object getObjects(self, frameItems):
+class _AceCommon(DataLoader):
+    systemDict = None
+    extensionDict = None
+    objectType = 0
+    num = 0
+    loader = None
+    objectInfo = 0
+    objectInfoList = 0
+    name = None
+
+    def getObjects(self, frameItems):
         return frameItems.fromHandle(self.objectInfo)
     
-    cpdef bint isQualifier(self):
+    def isQualifier(self):
         return isQualifier(self.objectInfo)
     
-    cpdef bint getQualifier(self):
+    def getQualifier(self):
         return getQualifier(self.objectInfo)
     
-    cpdef str getName(self):
+    def getName(self):
         if self.name is None:
             self.name = getName(self.objectType, self.num, 
                 self.systemDict, self.extensionDict)
         return self.name
             
-    cpdef int getType(self):
+    def getType(self):
         return getType(self)
     
-    cpdef str getTypeName(self):
+    def getTypeName(self):
         from mmfparser.data.chunkloaders.objectinfo import getObjectType
         return getObjectType(self.objectType)
     
-    cpdef bint hasObjectInfo(self):
+    def hasObjectInfo(self):
         return self.objectType >= 2
         
-    cpdef getExtension(self, extensionChunk):
+    def getExtension(self, extensionChunk):
         initialize()
         if self.getType() != EXTENSION_BASE:
             raise Exception('type is not an extension')
         return extensionChunk.fromHandle(
             self.objectType - EXTENSION_BASE)
 
-cdef inline str getName(objectType, num, dict systemDict, dict extensionDict):
+def getName(objectType, num, systemDict, extensionDict):
     if objectType in systemDict and num in systemDict[objectType]:
         return systemDict[objectType][num]
     elif num in extensionDict:

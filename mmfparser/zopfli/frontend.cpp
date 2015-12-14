@@ -2,18 +2,14 @@
 
 static ZopfliOptions options;
 
-void init_zopfli()
+void init_zopfli_internal()
 {
     ZopfliInitOptions(&options);
 }
 
-PyObject * compress_zopfli(char * data, size_t size)
+void compress_zopfli(char * data, size_t size, char ** out, size_t * out_size)
 {
-    unsigned char* out = 0;
-    size_t outsize = 0;
     ZopfliCompress(&options, ZOPFLI_FORMAT_ZLIB,
-                   (const unsigned char*)data, size, &out, &outsize);
-    PyObject * ret = PyString_FromStringAndSize((const char*)out, outsize);
-    free(out);
-    return ret;
+                   (const unsigned char*)data, size,
+                   (unsigned char**)out, out_size);
 }

@@ -71,7 +71,7 @@ cdef void initialize_events():
     from mmfparser.player.event.actions.all import ACTIONS
     from mmfparser.player.event.expressions.all import EXPRESSIONS
 
-cdef class Group(PlayerChild):
+class Group(PlayerChild):
     cdef void initialize(self, list conditionGroups, list actionList, 
                          Container container, int index, int orType):
         self.enabled = True
@@ -152,7 +152,7 @@ cdef class Group(PlayerChild):
                         extensionNum]
         return EXPRESSIONS[item.getName()]
     
-    cpdef list get_conditions(self, klass, objectInfo = None):
+    def list get_conditions(self, klass, objectInfo = None):
         cdef list searchHandles
         try:
             if objectInfo is None:
@@ -164,7 +164,7 @@ cdef class Group(PlayerChild):
         except KeyError:
             return []
 
-    cpdef list get_actions(self, klass, objectInfo = None):
+    def list get_actions(self, klass, objectInfo = None):
         cdef list searchHandles
         try:
             if objectInfo is None:
@@ -261,47 +261,47 @@ cdef class Group(PlayerChild):
             self.loopCount = self.eventPlayer.loopCount
         return
 
-cdef class Container(PlayerChild):
+class Container(PlayerChild):
     def initialize(self, groupParameter):
         self.name = groupParameter.name
         self.callbacks = []
         self.enabled = not groupParameter.flags['Inactive']
         self.parentContainer = self.parent
     
-    cpdef add_enable_callback(self, func):
+    def add_enable_callback(self, func):
         self.callbacks.append(func)
         
-    cpdef remove_enable_callback(self, func):
+    def remove_enable_callback(self, func):
         try:
             self.callbacks.remove(func)
         except ValueError:
             pass
     
-    cpdef bint is_enabled(self):
+    def is_enabled(self):
         return self.enabled and self.parentContainer.is_enabled()
     
-    cpdef enable(self):
+    def enable(self):
         if self.enabled:
             return
         self.enabled = True
         for callback in self.callbacks:
             callback()
     
-    cpdef disable(self):
+    def disable(self):
         self.enabled = False
 
-cdef class BaseContainer(Container):
+class BaseContainer(Container):
     def initialize(self):
         pass
     
-    cpdef bint is_enabled(self):
+    def is_enabled(self):
         return True
 
-cdef class Loop:
+class Loop:
     pass
 
-cdef class EventPlayer(PlayerChild):    
-    cpdef initialize(self, events):
+class EventPlayer(PlayerChild):    
+    def initialize(self, events):
         initialize_events()
         self.objectIndex = -1
         self.qualifiers = qualifiers = {}
@@ -427,7 +427,7 @@ cdef class EventPlayer(PlayerChild):
             self.loops[name] = loop
             return loop
 
-    cpdef loop(self, sinceLast):
+    def loop(self, sinceLast):
         self.looping = True
         self.loopCount += 1
         cdef Condition condition
@@ -461,12 +461,12 @@ cdef class EventPlayer(PlayerChild):
                 continue
             condition.generate()
     
-    cpdef list resolve_objects(self, objectInfo):
+    def list resolve_objects(self, objectInfo):
         if is_qualifier(objectInfo):
             return self.qualifiers[get_qualifier(objectInfo)]
         return [objectInfo]
     
-    cpdef quit(self):
+    def quit(self):
         if EndOfApplication in self.conditions.keys():
             for condition in self.conditions[EndOfApplication]:
                 condition.generate()

@@ -22,7 +22,7 @@ from mmfparser.player.collision cimport collide, CollisionBase
 from mmfparser.player.objects.common cimport BaseObject
 import time
 
-cdef class Static(MovementPlayer):
+class Static(MovementPlayer):
     cdef public:
         object movement
         bint firstUpdate
@@ -41,7 +41,7 @@ cdef class Static(MovementPlayer):
         if not self.firstUpdate and not parent.updateEnabled:
             parent.updateEnabled = True
         
-    cpdef update(self):
+    def update(self):
         cdef Instance parent = self.parent
         if self.firstUpdate:
             if not self.player.frame.collision_enabled(parent.handle):
@@ -54,7 +54,7 @@ cdef class Static(MovementPlayer):
             parent.collisionSet = True
             self.handle_collisions()
             
-    cpdef bint handle_collisions(self, set instances_dummy = None):
+    def handle_collisions(self, set instances_dummy = None):
         cdef Instance parent = self.parent
         if parent.destroying:
             return True

@@ -15,40 +15,36 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-from mmfparser.bytereader cimport ByteReader
-from mmfparser.common cimport allocate_memory
-from libc.stdlib cimport malloc, free
+from mmfparser.bytereader import ByteReader
+# from mmfparser.common import allocate_memory
 
-cdef extern from "tinflate.c":
-    void tinf_init()
-    int tinf_uncompress(void *dest, unsigned int *destLen,
-        void *source, unsigned int sourceLen)
+# cdef extern from "tinflate.c":
+#     void tinf_init()
+#     int tinf_uncompress(void *dest, unsigned int *destLen,
+#         void *source, unsigned int sourceLen)
 
-tinf_init()
+# tinf_init()
 
-cdef char * buffer = NULL
+# buffer = NULL
 
-def decompress_single(ByteReader reader):
-    cdef unsigned int buffer_size = 1024 * 1024 * 10
+def decompress_single(reader):
+    buffer_size = 1024 * 1024 * 10
     global buffer
     if buffer == NULL:
-        buffer = <char*>malloc(buffer_size) # allocate 10 mb
-    cdef int start = reader.tell()
+        buffer = malloc(buffer_size) # allocate 10 mb
+    start = reader.tell()
     data = reader.read()
-    cdef int bytesread = tinf_uncompress(<void *>buffer, &buffer_size,
-        <void *>(<char *>data), len(data))
+    bytesread = tinf_uncompress(buffer, buffer_size, data, len(data))
     reader.seek(start + bytesread)
     return ByteReader(buffer[:buffer_size])
 
-def decompress(ByteReader reader):
-    cdef unsigned int decompressed_size = reader.readInt(True)
-    cdef unsigned int saved_size = decompressed_size
-    cdef char * buf
-    cdef int start = reader.tell()
+def decompress(reader):
+    decompressed_size = reader.readInt(True)
+    saved_size = decompressed_size
+    start = reader.tell()
     data = reader.read()
-    new_data = allocate_memory(decompressed_size, &buf)
-    cdef int bytesread = tinf_uncompress(<void *>buf, &decompressed_size,
-        <void *>(<char *>data), len(data))
+    new_data = allocate_memory(decompressed_size, buf)
+    bytesread = tinf_uncompress(buf, decompressed_size, data, len(data))
     reader.seek(start + bytesread)
     if decompressed_size != saved_size:
         raise Exception('decompression failed (%s, %s)' % (saved_size,

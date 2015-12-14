@@ -32,7 +32,7 @@ cdef inline void initialize():
     global make_image
     from mmfparser.player.common import make_image
 
-cdef class BaseObject(PlayerChild):
+class BaseObject(PlayerChild):
     property movement:
         def __get__(self):
             return (<Instance>self.parent).currentMovement
@@ -44,7 +44,7 @@ cdef class BaseObject(PlayerChild):
         if self.collision is None:
             self.collision = BoundingBox(self)
     
-    cpdef update(self):
+    def update(self):
         return
     
     def get_storage(self):
@@ -91,13 +91,13 @@ cdef class BaseObject(PlayerChild):
     def created(self, data = None):
         pass
     
-    cpdef bint draw(self):
+    def draw(self):
         pass
     
     def is_background(self):
         return False
     
-    cpdef set_position(self, double x, double y):
+    def set_position(self, double x, double y):
         pass
 
     def set_direction(self, direction, fromMovement = False):
@@ -140,10 +140,10 @@ cdef class BaseObject(PlayerChild):
     def destroy(self):
         return True
 
-cdef class BackgroundPlayer(BaseObject):
+class BackgroundPlayer(BaseObject):
     pass
 
-cdef class ObjectPlayer(BaseObject):
+class ObjectPlayer(BaseObject):
     cdef void initialize(self, loader, frame):
         self.loader = loader
         self.frame = frame

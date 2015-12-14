@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-cdef class GamePlayer
+class GamePlayer
 
 from mmfparser.player.clock cimport Clock
 from mmfparser.player.event.player cimport EventPlayer
@@ -23,7 +23,7 @@ from mmfparser.player.frame cimport Frame
 from mmfparser.player.alterables cimport Globals
 from mmfparser.player.common cimport PlayerChild
 
-cdef class GamePlayer:
+class GamePlayer:
     cdef public:
         PlayerChild parent
         object gameData
@@ -74,10 +74,10 @@ cdef class GamePlayer:
     
     cdef void get_window_coordinates(self, double x, double y, double * glX,
                                      double * glY)
-    cpdef tuple get_real_coordinates(self, double x, double y)
-    cpdef tuple get_window_rect(self)
-    cpdef double get_time(self)
-    cpdef draw(self, bint draw_window = ?)
+    def get_real_coordinates(self, double x, double y)
+    def get_window_rect(self)
+    def get_time(self)
+    def draw(self, bint draw_window = ?)
     cdef void update_window_rect(self)
     cdef PlayerChild new(self, type typeClass)
     cdef object get_extension(self, item)

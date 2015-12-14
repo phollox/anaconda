@@ -24,33 +24,33 @@ from mmfparser.player.movements import make_direction
 from mmfparser.player.objects.common cimport BaseObject
 from mmfparser.player.frame cimport Frame
 
-cdef class SubtractFromAlterable(Action):
+class SubtractFromAlterable(Action):
     cdef void execute_instance(self, Instance instance):
         index = self.get_alterable_index(self.get_parameter(0))
         value = self.evaluate_index(1)
         currentValue = instance.alterables.get_value(index)
         instance.alterables.set_value(index, currentValue - value)
 
-cdef class AddToAlterable(Action):
+class AddToAlterable(Action):
     cdef void execute_instance(self, Instance instance):
         index = self.get_parameter_value(self.parameters[0])
         value = self.evaluate_expression(self.parameters[1])
         currentValue = instance.alterables.get_value(index)
         instance.alterables.set_value(index, currentValue + value)
 
-cdef class SetAlterableValue(Action):
+class SetAlterableValue(Action):
     cdef void execute_instance(self, Instance instance):
         index = self.get_parameter_value(self.parameters[0])
         value = self.evaluate_expression(self.parameters[1])
         instance.alterables.set_value(index, value)
 
-cdef class SetAlterableString(Action):
+class SetAlterableString(Action):
     cdef void execute_instance(self, Instance instance):
         index = self.get_alterable_index(self.get_parameter(0))
         value = self.evaluate_index(1)
         instance.alterables.set_string(index, str(value))
 
-cdef class SpreadValue(Action):
+class SpreadValue(Action):
     iterateObjects = False
 
     cdef void execute(self):
@@ -62,7 +62,7 @@ cdef class SpreadValue(Action):
         for n, item in enumerate(reversed(instances)):
             item.alterables.set_value(index, start + n)
 
-cdef class EnableFlag(Action):
+class EnableFlag(Action):
     cdef void execute_instance(self, Instance instance):
         index = self.evaluate_index(0) % 32
         try:
@@ -70,7 +70,7 @@ cdef class EnableFlag(Action):
         except IndexError:
             pass
 
-cdef class DisableFlag(Action):
+class DisableFlag(Action):
     cdef void execute_instance(self, Instance instance):
         index = self.evaluate_index(0) % 32
         try:
@@ -78,7 +78,7 @@ cdef class DisableFlag(Action):
         except IndexError:
             pass
 
-cdef class ToggleFlag(Action):
+class ToggleFlag(Action):
     cdef void execute_instance(self, Instance instance):
         cdef bint value
         index = self.evaluate_index(0) % 32
@@ -88,7 +88,7 @@ cdef class ToggleFlag(Action):
         except IndexError:
             pass
 
-cdef class ForceAnimation(Action):
+class ForceAnimation(Action):
     cdef void execute_instance(self, Instance instance):
         index = <int>self.get_parameter_value(self.get_parameter(0))
         instance.objectPlayer.set_animation_index(index, True)
@@ -97,12 +97,12 @@ class RestoreAnimation(Action):
     def execute(self, instance):
         instance.objectPlayer.restore_animation()
 
-cdef class ForceSpeed(Action):
+class ForceSpeed(Action):
     cdef void execute_instance(self, Instance instance):
         instance.objectPlayer.force_speed(True, self.evaluate_expression(
             self.get_parameter(0)))
 
-cdef class RestoreSpeed(Action):
+class RestoreSpeed(Action):
     cdef void execute_instance(self, Instance instance):
         instance.objectPlayer.force_speed(False)
 
@@ -113,7 +113,7 @@ class FlashDuring(Action):
     def execute(self, instance):
         instance.flash(self.seconds)
 
-cdef class SetPosition(Action):
+class SetPosition(Action):
     iterateObjects = False
     cdef void execute(self):
         cdef list positions = self.get_positions(self.get_parameter(0))
@@ -126,66 +126,66 @@ cdef class SetPosition(Action):
             destX, destY, _ = positions[index % size]
             instance.set_position(destX, destY, True)
 
-cdef class SetX(Action):
+class SetX(Action):
     cdef void execute_instance(self, Instance instance):
         value = self.evaluate_expression(self.parameters[0])
         instance.set_position(value, instance.y, True)
             
-cdef class SetY(Action):
+class SetY(Action):
     cdef void execute_instance(self, Instance instance):
         value = self.evaluate_index(0)
         instance.set_position(instance.x, value, True)
 
-cdef class SwapPosition(Action):
+class SwapPosition(Action):
     cdef void execute_instance(self, Instance instance):
         if self.group.swaps is None:
             self.group.swaps = []
         self.group.swaps.append(instance)
 
-cdef class SelectMovement(Action):
+class SelectMovement(Action):
     cdef void execute_instance(self, Instance instance):
         value = self.get_parameter_value(self.get_parameter(0))
         instance.set_movement(value)
         
-cdef class NextMovement(Action):
+class NextMovement(Action):
     cdef void execute_instance(self, Instance instance):
         instance.set_movement(instance.movementIndex + 1)
 
-cdef class PreviousMovement(Action):
+class PreviousMovement(Action):
     cdef void execute_instance(self, Instance instance):
         instance.set_movement(instance.movementIndex + 1)
 
-cdef class SetSpeed(Action):
+class SetSpeed(Action):
     cdef void execute_instance(self, Instance instance):
         speed = self.evaluate_index(0)
         instance.currentMovement.set_speed(speed)
 
-cdef class SetMaximumSpeed(Action):
+class SetMaximumSpeed(Action):
     cdef void execute_instance(self, Instance instance):
         speed = self.evaluate_index(0)
         movement = instance.currentMovement
         movement.maxSpeed = speed
         movement.set_speed(movement.speed)
 
-cdef class SetRotatingSpeed(Action):
+class SetRotatingSpeed(Action):
     cdef void execute_instance(self, Instance instance):
         speed = self.evaluate_index(0)
         movement = instance.currentMovement
         movement.rotationSpeed = speed
 
-cdef class SetAcceleration(Action):
+class SetAcceleration(Action):
     cdef void execute_instance(self, Instance instance):
         value = self.evaluate_index(0)
         movement = instance.currentMovement
         movement.set_acceleration(value)
 
-cdef class SetDeceleration(Action):
+class SetDeceleration(Action):
     cdef void execute_instance(self, Instance instance):
         value = self.evaluate_index(0)
         movement = instance.currentMovement
         movement.set_deceleration(value)
 
-cdef class SetGravity(Action):
+class SetGravity(Action):
     cdef void execute_instance(self, Instance instance):
         value = self.evaluate_index(0)
         movement = instance.currentMovement
@@ -194,7 +194,7 @@ cdef class SetGravity(Action):
         except AttributeError:
             pass
 
-cdef class Reverse(Action):
+class Reverse(Action):
     cdef void execute_instance(self, Instance instance):
         movement = instance.currentMovement
         try:
@@ -202,25 +202,25 @@ cdef class Reverse(Action):
         except AttributeError:
             pass
 
-cdef class SetDirections(Action):
+class SetDirections(Action):
     cdef void execute_instance(self, Instance instance):
         directions = self.get_parameter(0).value
         movement = instance.currentMovement
         movement.directions = directions
 
-cdef class BranchNode(Action):
+class BranchNode(Action):
     cdef void execute_instance(self, Instance instance):
         name = self.evaluate_index(0)
         movement = instance.currentMovement
         movement.branch_node(name)
 
-cdef class GoToNode(Action):
+class GoToNode(Action):
     cdef void execute_instance(self, Instance instance):
         name = self.evaluate_index(0)
         movement = instance.currentMovement
         movement.goto_node(name)
 
-cdef class SetDirection(Action):
+class SetDirection(Action):
     cdef void execute_instance(self, Instance instance):
         cdef int direction = self.get_direction(self.get_parameter(0))
         direction = direction & 31 # % 32
@@ -228,13 +228,13 @@ cdef class SetDirection(Action):
             return
         instance.set_direction(direction, False)
 
-cdef class ForceDirection(Action):
+class ForceDirection(Action):
     cdef void execute_instance(self, Instance instance):
         direction = self.get_direction(self.get_parameter(0))
         direction = direction & 31 # % 32
         instance.objectPlayer.force_direction(direction)
 
-cdef class RestoreDirection(Action):
+class RestoreDirection(Action):
     cdef void execute_instance(self, Instance instance):
         instance.objectPlayer.restore_direction()
 
@@ -251,7 +251,7 @@ class LookAt(Action):
                 self.direction_from(instance.x, instance.y, 
                     int(destX), int(destY)))
 
-cdef class CollidingCommon(Action):
+class CollidingCommon(Action):
     cdef public:
         bint stopCorner
         bint colliding
@@ -319,11 +319,11 @@ cdef class CollidingCommon(Action):
     cdef void action(self, Instance instance):
         pass
 
-cdef class Stop(CollidingCommon):
+class Stop(CollidingCommon):
     cdef void action(self, Instance instance):
         instance.stop(self.colliding)
 
-cdef class Bounce(CollidingCommon):
+class Bounce(CollidingCommon):
     cdef void action(self, Instance instance):
         instance.bounce()
 
@@ -338,7 +338,7 @@ class Wrap(Action):
 from mmfparser.data.chunkloaders.objects import SHOOTING
 from mmfparser.data.chunkloaders.objectinfo import ACTIVE
 
-cdef class Shoot(Action):
+class Shoot(Action):
     iterateObjects = False
     cdef:
         bint action
@@ -433,17 +433,17 @@ class ShootToward(Action):
             newInstances.append(newItem)
         self.select_instances(newInstances, newItem.handle)
 
-cdef class BringToBack(Action):
+class BringToBack(Action):
     cdef void execute_instance(self, Instance instance):
         layer = instance.layer
         layer.set_level(instance, 0)
 
-cdef class BringToFront(Action):
+class BringToFront(Action):
     cdef void execute_instance(self, Instance instance):
         layer = instance.layer
         layer.set_level(instance, layer.get_size())
 
-cdef class MoveBehind(Action):
+class MoveBehind(Action):
     cdef void execute_instance(self, Instance instance):
         layer = instance.layer
         cdef Instance otherInstance
@@ -454,7 +454,7 @@ cdef class MoveBehind(Action):
             if position2 < position1:
                 layer.set_level(instance, position2)
 
-cdef class MoveInFront(Action):
+class MoveInFront(Action):
     cdef void execute_instance(self, Instance instance):
         layer = instance.layer
         cdef Instance otherInstance
@@ -465,45 +465,45 @@ cdef class MoveInFront(Action):
             if position1 < position2:
                 layer.set_level(instance, position2 + 1)
 
-cdef class MoveToLayer(Action):
+class MoveToLayer(Action):
     cdef void execute_instance(self, Instance instance):
         index = int(self.evaluate_index(0)) - 1
         instance.set_layer(index)
 
-cdef class SetInkEffect(Action):
+class SetInkEffect(Action):
     cdef void execute_instance(self, Instance instance):
         shorts = self.get_parameter(0)
         instance.set_effect(shorts.value1, shorts.value2)
 
-cdef class SetEffect(Action):
+class SetEffect(Action):
     cdef void execute_instance(self, Instance instance):
         instance.set_effect_name(
             self.get_parameter(0).value)
 
-cdef class Hide(Action):
+class Hide(Action):
     cdef void execute_instance(self, Instance instance):
         instance.set_visible(False)
 
-cdef class Show(Action):
+class Show(Action):
     cdef void execute_instance(self, Instance instance):
         instance.set_visible(True)
 
-cdef class Destroy(Action):
+class Destroy(Action):
     cdef void execute_instance(self, Instance instance):
         # print 'destroying instance:', instance.objectInfo.name
         instance.destroy()
 
-cdef class SetSemiTransparency(Action):
+class SetSemiTransparency(Action):
     cdef void execute_instance(self, Instance instance):
         instance.set_transparency(128 - int(self.evaluate_expression(
             self.get_parameter(0))))
 
-cdef class SetAlphaCoefficient(Action):
+class SetAlphaCoefficient(Action):
     cdef void execute_instance(self, Instance instance):
         instance.set_transparency((255 - int(self.evaluate_expression(
             self.get_parameter(0)))) / 255.0 * 128.0)
 
-cdef class SetRGBCoefficient(Action):
+class SetRGBCoefficient(Action):
     cdef void execute_instance(self, Instance instance):
         color = self.get_color(self.get_parameter(0))
         r, g, b = color
@@ -512,7 +512,7 @@ cdef class SetRGBCoefficient(Action):
         b = b / 255.0
         instance.colorCoefficient = (r, g, b)
 
-cdef class SetEffectParameter(Action):
+class SetEffectParameter(Action):
     cdef void execute_instance(self, Instance instance):
         if instance.inkEffect is None or instance.inkEffect.parameters is None:
             return
@@ -523,7 +523,7 @@ cdef class SetEffectParameter(Action):
         except KeyError:
             return
 
-cdef class AddToDebugger(Action):
+class AddToDebugger(Action):
     cdef void execute_instance(self, Instance instance):
         pass
 

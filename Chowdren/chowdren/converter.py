@@ -57,7 +57,7 @@ from chowdren.idpool import get_id
 from chowdren.codewriter import CodeWriter
 from chowdren.platforms import classes as platform_classes
 from chowdren.assets import Assets
-from mmfparser import texpack
+# from mmfparser import texpack
 import platform
 import math
 import wave
@@ -1346,7 +1346,8 @@ class Converter(object):
 
         for i, (image, image_hash) in enumerate(new_entries):
             cache_path = get_image_path(image_hash)
-            temp = open(cache_path, 'rb').read()
+            with open(cache_path, 'rb') as fp:
+                temp = fp.read()
             arg = (image.width, image.height,
                    image.xHotspot, image.yHotspot,
                    image.actionX, image.actionY, temp)
@@ -3161,7 +3162,7 @@ class Converter(object):
                     out = out.split(',')[0]
             self.in_condition_expression = False
         else:
-            parameter_name = type(container.loader).__name__
+            parameter_name = container.loader.__class__.__name__
             if parameter_name == 'Object':
                 return self.get_object((loader.objectInfo, loader.objectType))
             elif parameter_name == 'Sample':

@@ -62,7 +62,7 @@ class AllDestroyed(Condition):
         return len(self.get_all_instances()) == 0
 
 @cython.final
-cdef class OnCollision(Condition):
+class OnCollision(Condition):
     cdef public:
         bint iterateObjects
         tuple waitingInstances
@@ -153,7 +153,7 @@ cdef inline tuple check_overlap(list instances, list otherInstances):
     return list(selectedInstances), list(otherSelectedInstances)
 
 @cython.final
-cdef class OnBackgroundCollision(Condition):
+class OnBackgroundCollision(Condition):
     cdef public:
         bint iterateObjects
         bint bounceObjects
@@ -196,7 +196,7 @@ cdef class OnBackgroundCollision(Condition):
             return len(selectedInstances) > 0
 
 @cython.final
-cdef class IsOverlapping(Condition):
+class IsOverlapping(Condition):
     cdef public:
         object otherInfo
     
@@ -224,16 +224,16 @@ cdef class IsOverlapping(Condition):
             self.select_instances(otherSelectedInstances, objectInfo)
         return (len(selectedInstances) > 0) != self.negated
 
-cdef class IsOverlappingBackground(Condition):
+class IsOverlappingBackground(Condition):
     cdef bint check_instance(self, Instance instance):
         return check_backdrop_overlap(instance)
 
-cdef class AnimationPlaying(Condition):
-    cpdef bint check_instance(self, Instance instance):
+class AnimationPlaying(Condition):
+    def check_instance(self, Instance instance):
         value = self.get_parameter_value(self.get_parameter(0))
         return instance.objectPlayer.currentAnimation.getIndex() == value
 
-cdef class AnimationFinished(Condition):
+class AnimationFinished(Condition):
     iterateObjects = False
     instances = None
     instance = None
@@ -251,7 +251,7 @@ cdef class AnimationFinished(Condition):
             else:
                 self.instances.append(instance)
     
-    cpdef bint check(self):
+    def check(self):
         if self.isTriggered:
             if not self.instance:
                 return False
@@ -271,7 +271,7 @@ cdef class AnimationFinished(Condition):
             return len(selectedInstances) > 0
 
 @cython.final
-cdef class AnimationFrame(Condition):
+class AnimationFrame(Condition):
     cdef bint check_instance(self, Instance instance):
         value = self.evaluate_index(0)
         return self.compare(instance.objectPlayer.frameIndex, value)
@@ -302,7 +302,7 @@ class ObjectsInZone(Condition):
         return self.compare(count, value)
 
 @cython.final
-cdef class NoObjectsInZone(Condition):
+class NoObjectsInZone(Condition):
     iterateObjects = False
     cdef public:
         int x1
@@ -322,12 +322,12 @@ cdef class NoObjectsInZone(Condition):
             if instance.in_zone(self.x1, self.y1, self.x2, self.y2)])
         return count == 0
 
-cdef class MovementStopped(Condition):
+class MovementStopped(Condition):
     cdef bint check_instance(self, Instance instance):
         return instance.currentMovement.stopped
 
 @cython.final
-cdef class CompareDeceleration(Condition):
+class CompareDeceleration(Condition):
     cdef bint check_instance(self, Instance instance):
         try:
             value1 = instance.currentMovement.decelerationValue
@@ -337,7 +337,7 @@ cdef class CompareDeceleration(Condition):
         return self.compare(value1, value2)
 
 @cython.final
-cdef class CompareAcceleration(Condition):
+class CompareAcceleration(Condition):
     cdef bint check_instance(self, Instance instance):
         try:
             value1 = instance.currentMovement.accelerationValue
@@ -347,33 +347,33 @@ cdef class CompareAcceleration(Condition):
         return self.compare(value1, value2)
 
 @cython.final
-cdef class CompareY(Condition):
+class CompareY(Condition):
     cdef bint check_instance(self, Instance instance):
         value = self.evaluate_index(0)
         return self.compare(<int>instance.y, value)
 
 @cython.final
-cdef class CompareX(Condition):
+class CompareX(Condition):
     cdef bint check_instance(self, Instance instance):
         value = self.evaluate_index(0)
         return self.compare(<int>instance.x, value)
 
 @cython.final
-cdef class CompareAlterableValue(Condition):
+class CompareAlterableValue(Condition):
     cdef bint check_instance(self, Instance instance):
         index = self.get_parameter_value(self.get_parameter(0))
         value = self.evaluate_index(1)
         return self.compare(instance.alterables.get_value(index), value)
 
 @cython.final
-cdef class CompareAlterableString(Condition):
+class CompareAlterableString(Condition):
     cdef bint check_instance(self, Instance instance):
         index = self.get_alterable_index(self.get_parameter(0))
         value = self.evaluate_index(1)
         return self.compare(instance.alterables.get_string(index), value)
 
 @cython.final
-cdef class FlagOn(Condition):
+class FlagOn(Condition):
     cdef bint check_instance(self, Instance instance):
         index = self.evaluate_index(0) % 32
         try:
@@ -382,7 +382,7 @@ cdef class FlagOn(Condition):
             return False
 
 @cython.final
-cdef class FlagOff(Condition):
+class FlagOff(Condition):
     iterateObjects = False
     cdef bint check(self):
         cdef list instances = self.get_instances()
@@ -398,20 +398,20 @@ cdef class FlagOff(Condition):
         self.select_instances(newInstances)
         return len(newInstances) > 0
 
-cdef class OutsidePlayfield(Condition):
+class OutsidePlayfield(Condition):
     cdef void created(self):
         for handle in self.resolve_objects(self.objectInfo):
             self.player.frame.add_border_collision_instance(handle)
         
-    cpdef bint check_instance(self, Instance instance):
+    def check_instance(self, Instance instance):
         return instance.outside_playfield()
 
-cdef class InsidePlayfield(Condition):
+class InsidePlayfield(Condition):
     cdef void created(self):
         for handle in self.resolve_objects(self.objectInfo):
             self.player.frame.add_border_collision_instance(handle)
 
-    cpdef bint check_instance(self, Instance instance):
+    def check_instance(self, Instance instance):
         return (not instance.outside_playfield())
 
 PLAYFIELD_FLAGS = BitDict('Left', 'Right', 'Up', 'Down')
@@ -530,23 +530,23 @@ class EnteringPlayfield(Condition):
     def on_detach(self):
         del self.instances
 
-cdef class ObjectVisible(Condition):
+class ObjectVisible(Condition):
     cdef bint check_instance(self, Instance instance):
         return instance.visible and instance.layer.visible
 
 @cython.final
-cdef class ObjectInvisible(Condition):
+class ObjectInvisible(Condition):
     cdef bint check_instance(self, Instance instance):
         return not (instance.visible and instance.layer.visible)
 
 @cython.final
-cdef class NearWindowBorder(Condition):
-    cpdef bint check_instance(self, Instance instance):
+class NearWindowBorder(Condition):
+    def check_instance(self, Instance instance):
         value = self.evaluate_index(0)
         result = instance.inside_window(value, value)
         return not result
 
-cdef class PathFinished(Condition):
+class PathFinished(Condition):
     iterateObjects = False
     instance = None
     cdef void created(self):
@@ -558,7 +558,7 @@ cdef class PathFinished(Condition):
         self.instance = instance
         self.generate()
     
-    cpdef bint check(self):
+    def check(self):
         if self.instance and self.instance in self.get_instances():
             self.select_instances([self.instance])
             self.instance = None
@@ -608,13 +608,13 @@ class NamedNodeReached(Condition):
         return False
 
 @cython.final
-cdef class CompareSpeed(Condition):
+class CompareSpeed(Condition):
     cdef bint check_instance(self, Instance instance):
         value = self.evaluate_index(0)
         return self.compare(instance.currentMovement.speed, value)
 
 @cython.final
-cdef class Bouncing(Condition):
+class Bouncing(Condition):
     cdef bint check_instance(self, Instance instance):
         try:
             return instance.currentMovement.bouncing
@@ -622,12 +622,12 @@ cdef class Bouncing(Condition):
             return False
 
 @cython.final
-cdef class FacingInDirection(Condition):
+class FacingInDirection(Condition):
     cdef bint check_instance(self, Instance instance):
         return instance.direction in self.get_directions(self.get_parameter(0))
 
 @cython.final
-cdef class CompareFixedValue(Condition):
+class CompareFixedValue(Condition):
     iterateObjects = False
     cdef bint check(self):
         cdef void * fixed = <void*>(<long>self.evaluate_index(0))

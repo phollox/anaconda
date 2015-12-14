@@ -15,43 +15,36 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-cdef class DataLoader:
+class DataLoader:
     def __init__(self, reader = None, parent = None, **settings):
         self.init(reader, parent, settings)
 
-    cdef bint init(self, ByteReader reader, DataLoader parent,
-                   dict settings) except False:
+    def init(self, reader, parent, settings):
         self.parent = parent
         self.settings = settings
-        IF IS_PYPY:
-            getattr(self, 'initialize')()
-        ELSE:
-            self.initialize()
+        self.initialize()
         if reader is not None:
             self.read(reader)
         return True
 
-    def new(self, type loaderClass, reader = None, **kw):
-        (<dict>kw).update(self.settings)
-        cdef DataLoader newLoader = loaderClass.__new__(loaderClass)
+    def new(self, loaderClass, reader = None, **kw):
+        kw.update(self.settings)
+        newLoader = loaderClass()
         newLoader.init(reader, self, kw)
         return newLoader
 
-    cpdef readString(self, ByteReader reader, size=None):
+    def readString(self, reader, size=None):
         if self.settings.get('unicode', False):
             return reader.readUnicodeString(size).encode('utf-8')
         else:
             return reader.readString(size)
 
-    cpdef initialize(self):
+    def initialize(self):
         return
 
-    cpdef read(self, ByteReader reader):
-        IF IS_PYPY:
-            return getattr(self, 'read')(reader)
-        ELSE:
-            raise NotImplementedError('%s has not implemented a read method' %
-                self.__class__.__name__)
+    def read(self, reader):
+        raise NotImplementedError('%s has not implemented a read method' %
+            self.__class__.__name__)
 
     def generate(self):
         newReader = ByteReader()

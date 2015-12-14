@@ -15,28 +15,28 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-cdef class Container
-cdef class Group
-cdef class EventPlayer
+class Container
+class Group
+class EventPlayer
 
 from mmfparser.player.event.evaluater cimport Evaluater
 from mmfparser.player.frame cimport Frame
 from mmfparser.player.common cimport PlayerChild
 
-cdef class Container(PlayerChild):
+class Container(PlayerChild):
     cdef public:
         str name
         bint enabled
         Container parentContainer
     cdef list callbacks
     
-    cpdef add_enable_callback(self, func)
-    cpdef remove_enable_callback(self, func)
-    cpdef bint is_enabled(self)
-    cpdef enable(self)
-    cpdef disable(self)
+    def add_enable_callback(self, func)
+    def remove_enable_callback(self, func)
+    def is_enabled(self)
+    def enable(self)
+    def disable(self)
 
-cdef class Group(PlayerChild):
+class Group(PlayerChild):
     cdef public:
         Container container
         int index
@@ -59,17 +59,17 @@ cdef class Group(PlayerChild):
     cdef type find_condition(self, item)
     cdef type find_action(self, item)
     cdef type find_expression(self, item)
-    cpdef list get_conditions(self, klass, objectInfo = ?)
-    cpdef list get_actions(self, klass, objectInfo = ?)
+    def list get_conditions(self, klass, objectInfo = ?)
+    def list get_actions(self, klass, objectInfo = ?)
     cdef list get_instances(self, infoHandle)
     cdef void select_instances(self, handle, list instanceList)
     cdef void execute(self)
 
-cdef class Loop:
+class Loop:
     cdef int index
     cdef bint stopped
 
-cdef class EventPlayer(PlayerChild):
+class EventPlayer(PlayerChild):
     cdef public:
         Evaluater evaluater
         list containers
@@ -87,7 +87,7 @@ cdef class EventPlayer(PlayerChild):
     cdef list always_groups
     cdef bint started
     
-    cpdef initialize(self, events)
-    cpdef loop(self, sinceLast)
-    cpdef list resolve_objects(self, objectInfo)
-    cpdef quit(self)
+    def initialize(self, events)
+    def loop(self, sinceLast)
+    def list resolve_objects(self, objectInfo)
+    def quit(self)

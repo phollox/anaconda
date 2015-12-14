@@ -33,7 +33,7 @@ cdef extern from "./maxrects/frontend.cpp":
 
 from PIL import Image
 
-cdef class Sprite:
+class Sprite:
     cdef public:
         int x, y, w, h
         object image
@@ -45,7 +45,7 @@ cdef class Sprite:
         self.h = rect.height
         self.image = image
 
-cdef class MaxRects:
+class MaxRects:
     cdef public:
         int width, height
         list results

@@ -17,7 +17,7 @@
 
 from mmfparser.loader cimport DataLoader
 
-cdef class _AceCommon(DataLoader):
+class _AceCommon(DataLoader):
     cdef public:
         dict systemDict
         dict extensionDict
@@ -28,11 +28,11 @@ cdef class _AceCommon(DataLoader):
         int objectInfoList
     cdef str name
         
-    cpdef object getObjects(self, frameItems)
-    cpdef bint isQualifier(self)
-    cpdef bint getQualifier(self)
-    cpdef str getName(self)   
-    cpdef int getType(self)
-    cpdef str getTypeName(self)
-    cpdef bint hasObjectInfo(self)
-    cpdef getExtension(self, extensionChunk)
+    def getObjects(self, frameItems)
+    def isQualifier(self)
+    def getQualifier(self)
+    def getName(self)   
+    def getType(self)
+    def getTypeName(self)
+    def hasObjectInfo(self)
+    def getExtension(self, extensionChunk)

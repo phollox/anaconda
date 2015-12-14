@@ -16,22 +16,22 @@
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
 from mmfparser.data.chunkloaders.objectinfo import ObjectInfo
-from mmfparser.loader cimport DataLoader
-from mmfparser.bytereader cimport ByteReader
+from mmfparser.loader import DataLoader
+from mmfparser.bytereader import ByteReader
 
-cdef class FrameItems(DataLoader):
-    cdef public:
-        dict itemDict
+class FrameItems(DataLoader):
+    # cdef public:
+    #     dict itemDict
 
-    cpdef initialize(self):
+    def initialize(self):
         self.itemDict = {}
     
-    property items:
-        def __get__(self):
-            return self.itemDict.values()
+    @property
+    def items(self):
+        return self.itemDict.values()
     
-    cpdef read(self, ByteReader reader):
-        cdef dict itemDict = self.itemDict
+    def read(self, reader):
+        itemDict = self.itemDict
         for _ in xrange(reader.readInt(True)):
             item = self.new(ObjectInfo, reader)
             itemDict[item.handle] = item
@@ -39,7 +39,7 @@ cdef class FrameItems(DataLoader):
     def fromHandle(self, handle):
         return self.itemDict[handle]
     
-    def write(self, ByteReader reader):
+    def write(self, reader):
         reader.writeInt(len(self.items), True)
         for item in self.items:
             item.write(reader)

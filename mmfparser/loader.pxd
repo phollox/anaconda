@@ -17,15 +17,15 @@
 
 from mmfparser.bytereader cimport ByteReader
 
-cdef class DataLoader
+class DataLoader
 
-cdef class DataLoader:
+class DataLoader:
     cdef public:
         dict settings
         DataLoader parent
 
-    cpdef read(self, ByteReader reader)
-    cpdef initialize(self)
-    cdef bint init(self, ByteReader reader, DataLoader parent,
+    def read(self, reader)
+    def initialize(self)
+    cdef bint init(self, reader, DataLoader parent,
                    dict settings) except False
-    cpdef readString(self, ByteReader reader, size=?)
+    def readString(self, reader, size=?)

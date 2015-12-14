@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-cdef class Values:
+class Values:
     cdef public:
         int stringCount
         int valueCount
@@ -23,15 +23,15 @@ cdef class Values:
         dict strings
     
     cdef initialize(self)
-    cpdef str get_string(self, index)
-    cpdef bint set_string(self, index, value)
-    cpdef object get_value(self, index)
-    cpdef bint set_value(self, index, value)
-    cpdef Values copy(self)
+    def get_string(self, index)
+    def set_string(self, index, value)
+    def get_value(self, index)
+    def set_value(self, index, value)
+    def copy(self)
 
-cdef class Alterables(Values):
+class Alterables(Values):
     cdef public:
         list flags
 
-cdef class Globals(Values):
+class Globals(Values):
     pass

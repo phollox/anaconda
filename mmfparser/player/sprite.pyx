@@ -74,7 +74,7 @@ cdef struct Point2d:
 cdef struct float2:
     float a, b
 
-cdef class Quad:
+class Quad:
     cdef Point2d v[4]
     def __init__(self, definition):
         try:
@@ -246,7 +246,7 @@ cdef class Quad:
     def __repr__(self):
         return "Quad((%r, %r, %r, %r))" % (self[0], self[1], self[2], self[3])
 
-cdef class Sprite:
+class Sprite:
     cdef public:
         object texture
         int texture_id
@@ -415,7 +415,7 @@ cdef class Sprite:
             glDisable(GL_TEXTURE_2D)
             glActiveTexture(GL_TEXTURE0)
     
-    cpdef int render(self):
+    def render(self):
         self._render()
         
     cdef float2 _bounds_x(self):
@@ -488,7 +488,7 @@ cdef class Sprite:
         def __set__(self, y):
             self.y = y - self._bounds_y().b
         
-cdef class ObjectSprite(Sprite):
+class ObjectSprite(Sprite):
     cdef public:
         Collision collision
         GamePlayer player
@@ -524,7 +524,7 @@ cdef class ObjectSprite(Sprite):
         return (self.left, self.player.realHeight - self.top, self.right,
             self.player.realHeight - self.bottom)
     
-    cpdef int render(self):
+    def render(self):
         cdef InkEffect inkEffect = self.instance.inkEffect
         colorCoefficient = self.instance.colorCoefficient
         if colorCoefficient is not None:
@@ -602,7 +602,7 @@ cdef class ObjectSprite(Sprite):
         self.player = None
         self.instance = None
 
-cdef class CreatedFrame:
+class CreatedFrame:
     cdef public:
         object image
         int xHotspot

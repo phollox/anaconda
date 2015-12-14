@@ -15,123 +15,86 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-cimport cython
-
 import struct
 import zlib
 from cStringIO import StringIO
+from cffi import FFI
+ffi = FFI()
 
-from mmfparser.bytereader cimport ByteReader
+from mmfparser.bytereader import ByteReader
 from mmfparser.data import zlibdata
 from mmfparser.data import onepointfive
-from mmfparser.loader cimport DataLoader
+from mmfparser.loader import DataLoader
 from mmfparser.data.chunkloaders.appheader import graphicModes
-from mmfparser.common cimport allocate_memory
+# from mmfparser.common import allocate_memory
 
 from mmfparser.bitdict import BitDict
 
-cdef extern from "math.h": 
-    double ceil(double ceil)
-
-cdef int POINT_MODE = 4 # 16 million colors
-cdef int FIFTEENPOINT_MODE = 6  # 32768 colors
-
-cdef class ImageItem
+POINT_MODE = 4 # 16 million colors
+FIFTEENPOINT_MODE = 6  # 32768 colors
     
-cdef inline object indexImage(ImageItem item, frame):
-    cdef unsigned int i
-    cdef tuple current_value
-    cdef unsigned int * image
-    cdef unsigned int * new_points_array
-    cdef char * new_points
+def indexImage(item, frame):
     if not item.indexed:
         return item.image
     else:
-        image = <unsigned int *>(<char *>item.image)
-        str_points = allocate_memory(len(item.image), &new_points)
-        new_points_array = <unsigned int *>new_points
-        for i in range(len(item.image) / 4):
+        image = item.image # <unsigned int *>(<char *>item.image)
+        str_points = allocate_memory(len(item.image), new_points)
+        new_points_array = new_points
+        for i in xrange(len(item.image) / 4):
             current_value = frame.palette.items[image[i]]
             new_points_array[i] = (current_value[0] | current_value[1] << 8 | 
-                current_value[2] << 16) 
+                                   current_value[2] << 16) 
         return str_points
 
-cdef inline str joinImage(bytes points, bytes alpha):
-    cdef char * c_array_string
-    cdef unsigned int value
-    new_points = allocate_memory(len(points), &c_array_string)
-    cdef unsigned int * c_array = <unsigned int *>c_array_string
-    cdef unsigned int * points_c = <unsigned int *>(<char *>points)
-    cdef char * alpha_c = alpha
-    cdef int i
-    for i in range(len(points) / 4):
-        c_array[i] = points_c[i] | ((<unsigned char *>alpha_c)[i] << 24)
-    return new_points
+def joinImage(points, alpha):
+    c_array = ffi.new('unsigned int[]', len(points))
+    for i in xrange(len(points) / 4):
+        c_array[i] = points[i] | ((alpha)[i] << 24)
+    return c_array
 
-cdef inline object getImageData(ImageItem item, frame):
-    cdef unsigned int point
-    cdef unsigned int transparent
-    cdef object points = indexImage(item, frame)
-    cdef unsigned int * points_c = <unsigned int *>(<char *>points)
-    cdef int i
-    cdef unsigned int * c_array
+def getImageData(item, frame):
+    points = indexImage(item, frame)
+    points_c = points
     if item.alpha:
         data = joinImage(points, item.alpha)
     else:
         transparent = (item.transparent[0] | item.transparent[1] << 8 | 
             item.transparent[2] << 16)
-        data = allocate_memory(len(points), <char**>&c_array)
-        for i in range(len(points) / 4):
+        c_array = data = ffi.new('unsigned int[]', len(points_c))
+        for i in xrange(len(points) / 4):
             if points_c[i] == transparent:
                 c_array[i] = points_c[i]
             else:
-                c_array[i] = points_c[i] | <unsigned int>(0xFF << 24)
+                c_array[i] = points_c[i] | (0xFF << 24)
     return data
 
-cdef inline object createDisplay(ImageItem item, frame):
-    data = getImageData(item, frame)
-    from mmfparser.player.sprite import ImageData
-    newImage = ImageData(item.width, item.height, 'RGBA', data,
-        -item.width * 4, item.alpha)
-    newImage.anchor_x = item.xHotspot
-    newImage.anchor_y = item.height - item.yHotspot
-    return newImage
+class BasePoint:
+    pass
 
-cdef class BasePoint
-
-cdef class BasePoint:
-    cdef public:
-        int size
-    cdef unsigned int read(self, char * data, int position):
-        pass
-
-cdef class Point(BasePoint):
-    def __cinit__(self):
+class Point(BasePoint):
+    def __init__(self):
         self.size = 3
 
-    cdef inline unsigned int read(self, char * data, int position):
-        cdef unsigned char r, g, b
-        b = <unsigned char>data[position]
-        g = <unsigned char>data[position+1]
-        r = <unsigned char>data[position+2]
+    def read(self, data, position):
+        b = data[position]
+        g = data[position+1]
+        r = data[position+2]
         return r | g << 8 | b << 16
 
-    cdef write(self, item, ByteReader reader):
+    def write(self, item, reader):
         reader.writeByte(item[2], True)
         reader.writeByte(item[1], True)
         reader.writeByte(item[0], True)
 
-cdef BasePoint point_instance = Point()
+point_instance = Point()
 
-cdef class SixteenPoint(BasePoint):
-    def __cinit__(self):
+class SixteenPoint(BasePoint):
+    def __init__(self):
         self.size = 2
 
-    cdef inline unsigned int read(self, char * data, int position):
-        cdef unsigned short newShort
-        newShort = (<unsigned char>data[position] | 
-            <unsigned char>data[position + 1] << 8)
-        cdef unsigned char r, g, b
+    def read(self, data, position):
+        newShort = (data[position] | 
+            data[position + 1] << 8)
         r = (newShort & 63488) >> 11
         g = (newShort & 2016) >> 5
         b = (newShort & 31)
@@ -140,7 +103,7 @@ cdef class SixteenPoint(BasePoint):
         b = b << 3
         return r | g << 8 | b << 16
 
-    cdef write(item, ByteReader reader):
+    def write(item, reader):
         r, g, b = item
         r = r >> 3
         g = g >> 2
@@ -149,17 +112,14 @@ cdef class SixteenPoint(BasePoint):
         g = g << 5
         return r | g | b
 
-cdef BasePoint sixteen_point = SixteenPoint()
+sixteen_point = SixteenPoint()
 
-cdef class FifteenPoint(BasePoint):
-    def __cinit__(self):
+class FifteenPoint(BasePoint):
+    def __init__(self):
         self.size = 2
 
-    cdef inline unsigned int read(self, char * data, int position):
-        cdef unsigned char r, g, b
-        cdef unsigned short newShort
-        newShort = (<unsigned char>data[position] | 
-            <unsigned char>data[position + 1] << 8)
+    def read(self, data, position):
+        newShort = (data[position] | data[position + 1] << 8)
         r = (newShort & 31744) >> 10
         g = (newShort & 992) >> 5
         b = (newShort & 31)
@@ -168,7 +128,7 @@ cdef class FifteenPoint(BasePoint):
         b = b << 3
         return r | g << 8 | b << 16
 
-    cdef write(item, ByteReader reader):
+    def write(item, reader):
         r, g, b = item
         r = r >> 3
         g = g >> 3
@@ -178,56 +138,49 @@ cdef class FifteenPoint(BasePoint):
         
         return r | g | b
 
-cdef BasePoint fifteen_point = FifteenPoint()
+fifteen_point = FifteenPoint()
 
-cdef class IndexPoint(BasePoint):
-    def __cinit__(self):
+class IndexPoint(BasePoint):
+    def __init__(self):
         self.size = 1
 
-    cdef inline unsigned int read(self, char * data, int position):
-        return <unsigned char>data[position]
+    def read(self, data, position):
+        return data[position]
 
-    cdef write(self, point, ByteReader reader):
+    def write(self, point, reader):
         reader.writeByte(point, True)
 
-cdef IndexPoint index_point = IndexPoint()
+index_point = IndexPoint()
 
-cdef inline tuple read_rgb(char * data, int width, int height, BasePoint pointClass):
-    cdef char * buf
-    points = allocate_memory(width * height * 4, &buf)
-    cdef unsigned int * c_array = <unsigned int *>buf
-    cdef int x, y
-    cdef int n = 0
-    cdef int i = 0
-    cdef int pad = get_padding(width, pointClass)
-    for y in range(height):
-        for x in range(width):
+def read_rgb(data, width, height, pointClass):
+    c_array = ffi.new('unsigned int[]', width * height)
+    # cdef x, y
+    n = 0
+    i = 0
+    pad = get_padding(width, pointClass)
+    for y in xrange(height):
+        for x in xrange(width):
             c_array[i] = pointClass.read(data, n)
             n += pointClass.size
             i += 1
         n += pad * pointClass.size
-    return points, n
+    return c_array, n
 
-cdef inline int get_padding(int width, BasePoint pointClass, int bytes = 2):
-    cdef int pad
+def get_padding(width, pointClass, bytes = 2):
     pad = bytes - ((width * pointClass.size) % bytes)
     if pad == bytes:
         pad = 0
-    return <int>ceil(pad / <float>pointClass.size)
+    # return ceil(pad / <float>pointClass.size)
+    return (pad + pointClass.size - 1) / pointClass.size
 
-cdef inline tuple read_rle(char * data, int width, int height, BasePoint pointClass):
-    cdef char * buf
-    cdef int pad = get_padding(width, pointClass)
-    cdef bytes points = allocate_memory(width * height * 4, &buf)
-    cdef unsigned int * c_array = <unsigned int *>buf
-    cdef int currentPosition = 0
-    cdef int i = 0
-    cdef int pos = 0
-    cdef int n
-    cdef unsigned char command
-    cdef unsigned int newPoint
+def read_rle(data, width, height, pointClass):
+    pad = get_padding(width, pointClass)
+    c_array = ffi.new('unsigned int[]', width * height)
+    currentPosition = 0
+    i = 0
+    pos = 0
     while 1:
-        command = <unsigned char>data[currentPosition]
+        command = data[currentPosition]
         currentPosition += 1
 
         if command == 0:
@@ -235,7 +188,7 @@ cdef inline tuple read_rle(char * data, int width, int height, BasePoint pointCl
 
         if command > 128:
             command -= 128
-            for n in range(command):
+            for n in xrange(command):
                 if pos % (width + pad) < width:
                     c_array[i] = pointClass.read(data, currentPosition)
                     i += 1
@@ -243,66 +196,68 @@ cdef inline tuple read_rle(char * data, int width, int height, BasePoint pointCl
                 currentPosition += pointClass.size
         else:
             newPoint = pointClass.read(data, currentPosition)
-            for n in range(command):
+            for n in xrange(command):
                 if pos % (width + pad) < width:
                     c_array[i] = newPoint
                     i += 1
                 pos += 1
             currentPosition += pointClass.size
-    return points, currentPosition
+    return c_array, currentPosition
 
-cdef inline read_alpha(char * data, int width, int height, int position):
-    cdef int pad = get_padding(width, index_point, 4)
-    cdef char * buf
-    points = allocate_memory(width * height, &buf)
-    cdef int i, n, x, y
+def read_alpha(data, width, height, position):
+    pad = get_padding(width, index_point, 4)
+    c_array = ffi.new('unsigned char[]', width * height)
     n = i = 0
-    for y in range(height):
-        for x in range(width):
-            buf[i] = data[n + position]
+    for y in xrange(height):
+        for x in xrange(width):
+            c_array[i] = data[n + position]
             n += 1
             i += 1
         n += pad
-    return points
+    return c_array
 
-cdef inline generate_alpha(ImageItem item):
-    cdef int pad = get_padding(item.width, index_point, 4)
-    cdef int i, n, x, y
-    cdef char * alpha = item.alpha
-    cdef char * buf
-    points = allocate_memory(item.width * item.height + pad * item.height, &buf)
-    i = n = 0
-    for y in range(item.height):
-        for x in range(item.width):
-            buf[n] = alpha[i]
-            i += 1
-            n += 1
-        n += pad
-    return points
+# NEW!!!
+
+# cdef inline generate_alpha(item):
+#     cdef pad = get_padding(item.width, index_point, 4)
+#     cdef i, n, x, y
+#     cdef alpha = item.alpha
+#     cdef buf
+#     points = allocate_memory(item.width * item.height + pad * item.height, &buf)
+#     i = n = 0
+#     for y in range(item.height):
+#         for x in range(item.width):
+#             buf[n] = alpha[i]
+#             i += 1
+#             n += 1
+#         n += pad
+#     return points
     
-cdef inline generate_image(ImageItem item):
-    cdef int x, y
-    cdef int n = 0
-    cdef int i = 0
-    cdef char * image = item.image
-    cdef int pad = get_padding(item.width, point_instance)
-    cdef char * buf
-    points = allocate_memory((item.width * item.height + pad * item.height
-        ) * point_instance.size, &buf)
-    for y in range(item.height):
-        for x in range(item.width):
-            buf[n] = image[i+2]
-            buf[n+1] = image[i+1]
-            buf[n+2] = image[i]
-            i += 4
-            n += 3
-        n += pad * point_instance.size
-    return points
+# cdef inline generate_image(item):
+#     cdef x, y
+#     cdef n = 0
+#     cdef i = 0
+#     cdef image = item.image
+#     cdef pad = get_padding(item.width, point_instance)
+#     cdef buf
+#     points = allocate_memory((item.width * item.height + pad * item.height
+#         ) * point_instance.size, &buf)
+#     for y in range(item.height):
+#         for x in range(item.width):
+#             buf[n] = image[i+2]
+#             buf[n+1] = image[i+1]
+#             buf[n+2] = image[i]
+#             i += 4
+#             n += 3
+#         n += pad * point_instance.size
+#     return points
 
-# def generate_alpha(ImageItem item):
-    # cdef int pad = get_padding(item.width, index_point, 4)
+# OLD!!!
+
+# def generate_alpha(item):
+    # cdef pad = get_padding(item.width, index_point, 4)
     # data = ''
-    # cdef int i, x, y
+    # cdef i, x, y
     # alpha = item.alpha
     # i = 0
     # for y in range(item.height):
@@ -312,13 +267,13 @@ cdef inline generate_image(ImageItem item):
         # data += '\x00' * pad
     # return data
     
-# def generate_image(ImageItem item):
-    # cdef int x, y
-    # cdef int n = 0
-    # cdef int i = 0
+# def generate_image(item):
+    # cdef x, y
+    # cdef n = 0
+    # cdef i = 0
     # image = item.image
     # data = ''
-    # cdef int pad = get_padding(item.width, point_instance)
+    # cdef pad = get_padding(item.width, point_instance)
     # for y in range(item.height):
         # for x in range(item.width):
             # data += image[i+2]
@@ -338,45 +293,29 @@ IMAGE_FLAGS = BitDict(
     'Mac'
 )
 
-cdef class ImageItem(DataLoader):
-    cdef public:
-        int handle
-        int checksum # starts at imgWidth and ends at end of bitmap
-        int references
-        short width
-        short height
-        short xHotspot
-        short yHotspot
-        short actionX
-        short actionY
-        object flags
-        object image
-        object alpha
-        bint indexed
-        char graphicMode
-        tuple transparent
+class ImageItem(DataLoader):
+    __slots__ = ['handle', 'checksum', 'references', 'width', 'height',
+                 'xHotspot', 'yHotspot', 'actionX', 'actionY', 'flags',
+                 'image', 'alpha', 'indexed', 'graphicMode', 'transparent',
+                 'reader', 'pos']
 
-        ByteReader reader
-        size_t pos
-
-    cpdef initialize(self):
+    def initialize(self):
         self.flags = IMAGE_FLAGS.copy()
 
-    cpdef read(self, ByteReader reader):
+    def read(self, reader):
         self.handle = reader.readInt()
-        cdef bint load_now = self.settings.get('loadImages', True)
+        load_now = self.settings.get('loadImages', True)
         self.reader = reader
         self.pos = reader.tell()
         if load_now:
             self.load()
             return
 
-        cdef bint old = self.settings.get('old', False)
+        old = self.settings.get('old', False)
         if old:
             raise NotImplementedError('not supported')
 
-        cdef bint debug = self.settings.get('debug', False)
-        cdef int size
+        debug = self.settings.get('debug', False)
         if debug:
             reader.skipBytes(8)
             size = reader.readInt(True)
@@ -386,16 +325,15 @@ cdef class ImageItem(DataLoader):
             size = reader.readInt(True)
             reader.skipBytes(size)
 
-    cpdef load(self):
-        cdef ByteReader reader = self.reader
+    def load(self):
+        reader = self.reader
         if reader is None:
             return
         reader.seek(self.pos)
         self.reader = None
 
-        cdef bint old = self.settings.get('old', False)
-        cdef bint debug = self.settings.get('debug', False)
-        cdef ByteReader newReader
+        old = self.settings.get('old', False)
+        debug = self.settings.get('debug', False)
         if old:
             newReader = onepointfive.decompress(reader)
         elif debug:
@@ -410,7 +348,7 @@ cdef class ImageItem(DataLoader):
         else:
             self.checksum = newReader.readInt()
         self.references = newReader.readInt()
-        cdef int size = newReader.readInt(True)
+        size = newReader.readInt(True)
         
         if debug:
             newReader = newReader.readReader(size + 20)
@@ -430,14 +368,10 @@ cdef class ImageItem(DataLoader):
         else:
             self.transparent = newReader.readColor()
 
-        cdef int decompressed
         if self.flags['LZX']:
             decompressed = newReader.readInt()
             newReader = ByteReader(zlib.decompress(newReader.read()))
 
-        cdef BasePoint pointClass
-        cdef char * data
-        cdef int width, height
         width, height = self.width, self.height
         if self.graphicMode == 2:
             pointClass = index_point
@@ -462,8 +396,7 @@ cdef class ImageItem(DataLoader):
                                       % self.graphicMode)
 
         readerData = newReader.read()
-        data = readerData
-        cdef int alphaSize, imageSize
+        data = bytearray(readerData)
         if self.flags['RLE'] or self.flags['RLEW'] or self.flags['RLET']:
             image, bytesRead = read_rle(data, width, height, pointClass)
             alphaSize = size - bytesRead
@@ -475,9 +408,11 @@ cdef class ImageItem(DataLoader):
         if self.flags['Alpha']:
             pad = (alphaSize - width * height) / height
             self.alpha = read_alpha(data, width, height, size - alphaSize)
+        else:
+            self.alpha = None
     
     def write(self, reader):
-        cdef bint debug = self.settings.get('debug', False)
+        debug = self.settings.get('debug', False)
         dataReader = ByteReader()
 
         dataReader.write(generate_image(self))
@@ -496,7 +431,7 @@ cdef class ImageItem(DataLoader):
             newReader.writeByte(16)
         else:
             newReader.writeByte(0)
-        newReader.write(<bytes>('\x00\x00'))
+        newReader.write(b'\x00\x00')
         newReader.writeShort(self.xHotspot)
         newReader.writeShort(self.yHotspot)
         newReader.writeShort(self.actionX)
@@ -510,15 +445,10 @@ cdef class ImageItem(DataLoader):
         else:
             reader.writeReader(zlibdata.compress(newReader))
     
-    def createDisplay(self, frame = None, **kw):
-        foo = createDisplay(self, frame)
-        self.unload()
-        return foo
-    
     def getImageData(self, frame = None, **kw):
-        foo = getImageData(self, frame)
+        image = getImageData(self, frame)
         self.unload()
-        return foo
+        return ffi.buffer(image)[:]
 
     def unload(self):
         self.image = None
@@ -527,16 +457,11 @@ cdef class ImageItem(DataLoader):
     def getGraphicMode(self):
         return graphicModes[self.graphicMode]
 
-cdef class JavaImage(DataLoader):
-    cdef public:
-        int handle
-        int xHotspot, yHotspot
-        int actionX, actionY
-        int width, height
-        object data
-        bint flash
+class JavaImage(DataLoader):
+    __slots__ = ['handle', 'xHotspot', 'yHotspot', 'actionX', 'actionY',
+                 'width', 'height', 'data', 'flash']
 
-    cpdef read(self, ByteReader reader):
+    def read(self, reader):
         self.handle = reader.readShort()
         if self.settings.get('withSize', False):
             self.width = reader.readShort()
@@ -583,22 +508,19 @@ cdef class JavaImage(DataLoader):
         img = Image(data = self.data)
         return img.get_data()
 
-cdef class ImageBank(DataLoader):
-    cdef public:
-        dict itemDict
+class ImageBank(DataLoader):
+    __slots__ = ['itemDict']
     
     @property
     def items(self):
         return self.itemDict.values()
     
-    cpdef initialize(self):
+    def initialize(self):
         self.itemDict = {}
 
-    cpdef read(self, ByteReader reader):
-        cdef bint java = self.settings.get('java', False)
-        cdef int build = self.settings['build']
-        cdef int i
-        cdef int numberOfItems
+    def read(self, reader):
+        java = self.settings.get('java', False)
+        build = self.settings['build']
         if not java:
             if self.settings.get('debug', False):
                 path = self.readString(reader)

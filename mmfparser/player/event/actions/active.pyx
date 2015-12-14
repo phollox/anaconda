@@ -21,44 +21,44 @@ from pyglet import image
 from mmfparser.player.common import load_image
 from mmfparser.player.sprite import CreatedFrame
 
-cdef class SetAngle(Action):
+class SetAngle(Action):
     cdef void execute_instance(self, Instance instance):
         value = self.evaluate_index(0)
         instance.objectPlayer.set_angle(value)
 
-cdef class SetScale(Action):
+class SetScale(Action):
     cdef void execute_instance(self, Instance instance):
         value = self.evaluate_index(0)
         instance.objectPlayer.set_scale(value, value)
 
-cdef class SetXScale(Action):
+class SetXScale(Action):
     cdef void execute_instance(self, Instance instance):
         value = self.evaluate_index(0)
         instance.objectPlayer.set_scale(value, None)
 
-cdef class SetYScale(Action):
+class SetYScale(Action):
     cdef void execute_instance(self, Instance instance):
         value = self.evaluate_index(0)
         instance.objectPlayer.set_scale(None, value)
 
-cdef class StartAnimation(Action):
+class StartAnimation(Action):
     cdef void execute_instance(self, Instance instance):
         instance.objectPlayer.start_animation()
 
-cdef class StopAnimation(Action):
+class StopAnimation(Action):
     cdef void execute_instance(self, Instance instance):
         instance.objectPlayer.stop_animation()
 
-cdef class ForceFrame(Action):
+class ForceFrame(Action):
     cdef void execute_instance(self, Instance instance):
         value = self.evaluate_index(0)
         instance.objectPlayer.force_frame(True, value)
 
-cdef class RestoreFrame(Action):
+class RestoreFrame(Action):
     cdef void execute_instance(self, Instance instance):
         instance.objectPlayer.force_frame(False)
 
-cdef class ReplaceColor(Action):
+class ReplaceColor(Action):
     iterateObjects = False
     cdef void execute(self):
         color1 = self.get_color(self.get_parameter(0))
@@ -73,7 +73,7 @@ cdef inline int make_special_value(int value, int max):
         return max - 1
     return value
 
-cdef class LoadActiveFrame(Action):
+class LoadActiveFrame(Action):
     iterateObjects = False
     cdef void execute(self):
         filename = self.get_filename(self.get_parameter(0))
@@ -100,12 +100,12 @@ cdef class LoadActiveFrame(Action):
         except IOError:
             pass
 
-cdef class PasteActive(Action):
+class PasteActive(Action):
     cdef void execute_instance(self, Instance instance):
         collisionType = self.get_parameter(0).value
         instance.objectPlayer.paste(collisionType)
 
-cdef class AddBackdrop(Action):
+class AddBackdrop(Action):
     cdef void execute_instance(self, Instance instance):
         collisionType = self.get_parameter(0).value
         instance.objectPlayer.paste(collisionType)

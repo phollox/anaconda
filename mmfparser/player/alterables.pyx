@@ -23,7 +23,7 @@ cdef fill_dict(loader, dict fillDict):
         for index, item in enumerate(loader.items):
             fillDict[index] = item
 
-cdef class Values:
+class Values:
     def __init__(self, values = None, strings = None):
         self.initialize()
         self.values = {}
@@ -34,39 +34,39 @@ cdef class Values:
     cdef initialize(self):
         pass
             
-    cpdef str get_string(self, index):
+    def get_string(self, index):
         try:
             return self.strings[index]
         except KeyError:
             return ''
     
-    cpdef bint set_string(self, index, value):
+    def set_string(self, index, value):
         self.strings[index] = value
         return True
     
-    cpdef object get_value(self, index):
+    def get_value(self, index):
         try:
             return self.values[index]
         except KeyError:
             return 0
     
-    cpdef bint set_value(self, index, value):
+    def set_value(self, index, value):
         self.values[index] = value
         return True
     
-    cpdef Values copy(self):
+    def copy(self):
         cdef Values values = self.__class__()
         values.values = self.values.copy()
         values.strings = self.strings.copy()
         return values
 
-cdef class Alterables(Values):
+class Alterables(Values):
     cdef initialize(self):
         self.stringCount = 10
         self.valueCount = 26
         self.flags = [False for _ in xrange(32)]
 
-cdef class Globals(Values):
+class Globals(Values):
     cdef initialize(self):
         self.stringCount = 26
         self.valueCount = 26

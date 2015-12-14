@@ -19,21 +19,9 @@ import glob
 import sys
 import os
 import platform
+import cffi
+ffi = cffi.FFI()
 from setuptools import setup
-from Cython.Distutils import build_ext
-from Cython.Distutils.extension import Extension
-from Cython.Build import cythonize
-
-from Cython.Compiler import Options
-directive_defaults = Options.directive_defaults
-Options.docstrings = False
-if sys.argv[0].count('profile'):
-    directive_defaults['profile'] = True
-
-directive_defaults['cdivision'] = True
-directive_defaults['infer_types'] = True
-directive_defaults['auto_cpdef'] = True
-directive_defaults['wraparound'] = False
 
 ext_modules = []
 libraries = []
@@ -51,27 +39,32 @@ if trans_start is not None:
 
 kw = dict(language='c++')
 
-for name in names:
-    if name.startswith('#'):
-        continue
-    ext_modules.append(Extension(name,
-                                 ['./' + name.replace('.', '/') + '.pyx'],
-                                 define_macros=define_macros,
-                                 include_dirs=include_dirs, **kw))
+# for name in names:
+#     if name.startswith('#'):
+#         continue
+#     ext_modules.append(Extension(name,
+#                                  ['./' + name.replace('.', '/') + '.pyx'],
+#                                  define_macros=define_macros,
+#                                  include_dirs=include_dirs, **kw))
 
-webp_srcs = glob.glob('./mmfparser/webp/*/*.c')
-ext_modules.append(Extension('mmfparser.webp',
-                             ['./mmfparser/webp.pyx'] + webp_srcs,
-                             include_dirs=include_dirs + ['./mmfparser/webp'],
-                             **kw))
+# webp_srcs = glob.glob('./mmfparser/webp/*/*.c')
+# ext_modules.append(Extension('mmfparser.webp',
+#                              ['./mmfparser/webp.pyx'] + webp_srcs,
+#                              include_dirs=include_dirs + ['./mmfparser/webp'],
+#                              **kw))
 
-zopfli_srcs = glob.glob('./mmfparser/zopfli/zopfli/*.c')
-ext_modules.append(Extension('mmfparser.zopfli',
-                             ['./mmfparser/zopfli.pyx'] + zopfli_srcs,
-                             include_dirs=include_dirs + ['./mmfparser/zopfli'],
-                             **kw))
+# zopfli_srcs = glob.glob('./mmfparser/zopfli/zopfli/*.c')
+# ext_modules.append(Extension('mmfparser.zopfli',
+#                              ['./mmfparser/zopfli.pyx'] + zopfli_srcs,
+#                              include_dirs=include_dirs + ['./mmfparser/zopfli'],
+#                              **kw))
+
+import _cffi_backend
+requires_cffi = "cffi==" + _cffi_backend.__version__
 
 setup(
     name = 'mmfparser extensions',
-    ext_modules = cythonize(ext_modules, compile_time_env=compile_env)
+    install_requires=[requires_cffi],
+    cffi_modules=["./mmfparser/build_zopfli.py:ffi"],
+    setup_requires=[requires_cffi]
 )

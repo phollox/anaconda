@@ -78,20 +78,20 @@ def collide_line(x1, y1, x2, y2, line_x1, line_y1, line_x2, line_y2):
 import weakref
 generated_masks = weakref.WeakKeyDictionary()
 
-cdef class MaskContainer:
+class MaskContainer:
     cdef PMASK * mask
     
     def __dealloc__(self):
         destroy_pmask(self.mask)
 
-cdef class CollisionBase:
+class CollisionBase:
     cdef void get_rect(self, int * r_x1, int * r_y1, int * r_x2, int * r_y2):
         pass # default does nothing
         
     cdef bint get_bit(self, int x, int y):
         return get_pmask_pixel(self.mask, x, y)
 
-cdef class ObjectCollision(CollisionBase):
+class ObjectCollision(CollisionBase):
     cdef void created(self):
         self.xScale = self.yScale = 1.0
         self.parent = self.objectPlayer.parent
@@ -109,11 +109,11 @@ cdef class ObjectCollision(CollisionBase):
         if self.isPlatform:
             destroy_pmask(self.mask)
 
-    cpdef set_angle(self, int value):
+    def set_angle(self, int value):
         self.angle = value
         self.update_transform()
     
-    cpdef set_scale(self, double xScale, double yScale):
+    def set_scale(self, double xScale, double yScale):
         self.xScale = xScale
         self.yScale = yScale
         self.update_transform()
@@ -209,7 +209,7 @@ cdef class ObjectCollision(CollisionBase):
         r_x2[0] = (<Instance>self.parent).x2
         r_y2[0] = (<Instance>self.parent).y2
 
-cdef class Collision(ObjectCollision):
+class Collision(ObjectCollision):
     def __init__(self, image, sprite, BaseObject objectPlayer):
         self.image = image
         self.objectPlayer = objectPlayer
@@ -291,7 +291,7 @@ cdef inline PMASK * make_rectangle_mask(int width, int height):
             set_pmask_pixel(mask, x, y, 1)
     return mask
 
-cdef class BoundingBox(ObjectCollision):
+class BoundingBox(ObjectCollision):
     def __init__(self, BaseObject objectPlayer):
         self.width = objectPlayer.width or 0
         self.height = objectPlayer.height or 0
@@ -307,7 +307,7 @@ cdef class BoundingBox(ObjectCollision):
         destroy_pmask(self.mask)
         self.mask = make_rectangle_mask(self.width, self.height)
 
-cdef class Rectangle(CollisionBase):
+class Rectangle(CollisionBase):
     def __init__(self, int x, int y, int width, int height):
         self.x1 = x
         self.y1 = y
@@ -329,7 +329,7 @@ cdef class Rectangle(CollisionBase):
 
 cdef PMASK * point_mask = make_rectangle_mask(1, 1)
 
-cdef class Point(CollisionBase):
+class Point(CollisionBase):
     def __init__(self, int x, int y):
         self.x1 = x
         self.y1 = y

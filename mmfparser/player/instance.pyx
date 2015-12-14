@@ -58,7 +58,7 @@ cdef inline void initialize_movements():
 
 cdef double nan = float('nan')
 
-cdef class InkEffect:
+class InkEffect:
     def __init__(self, effect, parameter = None):
         self.effect = effect
         if effect == 'shaders':
@@ -171,7 +171,7 @@ cdef inline void update_player_position(Instance self):
         objectPlayer.set_position(glX, glY)
 
 @cython.final
-cdef class Instance(PlayerChild):
+class Instance(PlayerChild):
     def initialize(self, objectInstance, int layer = -1):
         initialize_movements()
 
@@ -342,7 +342,7 @@ cdef class Instance(PlayerChild):
         self.x2 = self.x1 + width
         self.y2 = self.y1 + height
     
-    cpdef set_position(self, double x, double y, bint fromAction = False):
+    def set_position(self, double x, double y, bint fromAction = False):
         if x == self.x and y == self.y:
             return
         self.x = x
@@ -354,17 +354,17 @@ cdef class Instance(PlayerChild):
             self.collisionSet = False
             self.currentMovement.breakMovement = True
     
-    cpdef object_changed(self):
+    def object_changed(self):
         if self.layer is None: # are we initialized yet?
             return
         self.update_bounding_box()
     
-    cpdef update_collisions(self, list instances):
+    def update_collisions(self, list instances):
         cdef bint looping = self.player.eventPlayer.looping
         if self.currentMovement:
             self.currentMovement.update_collisions(set(instances))
     
-    cpdef set_direction(self, int direction, bint force = True):
+    def set_direction(self, int direction, bint force = True):
         direction = direction % 32
         self.direction = direction
         self.objectPlayer.set_direction(direction, force)
@@ -372,16 +372,16 @@ cdef class Instance(PlayerChild):
         and self.currentMovement.direction != direction):
             self.currentMovement.set_direction(direction)
     
-    cpdef inline int get_direction(self):
+    def inline int get_direction(self):
         return self.direction
     
-    cpdef inline bint is_leaving(self):
+    def inline bint is_leaving(self):
         return (self.y1 < 0 or
             self.y2 > self.frame.virtualHeight or
             self.x1 < 0 or
             self.x2 > self.frame.virtualWidth)
         
-    cpdef inline bint outside_playfield(self):
+    def inline bint outside_playfield(self):
         cdef int x1, y1, x2, y2
         cdef bint outsideY, outsideX
         x1, y1, x2, y2 = self.x1, self.y1, self.x2, self.y2
@@ -389,14 +389,14 @@ cdef class Instance(PlayerChild):
         outsideX = x1 > self.frame.virtualWidth or x2 < 0
         return outsideX or outsideY
     
-    cpdef int get_leaving_corners(self):
+    def get_leaving_corners(self):
         cdef int first = get_leaving_corners(self.player.frame, self.x1, 
             self.y1, self.x2, self.y2)
         cdef int second = get_leaving_corners(self.player.frame,
             self.oldX1, self.oldY1, self.oldX2, self.oldY2)
         return (~second & first)
 
-    cpdef int get_entering_corners(self):
+    def get_entering_corners(self):
         cdef int second
         cdef int first = get_entering_corners(self.player.frame,
             self.oldX1, self.oldY1, self.oldX2, self.oldY2)
@@ -407,7 +407,7 @@ cdef class Instance(PlayerChild):
                 return second ^ first
         return 0
     
-    cpdef inline tuple get_outside_corners(self):
+    def inline tuple get_outside_corners(self):
         cdef int x1, y1, x2, y2
         cdef bint outsideDown, outsideUp, outsideRight, outsideLeft
         x1, y1, x2, y2 = self.x1, self.y1, self.x2, self.y2
@@ -419,12 +419,12 @@ cdef class Instance(PlayerChild):
         outsideLeft = x2 < 0
         return (outsideUp, outsideDown, outsideLeft, outsideRight)
 
-    cpdef inline bint in_playfield(self, int x_border = 0, int y_border = 0):
+    def inline bint in_playfield(self, int x_border = 0, int y_border = 0):
         return self.inside_zone(x_border, y_border, 
             self.frame.virtualWidth - x_border, 
             self.frame.virtualHeight - y_border)
     
-    cpdef inline bint inside_window(self, int x_border = 0, int y_border = 0):
+    def inline bint inside_window(self, int x_border = 0, int y_border = 0):
         cdef int x1, y1, x2, y2
         x1 = self.player.x1 + x_border
         x2 = self.player.x2 - x_border
@@ -432,7 +432,7 @@ cdef class Instance(PlayerChild):
         y2 = self.player.y2 - y_border
         return self.inside_zone(x1, y1, x2, y2)
     
-    cpdef inline bint inside_zone(self, int xZone, int yZone, int xZone2, 
+    def inline bint inside_zone(self, int xZone, int yZone, int xZone2, 
                               int yZone2):
         cdef int x1, y1, x2, y2
         cdef bint insideY, insideX
@@ -441,12 +441,12 @@ cdef class Instance(PlayerChild):
         insideX = x2 <= xZone2 and x1 >= xZone
         return insideX and insideY
     
-    cpdef inline bint in_zone(self, int xZone, int yZone, int xZone2, 
+    def inline bint in_zone(self, int xZone, int yZone, int xZone2, 
                               int yZone2):
         return collides(<int>self.x, <int>self.y, <int>self.x, <int>self.y,
             xZone, yZone, xZone2, yZone2)
         
-    cpdef inline bint mouse_over(self):
+    def inline bint mouse_over(self):
         return self in self.player.mouse.over
     
     def fire_handler(self, name, *args):
@@ -586,7 +586,7 @@ cdef class Instance(PlayerChild):
         self.layer.remove(self)
         self.detach()
     
-    cpdef on_detach(self):
+    def on_detach(self):
         self.destroyed = True
         self.flash(False)
     

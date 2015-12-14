@@ -117,7 +117,7 @@ class Window(pyglet.window.Window):
     def on_resize(self, width, height):
         return
 
-cdef class GamePlayer:
+class GamePlayer:
     def __init__(self, gameData, PlayerChild parent = None):
         # self.debug = {'draw' : True, 'clock' : True, 'events' : True}
         self.parent = parent
@@ -408,7 +408,7 @@ cdef class GamePlayer:
         self.get_window_coordinates(x, y, &glX, &glY)
         return glX, glY
     
-    cpdef tuple get_real_coordinates(self, double x, double y):
+    def get_real_coordinates(self, double x, double y):
         if self.viewport is not None:
             x, y = self.viewport.convert_coordinates(x, y)
         x = x - self.addX + self.offsetX
@@ -418,7 +418,7 @@ cdef class GamePlayer:
             y = self.realHeight - y - self.addY + self.offsetY
         return x, y
     
-    cpdef tuple get_window_rect(self):
+    def get_window_rect(self):
         return self.x1, self.y1, self.x2, self.y2
     
     cdef void update_window_rect(self):
@@ -488,7 +488,7 @@ cdef class GamePlayer:
     def update_away(self, *arg, **kw):
         self.awayTime = 0
     
-    cpdef double get_time(self):
+    def get_time(self):
         return self.time
     
     def get_offset_time(self):
@@ -658,7 +658,7 @@ cdef class GamePlayer:
                 ApplicationResumed)
             self.eventPlayer.generate_event(ApplicationResumed)
     
-    cpdef draw(self, bint draw_window = True):
+    def draw(self, bint draw_window = True):
         if self.realWidth == 0 or self.realHeight == 0:
             return
         cdef bint child = self.parent is not None

@@ -26,7 +26,7 @@ from mmfparser.player.event.player cimport EventPlayer
 
 from pyglet.window import key
 
-cpdef int get_direction(bint up, bint down, bint left, bint right):
+def get_direction(bint up, bint down, bint left, bint right):
     if up and down:
         up = False
         down = False
@@ -79,7 +79,7 @@ cdef inline void set_position(Instance instance, double x, double y):
     instance.set_position(x, y)
     instance.update_playfield()
 
-cdef class MovementPlayer(PlayerChild):
+class MovementPlayer(PlayerChild):
     property stopped:
         def __get__(self):
             return self.speed == 0
@@ -111,7 +111,7 @@ cdef class MovementPlayer(PlayerChild):
             self.set_uncrouch = active.set_uncrouch
             self.set_walk = active.set_walk
         
-    cpdef ready(self):
+    def ready(self):
         cdef Instance parent = self.parent
         if not parent.updateEnabled:
             parent.updateEnabled = True
@@ -123,10 +123,10 @@ cdef class MovementPlayer(PlayerChild):
             return ACCELERATORS[value]
         return value
     
-    cpdef double get_pixels(self, double value):
+    def get_pixels(self, double value):
         return value * 0.125
     
-    cpdef set_direction(self, direction = None):
+    def set_direction(self, direction = None):
         if direction is None:
             if hasattr(self.movement, 'directionAtStart'):
                 direction = make_direction(self.movement.directionAtStart)
@@ -177,7 +177,7 @@ cdef class MovementPlayer(PlayerChild):
     def speed_changed(self):
         pass
     
-    cpdef update(self):
+    def update(self):
         if self._useKeys:        
             is_down = self.is_down_index
             up = is_down(0)
@@ -190,7 +190,7 @@ cdef class MovementPlayer(PlayerChild):
         else:
             self.move()
             
-    cpdef tuple move_object(self, double addX, double addY):
+    def move_object(self, double addX, double addY):
         cdef Instance parent = self.parent
         if addX == 0 and addY == 0:
             return False, False
@@ -280,7 +280,7 @@ cdef class MovementPlayer(PlayerChild):
 
         return collidedX, collidedY
 
-    cpdef bint handle_collisions(self, set instances = None):
+    def handle_collisions(self, set instances = None):
         cdef Instance parent = self.parent
         cdef int objectInfo = parent.handle
         if not self.player.frame.collision_enabled(objectInfo):
@@ -327,7 +327,7 @@ cdef class MovementPlayer(PlayerChild):
             return False
         return True
     
-    cpdef bint update_collisions(self, set instances):
+    def update_collisions(self, set instances):
         cdef Instance parent = self.parent
         cdef int objectInfo = parent.handle
         if not self.player.frame.collision_enabled(objectInfo):
@@ -347,7 +347,7 @@ cdef class MovementPlayer(PlayerChild):
                 if instance.currentMovement:
                     instance.currentMovement.overlapping[parent] = False
 
-    cpdef bint instance_collides(self, Instance instance):
+    def instance_collides(self, Instance instance):
         return True
     
     def test_below(self, int y):

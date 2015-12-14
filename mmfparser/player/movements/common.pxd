@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-cdef class MovementPlayer
+class MovementPlayer
 
 from mmfparser.player.objects.common cimport BaseObject
 from mmfparser.player.instance cimport Instance
 from mmfparser.player.common cimport PlayerChild
 
-cdef class MovementPlayer(PlayerChild):
+class MovementPlayer(PlayerChild):
     cdef public:
         object player_handler
         double sinceLast
@@ -42,11 +42,11 @@ cdef class MovementPlayer(PlayerChild):
         bint hasAnimations
         bint breakMovement
     
-    cpdef update(self)
-    cpdef ready(self)
-    cpdef double get_pixels(self, double value)
-    cpdef set_direction(self, direction = ?)
-    cpdef tuple move_object(self, double addX, double addY)
-    cpdef bint handle_collisions(self, set instances = ?)
-    cpdef bint update_collisions(self, set instances)
-    cpdef bint instance_collides(self, Instance instance)
+    def update(self)
+    def ready(self)
+    def get_pixels(self, double value)
+    def set_direction(self, direction = ?)
+    def move_object(self, double addX, double addY)
+    def handle_collisions(self, set instances = ?)
+    def update_collisions(self, set instances)
+    def instance_collides(self, Instance instance)

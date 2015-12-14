@@ -15,4 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-cdef class Clockfrom mmfparser.player.main cimport GamePlayercdef class Clock:    cdef:        list scheduled_items        list scheduled_interval_items        double dt, time        GamePlayer player    cdef void tick(self, double dt)    cpdef unschedule(self, func)    cdef double get_fps(self)
+class Clock
+
+from mmfparser.player.main cimport GamePlayer
+
+class Clock:
+    cdef:
+        list scheduled_items
+        list scheduled_interval_items
+        double dt, time
+        GamePlayer player
+
+    cdef void tick(self, double dt)
+    def unschedule(self, func)
+    cdef double get_fps(self)

@@ -32,11 +32,11 @@ from mmfparser.player.instance cimport Instance
 
 # Actions
 
-cdef class DefaultObject
-cdef class OnLoop
-cdef class OnFunction
+class DefaultObject
+class OnLoop
+class OnFunction
 
-cdef class FunctionAction(Action):
+class FunctionAction(Action):
     cdef public:
         list conditions
         str name
@@ -83,7 +83,7 @@ cdef class FunctionAction(Action):
     cdef void set_arguments(self, DefaultObject objectPlayer):
         pass
 
-cdef class Action0(FunctionAction):
+class Action0(FunctionAction):
     """
     Call function
 
@@ -91,7 +91,7 @@ cdef class Action0(FunctionAction):
     0: Function name (EXPSTRING, ExpressionParameter)
     """
 
-cdef class Action1(FunctionAction):
+class Action1(FunctionAction):
     """
     Call function ( Int )
 
@@ -103,7 +103,7 @@ cdef class Action1(FunctionAction):
     cdef void set_arguments(self, DefaultObject objectPlayer):
         objectPlayer.intA = self.evaluate_index(1)
 
-cdef class Action2(FunctionAction):
+class Action2(FunctionAction):
     """
     Call function ( Int, Int )
 
@@ -117,7 +117,7 @@ cdef class Action2(FunctionAction):
         objectPlayer.intA = self.evaluate_index(1)
         objectPlayer.intB = self.evaluate_index(2)
 
-cdef class Action3(FunctionAction):
+class Action3(FunctionAction):
     """
     Call function ( String )
 
@@ -129,7 +129,7 @@ cdef class Action3(FunctionAction):
     cdef void set_arguments(self, DefaultObject objectPlayer):
         objectPlayer.stringA = self.evaluate_index(1)
 
-cdef class Action4(FunctionAction):
+class Action4(FunctionAction):
     """
     Call function ( String, String )
 
@@ -143,7 +143,7 @@ cdef class Action4(FunctionAction):
         objectPlayer.stringA = self.evaluate_index(1)
         objectPlayer.stringB = self.evaluate_index(2)
 
-cdef class Action5(FunctionAction):
+class Action5(FunctionAction):
     """
     Call function ( Int, String )
 
@@ -157,12 +157,12 @@ cdef class Action5(FunctionAction):
         objectPlayer.intA = self.evaluate_index(1)
         objectPlayer.stringB = self.evaluate_index(2)
 
-cdef class ArgumentAction(Action):
+class ArgumentAction(Action):
     cdef void execute_instance(self, Instance instance):
         <DefaultObject>(instance.objectPlayer).waitingArguments.append(
             self.evaluate_index(0))
 
-cdef class Action6(ArgumentAction):
+class Action6(ArgumentAction):
     """
     Function Arugments->Add int argument
 
@@ -170,7 +170,7 @@ cdef class Action6(ArgumentAction):
     0: Int argument (EXPRESSION, ExpressionParameter)
     """
 
-cdef class Action7(ArgumentAction):
+class Action7(ArgumentAction):
     """
     Function Arugments->Add float argument
 
@@ -178,7 +178,7 @@ cdef class Action7(ArgumentAction):
     0: Float argument (EXPRESSION, ExpressionParameter)
     """
 
-cdef class Action8(ArgumentAction):
+class Action8(ArgumentAction):
     """
     Function Arugments->Add string argument
 
@@ -186,7 +186,7 @@ cdef class Action8(ArgumentAction):
     0: String argument (EXPSTRING, ExpressionParameter)
     """
 
-cdef class ReturnAction(Action):
+class ReturnAction(Action):
     cdef void execute_instance(self, Instance instance):
         cdef DefaultObject objectPlayer = instance.objectPlayer
         objectPlayer.returned = True
@@ -195,16 +195,16 @@ cdef class ReturnAction(Action):
     cdef object get_return(self, Instance instance):
         return None
 
-cdef class Action9(ReturnAction):
+class Action9(ReturnAction):
     """
     Return->Return
     """
 
-cdef class ReturnVariableAction(ReturnAction):
+class ReturnVariableAction(ReturnAction):
     cdef object get_return(self, Instance instance):
         return self.evaluate_index(0)
 
-cdef class Action10(ReturnVariableAction):
+class Action10(ReturnVariableAction):
     """
     Return->Return an int
 
@@ -212,7 +212,7 @@ cdef class Action10(ReturnVariableAction):
     0: Int to return (EXPRESSION, ExpressionParameter)
     """
 
-cdef class Action11(ReturnVariableAction):
+class Action11(ReturnVariableAction):
     """
     Return->Return a float
 
@@ -220,7 +220,7 @@ cdef class Action11(ReturnVariableAction):
     0: Float to return (EXPRESSION, ExpressionParameter)
     """
 
-cdef class Action12(ReturnVariableAction):
+class Action12(ReturnVariableAction):
     """
     Return->Return a string
 
@@ -228,7 +228,7 @@ cdef class Action12(ReturnVariableAction):
     0: String to return (EXPSTRING, ExpressionParameter)
     """
 
-cdef class Action13(Action):
+class Action13(Action):
     """
     Start a loop
 
@@ -269,7 +269,7 @@ cdef class Action13(Action):
         del objectPlayer.loopIndexes[self.name]
         objectPlayer.loopIndex = oldIndex
 
-cdef class Action14(Action):
+class Action14(Action):
     """
     Stop curent loop
     """
@@ -277,7 +277,7 @@ cdef class Action14(Action):
     cdef void execute_instance(self, Instance instance):
         (<DefaultObject>instance.objectPlayer).loopStopped = True
 
-cdef class Action15(Action):
+class Action15(Action):
     """
     Set loop index
 
@@ -292,7 +292,7 @@ cdef class Action15(Action):
 
 # Conditions
 
-cdef class OnFunction(Condition):
+class OnFunction(Condition):
     """
     On Function
 
@@ -310,7 +310,7 @@ cdef class OnFunction(Condition):
             self.name = self.evaluate_index(0)
         return self.name
 
-cdef class OnLoop(Condition):
+class OnLoop(Condition):
     """
     On loop
 
@@ -330,7 +330,7 @@ cdef class OnLoop(Condition):
 
 # Expressions
 
-cdef class Expression0(Expression):
+class Expression0(Expression):
     """
     Get loop index of a loop
 
@@ -342,7 +342,7 @@ cdef class Expression0(Expression):
     cdef object evaluate_instance(self, Instance instance):
         return (<DefaultObject>instance.objectPlayer).loopIndexes.get(self.next_argument(), 0)
 
-cdef class Expression1(Expression):
+class Expression1(Expression):
     """
     Get current loop index
     Return type: Int
@@ -351,7 +351,7 @@ cdef class Expression1(Expression):
     cdef object evaluate_instance(self, Instance instance):
         return (<DefaultObject>instance.objectPlayer).loopIndex
 
-cdef class Expression2(Expression):
+class Expression2(Expression):
     """
     Get int argument A
     Return type: Int
@@ -360,7 +360,7 @@ cdef class Expression2(Expression):
     cdef object evaluate_instance(self, Instance instance):
         return (<DefaultObject>instance.objectPlayer).intA or 0
 
-cdef class Expression3(Expression):
+class Expression3(Expression):
     """
     Get int argument B
     Return type: Int
@@ -369,7 +369,7 @@ cdef class Expression3(Expression):
     cdef object evaluate_instance(self, Instance instance):
         return (<DefaultObject>instance.objectPlayer).intB or 0
 
-cdef class Expression4(Expression):
+class Expression4(Expression):
     """
     Get string argument A
     Return type: String
@@ -378,7 +378,7 @@ cdef class Expression4(Expression):
     cdef object evaluate_instance(self, Instance instance):
         return (<DefaultObject>instance.objectPlayer).stringA or ''
 
-cdef class Expression5(Expression):
+class Expression5(Expression):
     """
     Get string argument B
     Return type: String
@@ -387,7 +387,7 @@ cdef class Expression5(Expression):
     cdef object evaluate_instance(self, Instance instance):
         return (<DefaultObject>instance.objectPlayer).stringB or ''
 
-cdef class Expression6(Expression):
+class Expression6(Expression):
     """
     Get value argument at
 
@@ -402,7 +402,7 @@ cdef class Expression6(Expression):
         except IndexError:
             return 0
 
-cdef class Expression7(Expression):
+class Expression7(Expression):
     """
     Get string argument at
 
@@ -417,7 +417,7 @@ cdef class Expression7(Expression):
         except IndexError:
             return ''
 
-cdef class Expression8(Expression):
+class Expression8(Expression):
     """
     Get return value
     Return type: Int
@@ -428,7 +428,7 @@ cdef class Expression8(Expression):
             return (<DefaultObject>instance.objectPlayer).returnValue
         return 0
 
-cdef class Expression9(Expression):
+class Expression9(Expression):
     """
     Get return string
     Return type: String
@@ -439,7 +439,7 @@ cdef class Expression9(Expression):
             return (<DefaultObject>instance.objectPlayer).returnValue
         return ''
 
-cdef class DefaultObject(ObjectPlayer):
+class DefaultObject(ObjectPlayer):
     cdef public:
         int loopIndex
         dict loopIndexes

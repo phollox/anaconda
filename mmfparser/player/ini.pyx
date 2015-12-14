@@ -22,7 +22,7 @@ cdef extern from "minIni.c":
 
 cdef char[500] buffer
 
-cdef class FastINI:
+class FastINI:
     cdef:
         bytes name
 

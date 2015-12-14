@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-cdef class ACEBase
-cdef class ACBase
-cdef class BaseParameter
-cdef class ValueParameter
-cdef class BaseExpression
-cdef class ExpressionList
-cdef class ConstantExpressionList
+class ACEBase
+class ACBase
+class BaseParameter
+class ValueParameter
+class BaseExpression
+class ExpressionList
+class ConstantExpressionList
 
 from mmfparser.player.frame cimport Frame
 from mmfparser.player.event.player cimport Group, EventPlayer
@@ -34,7 +34,7 @@ from cpython cimport PyObject, Py_INCREF, Py_DECREF
 
 cimport cython
 
-cdef class ACEBase(PlayerChild):
+class ACEBase(PlayerChild):
     cdef public:
         object loader
         bint _iterateObjects
@@ -47,48 +47,48 @@ cdef class ACEBase(PlayerChild):
 
     cdef void _initialize(self, loader)
     cdef void created(self)
-    cpdef Instance get_instance(self, objectInfo = ?)
-    cpdef list get_instances(self, objectInfo = ?)
-    cpdef list resolve_objects(self, objectInfo)
-    cpdef list get_all_instances(self, objectInfo = ?)
-    cpdef select_instances(self, list instanceList, objectInfo = ?)
-    cpdef get_frame_instances(self)
-    cpdef select_frame_instances(self, list instanceList, list allInstances = ?)
-    cpdef evaluate_expression(self, object loader)
-    cpdef evaluate_index(self, int index)
+    def Instance get_instance(self, objectInfo = ?)
+    def list get_instances(self, objectInfo = ?)
+    def list resolve_objects(self, objectInfo)
+    def list get_all_instances(self, objectInfo = ?)
+    def select_instances(self, list instanceList, objectInfo = ?)
+    def get_frame_instances(self)
+    def select_frame_instances(self, list instanceList, list allInstances = ?)
+    def evaluate_expression(self, object loader)
+    def evaluate_index(self, int index)
     
     # parameter stuff
-    cpdef direction_from(self, x1, y1, x2, y2, f = ?)
-    cpdef get_time(self, parameter)
-    cpdef str get_filename(self, parameter)
-    cpdef tuple get_color(self, parameter)
-    cpdef get_alterable_index(self, parameter)
-    cpdef get_global_index(self, parameter)
-    cpdef get_parameter_value(self, parameter)
-    cpdef int get_direction(self, parameter)
-    cpdef list get_directions(self, parameter)
-    cpdef list get_positions(self, position)
+    def direction_from(self, x1, y1, x2, y2, f = ?)
+    def get_time(self, parameter)
+    def get_filename(self, parameter)
+    def get_color(self, parameter)
+    def get_alterable_index(self, parameter)
+    def get_global_index(self, parameter)
+    def get_parameter_value(self, parameter)
+    def get_direction(self, parameter)
+    def list get_directions(self, parameter)
+    def list get_positions(self, position)
 
-cdef class BaseParameter(PlayerChild):
+class BaseParameter(PlayerChild):
     cdef public bint isExpression
     cdef void initialize(self, loader)
 
-cdef class ValueParameter(BaseParameter):
+class ValueParameter(BaseParameter):
     cdef public object value
 
-cdef class BaseExpression(BaseParameter):
+class BaseExpression(BaseParameter):
     pass
 
-cdef class ExpressionList(BaseExpression):
+class ExpressionList(BaseExpression):
     cdef:
         int size
         PyObject ** items
 
-cdef class ConstantExpressionList(BaseExpression):
+class ConstantExpressionList(BaseExpression):
     cdef public object value
 
-cdef class ACBase(ACEBase):
+class ACBase(ACEBase):
     cdef public:
         list parameters
         
-    cpdef get_parameter(self, int index)
+    def get_parameter(self, int index)

@@ -15,15 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-cdef class PlayerChild
+class PlayerChild
 
 cdef object replace_color(image, int r1, int g1, int b1, int r2, int g2, int b2)
 
-cpdef inline unsigned int make_color_number(unsigned char r, unsigned char g, 
+def inline unsigned int make_color_number(unsigned char r, unsigned char g, 
                                   unsigned char b):
     return (r | g << 8 | b << 16)
 
-cpdef inline tuple get_color_number(unsigned int value):
+def inline tuple get_color_number(unsigned int value):
     return value & 0xFF, (value & 0xFF00) >> 8, (value & 0xFF0000) >> 16
 
 # math stuff
@@ -80,7 +80,7 @@ cdef inline void transform_rect(int width, int height, double co,
 
 from mmfparser.player.main cimport GamePlayer
 
-cdef class PlayerChild:
+class PlayerChild:
     cdef:
         list _childs
 
@@ -90,7 +90,7 @@ cdef class PlayerChild:
         bint detached
     
     cdef void init(self, object player, PlayerChild parent)
-    cpdef detach(self)
-    cpdef on_detach(self)
+    def detach(self)
+    def on_detach(self)
     cdef void _detach(self)
-    cpdef PlayerChild new(self, type typeClass)
+    def PlayerChild new(self, type typeClass)

@@ -43,14 +43,14 @@ class GroupEnd(TrueCondition):
 class NewGroup(TrueCondition):
     pass
 
-cdef class CompareGlobalValue(Condition):
+class CompareGlobalValue(Condition):
     cdef bint check(self):
         value = self.player.globals.get_value(self.get_global_index(
             self.get_parameter(0)))
         evaluated = self.evaluate_index(1)
         return self.compare(value, evaluated)
 
-cdef class CompareGlobalString(Condition):
+class CompareGlobalString(Condition):
     cdef bint check(self):
         value = self.player.globals.get_string(self.get_global_index(
             self.get_parameter(0)))
@@ -65,7 +65,7 @@ class Once(Condition):
             return True
         return False
 
-cdef class Compare(Condition):
+class Compare(Condition):
     cdef bint check(self):
         value1 = self.evaluate_index(0)
         value2 = self.evaluate_index(1)
@@ -105,11 +105,11 @@ class GroupActivated(Condition):
     def check(self):
         return self.container.is_enabled() != self.negated
 
-cdef class OnLoop(Condition):
+class OnLoop(Condition):
     cdef bint check(self):
         return True
         
-cdef class PickRandom(Condition):
+class PickRandom(Condition):
     def created(self):
         self._iterateObjects = False
     
@@ -120,13 +120,13 @@ cdef class PickRandom(Condition):
         self.select_instances([random.choice(instances)])
         return True
 
-cdef class Chance(Condition):
+class Chance(Condition):
     cdef bint check(self):
         value1 = self.evaluate_index(0)
         value2 = self.evaluate_index(1)
         return random.randrange(value2) <= value1
 
-cdef class Repeat(Condition):
+class Repeat(Condition):
     cdef public:
         int times
     
@@ -136,7 +136,7 @@ cdef class Repeat(Condition):
         self.times += 1
         return True
 
-cdef class RestrictFor(Condition):
+class RestrictFor(Condition):
     cdef double seconds
     cdef double lastTrigger
 

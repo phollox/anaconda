@@ -19,7 +19,7 @@
 
 cimport cython
 
-cdef class Expression
+class Expression
 
 from mmfparser.data.chunkloaders.objectinfo import (QUICKBACKDROP, BACKDROP,
     ACTIVE, TEXT, COUNTER, SCORE, LIVES, EXTENSION_BASE)
@@ -67,7 +67,7 @@ cdef inline void initialize_ace(ACEBase self, loader):
         self.objectInfo = loader.objectInfo
         self.resolvedObjects = self.resolve_objects(self.objectInfo)
 
-cdef class ACEBase(PlayerChild):
+class ACEBase(PlayerChild):
     cdef void _initialize(self, loader):
         initialize_ace(self, loader)
     
@@ -95,7 +95,7 @@ cdef class ACEBase(PlayerChild):
     def get_group_actions(self, klass, objectInfo = None):
         return self.group.get_actions(klass, objectInfo)
 
-    cpdef evaluate_index(self, int index):
+    def evaluate_index(self, int index):
         cdef object loader = self.parameters[index]
         if isinstance(loader, ConstantExpressionList):
             return (<ConstantExpressionList>loader).value
@@ -103,35 +103,35 @@ cdef class ACEBase(PlayerChild):
         result = self.evaluater.evaluate()
         return result
 
-    cpdef evaluate_expression(self, loader):
+    def evaluate_expression(self, loader):
         if isinstance(loader, ConstantExpressionList):
             return (<ConstantExpressionList>loader).value
         self.evaluater.reset(loader)
         result = self.evaluater.evaluate()
         return result
     
-    cpdef direction_from(self, x1, y1, x2, y2, f = False):
+    def direction_from(self, x1, y1, x2, y2, f = False):
         return direction_from(x1, y1, x2, y2, f)
     
-    cpdef get_time(self, parameter):
+    def get_time(self, parameter):
         if is_expression(parameter):
             return self.evaluate_expression(parameter) / 1000.0
         else:
             return parameter.timer / 1000.0
     
-    cpdef str get_filename(self, parameter):
+    def get_filename(self, parameter):
         return self.get_parameter_value(parameter)
     
-    cpdef tuple get_color(self, parameter):
+    def get_color(self, parameter):
         if is_expression(parameter):
             return get_color_number(self.evaluate_expression(parameter))
         else:
             return (<ValueParameter>parameter).value
     
-    cpdef get_alterable_index(self, parameter):
+    def get_alterable_index(self, parameter):
         return self.get_parameter_value(parameter)
     
-    cpdef get_global_index(self, parameter):
+    def get_global_index(self, parameter):
         if is_expression(parameter):
             return self.evaluate_expression(parameter) - 1
         else:
@@ -143,25 +143,25 @@ cdef class ACEBase(PlayerChild):
         else:
             return (<ValueParameter>parameter).value
             
-    cpdef get_parameter_value(self, parameter):
+    def get_parameter_value(self, parameter):
         if is_expression(parameter):
             return self.evaluate_expression(parameter)
         else:
             return (<ValueParameter>parameter).value
     
-    cpdef int get_direction(self, parameter):
+    def get_direction(self, parameter):
         if is_expression(parameter):
             return self.evaluate_expression(parameter)
         else:
             return make_direction(parameter.value)
     
-    cpdef list get_directions(self, parameter):
+    def list get_directions(self, parameter):
         if is_expression(parameter):
             return [self.evaluate_expression(parameter)]
         else:
             return get_directions(parameter.value)
     
-    cpdef list get_positions(self, position):
+    def list get_positions(self, position):
         positions = []
         x, y = position.x, position.y
         cdef bint actionPoint = position.flags['Action']
@@ -177,7 +177,7 @@ cdef class ACEBase(PlayerChild):
             positions.append((x, y, None))
         return positions
 
-    cpdef Instance get_instance(self, objectInfo = None):
+    def Instance get_instance(self, objectInfo = None):
         """
         For expressions
         """
@@ -191,7 +191,7 @@ cdef class ACEBase(PlayerChild):
                 return value[index % size]
         return None
 
-    cpdef list get_instances(self, objectInfo = None):
+    def list get_instances(self, objectInfo = None):
         """
         For actions and conditions
         """
@@ -206,10 +206,10 @@ cdef class ACEBase(PlayerChild):
             instances.extend(self.group.get_instances(handle))
         return instances
 
-    cpdef list resolve_objects(self, objectInfo):
+    def list resolve_objects(self, objectInfo):
         return self.eventPlayer.resolve_objects(objectInfo)
 
-    cpdef list get_all_instances(self, objectInfo = None):
+    def list get_all_instances(self, objectInfo = None):
         if objectInfo is None:
             objectInfo = self.objectInfo
         cdef list instances = []
@@ -218,7 +218,7 @@ cdef class ACEBase(PlayerChild):
             instances.extend(self.frame.get_instances(handle))
         return instances
 
-    cpdef select_instances(self, list instanceList, objectInfo = None):
+    def select_instances(self, list instanceList, objectInfo = None):
         cdef list resolvedObjects
         if objectInfo is None:
             objectInfo = self.objectInfo
@@ -231,7 +231,7 @@ cdef class ACEBase(PlayerChild):
                 [instance for instance in instanceList
                 if instance.handle == handle])
 
-    cpdef get_frame_instances(self):
+    def get_frame_instances(self):
         cdef Instance instance
         cdef list instances = []
         for instance in self.frame.instances:
@@ -239,7 +239,7 @@ cdef class ACEBase(PlayerChild):
                 instances.append(instance)
         return instances
 
-    cpdef select_frame_instances(self, list instanceList, list allInstances = None):
+    def select_frame_instances(self, list instanceList, list allInstances = None):
         allInstances = allInstances or self.frame.instances[:]
         cdef Instance instance
         cdef set handles = set([instance.handle for instance in allInstances])
@@ -255,19 +255,19 @@ cdef class ACEBase(PlayerChild):
         objectInfo = kw.pop('objectInfo', self.objectInfo)
         self.frame.add_handlers(objectInfo, **kw)
 
-cdef class BaseParameter(PlayerChild):
+class BaseParameter(PlayerChild):
     cdef void initialize(self, loader):
         pass
 
-cdef class ValueParameter(BaseParameter):
+class ValueParameter(BaseParameter):
     cdef void initialize(self, value):
         self.value = value
         self.isExpression = False
 
-cdef class BaseExpression(BaseParameter):
+class BaseExpression(BaseParameter):
     pass
 
-cdef class ExpressionList(BaseExpression):
+class ExpressionList(BaseExpression):
     cdef void initialize(self, loader):
         self.isExpression = True
         self.size = len(loader.items)
@@ -289,18 +289,18 @@ cdef class ExpressionList(BaseExpression):
             items.append(<object>self.items[i])
         return items
     
-    cpdef on_detach(self):
+    def on_detach(self):
         cdef int i
         for i in range(self.size):
             Py_DECREF(<object>self.items[i])
         free(self.items)
 
-cdef class ConstantExpressionList(BaseExpression):
+class ConstantExpressionList(BaseExpression):
     cdef void initialize(self, value):
         self.value = value
         self.isExpression = True
 
-cdef class ACBase(ACEBase):
+class ACBase(ACEBase):
     cdef void _initialize(self, loader):
         initialize_ace(self, loader)
         cdef list parameters = []
@@ -326,5 +326,5 @@ cdef class ACBase(ACEBase):
                     item = newLoader
             parameters.append(item)
 
-    cpdef get_parameter(self, int index):
+    def get_parameter(self, int index):
         return self.parameters[index]

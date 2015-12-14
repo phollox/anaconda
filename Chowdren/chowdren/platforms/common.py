@@ -17,7 +17,7 @@
 
 from cStringIO import StringIO
 from mmfparser.bytereader import ByteReader
-from mmfparser.webp import encode
+# from mmfparser.webp import encode
 from mmfparser import zopfli
 import zlib
 import sys

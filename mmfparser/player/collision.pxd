@@ -15,12 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-cdef class CollisionBase
-cdef class ObjectCollision
-cdef class Rectangle
-cdef class BoundingBox
-cdef class Point
-cdef class Collision
+class CollisionBase
+class ObjectCollision
+class Rectangle
+class BoundingBox
+class Point
+class Collision
 
 cdef extern from "pmask.h":
     ctypedef struct PMASK:
@@ -48,7 +48,7 @@ cdef bint collide(CollisionBase lhs, CollisionBase rhs)
 from mmfparser.player.instance cimport Instance
 from mmfparser.player.objects.common cimport BaseObject
 
-cdef class CollisionBase:
+class CollisionBase:
     cdef PMASK * mask
     cdef int width, height
     cdef bint isPlatform
@@ -58,7 +58,7 @@ cdef class CollisionBase:
     cdef void get_rect(self, int * r_x1, int * r_y1, int * r_x2, int * r_y2)
     cdef bint get_bit(self, int x, int y)
 
-cdef class ObjectCollision(CollisionBase):
+class ObjectCollision(CollisionBase):
     cdef BaseObject objectPlayer
     cdef Instance parent
     
@@ -70,17 +70,17 @@ cdef class ObjectCollision(CollisionBase):
 
     cdef void created(self)
     cdef void update_transform(self)
-    cpdef set_angle(self, int value)
-    cpdef set_scale(self, double xScale, double yScale)
+    def set_angle(self, int value)
+    def set_scale(self, double xScale, double yScale)
 
-cdef class Collision(ObjectCollision):
+class Collision(ObjectCollision):
     cdef object image
 
-cdef class BoundingBox(ObjectCollision):
+class BoundingBox(ObjectCollision):
     pass
 
-cdef class Point(CollisionBase):
+class Point(CollisionBase):
     cdef int x1, y1, x2, y2
 
-cdef class Rectangle(CollisionBase):
+class Rectangle(CollisionBase):
     cdef int x1, y1, x2, y2

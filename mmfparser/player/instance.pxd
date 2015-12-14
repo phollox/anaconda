@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-cdef class Instance
+class Instance
 
 from mmfparser.player.alterables cimport Alterables
 from mmfparser.player.objects.common cimport BaseObject
@@ -23,7 +23,7 @@ from mmfparser.player.frame cimport Frame, Layer
 from mmfparser.player.movements.common cimport MovementPlayer
 from mmfparser.player.common cimport PlayerChild
 
-cdef class InkEffect:
+class InkEffect:
     cdef public:
         object effect
         object shaders
@@ -32,7 +32,7 @@ cdef class InkEffect:
     cdef void begin(self)
     cdef void end(self)
 
-cdef class Instance(PlayerChild):
+class Instance(PlayerChild):
     cdef public:
         Frame frame
         double x, y
@@ -74,23 +74,23 @@ cdef class Instance(PlayerChild):
         tuple colorCoefficient
 
     cdef void update_bounding_box(self)
-    cpdef set_position(self, double x, double y, bint fromAction = ?)
-    cpdef update_collisions(self, list instances)
-    cpdef set_direction(self, int direction, bint force = ?)
-    cpdef inline int get_direction(self)
-    cpdef inline int get_leaving_corners(self)
-    cpdef inline int get_entering_corners(self)
-    cpdef inline bint is_leaving(self)
-    cpdef inline bint outside_playfield(self)
-    cpdef inline tuple get_outside_corners(self)
-    cpdef inline bint in_playfield(self, int x_border = ?, int y_border = ?)
-    cpdef inline bint inside_window(self, int x_border = ?, int y_border = ?)
-    cpdef inline bint in_zone(self, int xZone, int yZone, int xZone2, 
+    def set_position(self, double x, double y, bint fromAction = ?)
+    def update_collisions(self, list instances)
+    def set_direction(self, int direction, bint force = ?)
+    def inline int get_direction(self)
+    def inline int get_leaving_corners(self)
+    def inline int get_entering_corners(self)
+    def inline bint is_leaving(self)
+    def inline bint outside_playfield(self)
+    def inline tuple get_outside_corners(self)
+    def inline bint in_playfield(self, int x_border = ?, int y_border = ?)
+    def inline bint inside_window(self, int x_border = ?, int y_border = ?)
+    def inline bint in_zone(self, int xZone, int yZone, int xZone2, 
         int yZone2)
-    cpdef inline bint inside_zone(self, int xZone, int yZone, int xZone2, 
+    def inline bint inside_zone(self, int xZone, int yZone, int xZone2, 
         int yZone2)
-    cpdef inline bint mouse_over(self)
+    def inline bint mouse_over(self)
     cdef void draw(self)
-    cpdef object_changed(self)
+    def object_changed(self)
     cdef void update(self)
     cdef void update_playfield(self)

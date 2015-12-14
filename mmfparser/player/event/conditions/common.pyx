@@ -30,7 +30,7 @@ cdef int GREATER_INT = GREATER
 
 cimport cython
 
-cdef class Condition(ACBase):
+class Condition(ACBase):
     @cython.wraparound(True)
     cdef void initialize(self, loader, bint isTriggered):
         self.isTriggered = isTriggered
@@ -42,7 +42,7 @@ cdef class Condition(ACBase):
         self._initialize(loader)
         self._check = getattr(self, 'check', None)
     
-    cpdef bint compare(self, value1, value2):
+    def compare(self, value1, value2):
         cdef int compareValue = self.compareValue
         if compareValue == EQUAL_INT:
             return value1 == value2
@@ -58,12 +58,12 @@ cdef class Condition(ACBase):
             return value1 > value2
         return False
     
-    cpdef generate(self):
+    def generate(self):
         if self.player.paused or self.player.fading:
             return
         self.group.execute()
     
-    cpdef get_conditions(self, conditionClass):
+    def get_conditions(self, conditionClass):
         try:
             return self.eventPlayer.conditions[conditionClass]
         except KeyError:
@@ -75,7 +75,7 @@ cdef class Condition(ACBase):
     cdef bint check_instance(self, Instance instance):
         return <bint>(self._check(instance))
         
-    cpdef bint handle(self):
+    def handle(self):
         cdef Instance instance
         cdef list selected_instances, all_instances
         if self._iterateObjects:
@@ -91,21 +91,21 @@ cdef class Condition(ACBase):
         else:
             return self.check()
 
-cdef class TrueCondition(Condition):
+class TrueCondition(Condition):
     cdef bint check(self):
         return True
 
     cdef bint check_instance(self, Instance instance):
         return True
 
-cdef class FalseCondition(Condition):
+class FalseCondition(Condition):
     cdef bint check(self):
         return False
     
     cdef bint check_instance(self, Instance instance):
         return False
 
-cdef class GeneratedInstances:
+class GeneratedInstances:
     cdef list instances
     cdef Condition condition
     cdef int loopCount
@@ -115,7 +115,7 @@ cdef class GeneratedInstances:
         self.condition = condition
         self.loopCount = -1
     
-    cpdef add_instance(self, Instance instance):
+    def add_instance(self, Instance instance):
         if self.is_valid():
             self.instances.append(instance)
         else:
@@ -130,14 +130,14 @@ cdef class GeneratedInstances:
         else:
             return self.condition.eventPlayer.loopCount <= self.loopCount + 1
     
-    cpdef list get_instances(self, objectInfo = None):
+    def list get_instances(self, objectInfo = None):
         if not self.is_valid():
             return None
         cdef list currentInstances = self.condition.get_instances(objectInfo)
         return list(set(currentInstances) & set(self.instances))
     
-    cpdef bint check(self, objectInfo = None):
-        cpdef list instances = self.get_instances(objectInfo)
+    def check(self, objectInfo = None):
+        def list instances = self.get_instances(objectInfo)
         if instances is None:
             return False
         self.condition.select_instances(instances, objectInfo)

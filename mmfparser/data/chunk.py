@@ -15,60 +15,55 @@
 # You should have received a copy of the GNU General Public License
 # along with Anaconda.  If not, see <http://www.gnu.org/licenses/>.
 
-from mmfparser.bytereader cimport ByteReader
+from mmfparser.bytereader import ByteReader
 from mmfparser.data import zlibdata
 from mmfparser.data import onepointfive
-from mmfparser.loader cimport DataLoader
+from mmfparser.loader import DataLoader
 
-IF USE_TRANS:
-    cdef extern from "chunk_cm.cpp":
-        cdef void prepare_transform(unsigned char * trans, int size)
-        cdef void transform(unsigned char * data, int size,
-                            unsigned char * trans)
+# IF USE_TRANS:
+#     cdef extern from "chunk_cm.cpp":
+#         cdef void prepare_transform(unsigned char * trans, int size)
+#         cdef void transform(unsigned char * data, int size,
+#                             unsigned char * trans)
 
 def makeValueChunk(klass, value):
     newLoader = klass()
     newLoader.value = value
     return newLoader
 
-cdef class Chunk(DataLoader):
-    cdef public:
-        str data
-        short id
-        short flags
-        DataLoader loader
+class Chunk(DataLoader):
+    __slots__ = ['data', 'id', 'flags', 'loader']
 
-    cpdef read(self, ByteReader reader):
-        cdef bint old = self.settings.get('old', False)
+    def read(self, reader):
+        old = self.settings.get('old', False)
         self.id = reader.readShort()
-        cdef short flags = reader.readShort()
+        flags = reader.readShort()
         self.flags = flags
-        cdef int size = reader.readInt()
-        cdef ByteReader data = reader.readReader(size)
+        size = reader.readInt()
+        data = reader.readReader(size)
 
-        cdef bint supported
-        IF USE_TRANS:
-            supported = (flags & (~3)) == 0
-        ELSE:
-            supported = (flags & (~1)) == 0
+        # IF USE_TRANS:
+        #     supported = (flags & (~3)) == 0
+        # ELSE:
+        supported = (flags & (~1)) == 0
         if not supported:
             raise Exception('unsupported compression flag: %s' % flags)
 
         if (flags & 1) != 0:
-            IF USE_TRANS:
-                if (flags & 2) != 0:
-                    transform(&data.buffer[data.pos] + 4, data.size() - 4,
-                              self.settings['trans'])
+            # IF USE_TRANS:
+            #     if (flags & 2) != 0:
+            #         transform(&data.buffer[data.pos] + 4, data.size() - 4,
+            #                   self.settings['trans'])
             if old:
                 data = onepointfive.decompress(data)
             else:
                 data = zlibdata.decompress(data)
         elif (flags & 2) != 0:
-            IF USE_TRANS:
-                transform(&data.buffer[data.pos], data.size(),
-                          self.settings['trans'])
+            pass
+            # IF USE_TRANS:
+            #     transform(&data.buffer[data.pos], data.size(),
+            #               self.settings['trans'])
 
-        cdef type loaderClass
         try:
             if old:
                 loaderClass = oldLoaders[self.id]
@@ -82,7 +77,7 @@ cdef class Chunk(DataLoader):
     def getName(self):
         return chunkNames[self.id]
 
-    def write(self, ByteReader reader):
+    def write(self, reader):
         flags = self.flags
         reader.writeShort(self.id)
         reader.writeShort(flags)
@@ -92,85 +87,75 @@ cdef class Chunk(DataLoader):
         reader.writeInt(len(data))
         reader.writeReader(data)
 
-IF USE_TRANS:
-    cdef bytes create_transform_part(bytes data):
-        cdef unsigned char * c = data
-        cdef unsigned short * v = <unsigned short*>c
+def create_transform_part(data):
+    c = data
+    v = c # <unsigned short*>
 
-        cdef unsigned int l = len(data) / 2
-        cdef unsigned int i
-        cdef unsigned short vv
+    l = len(data) / 2
+    ret = b''
 
-        cdef bytes ret = b''
+    for i in xrange(l):
+        vv = v[i]
+        if vv & 0xFF:
+            ret += chr(vv & 0xFF)
+        vv = vv >> 8
+        if vv:
+            ret += chr(vv)
 
-        for i in xrange(l):
-            vv = v[i]
-            if vv & 0xFF:
-                ret += chr(vv & 0xFF)
-            vv = vv >> 8
-            if vv:
-                ret += chr(vv)
+    return ret
 
-        return ret
+def create_transform(editor, name, copyright, is_ascii):
+    if is_ascii:
+        ret = (editor + name + copyright)
+    else:
+        editor = editor.decode('utf-8').encode('utf-16-le')
+        name = name.decode('utf-8').encode('utf-16-le')
+        copyright = copyright.decode('utf-8').encode('utf-16-le')
+        ret = b''
+        ret += create_transform_part(editor)
+        ret += create_transform_part(name)
+        ret += create_transform_part(copyright)
 
-    cpdef bytes create_transform(bytes editor, bytes name, bytes copyright,
-                                 bint is_ascii):
-        cdef bytes ret
-        if is_ascii:
-            ret = (editor + name + copyright)
-        else:
-            editor = editor.decode('utf-8').encode('utf-16-le')
-            name = name.decode('utf-8').encode('utf-16-le')
-            copyright = copyright.decode('utf-8').encode('utf-16-le')
-            ret = b''
-            ret += create_transform_part(editor)
-            ret += create_transform_part(name)
-            ret += create_transform_part(copyright)
+    ret = ret[:128]
+    l = len(ret)
+    ret += '\x00' * max(0, 256 - len(ret))
 
-        ret = ret[:128]
-        cdef unsigned int l = len(ret)
-        ret += '\x00' * max(0, 256 - len(ret))
+    ret_arr = bytearray(ret)
+    ret_c = ret_arr
+    prepare_transform(ret_arr, l)
+    return bytes(ret_arr)
 
-        cdef bytearray ret_arr = bytearray(ret)
-        cdef unsigned char * ret_c = ret_arr
-        prepare_transform(ret_arr, l)
-        return bytes(ret_arr)
+class ChunkList(DataLoader):
+    __slots__ = ['items']
 
-cdef class ChunkList(DataLoader):
-    cdef public:
-        list items
-
-    cpdef initialize(self):
+    def initialize(self):
         self.items = []
     
-    cpdef read(self, ByteReader reader):
+    def read(self, reader):
         setup()
-        cdef list items = self.items
-        # cdef int checksumStart = -1
+        items = self.items
+        # checksumStart = -1
         parent = self.parent
-        cdef Chunk newChunk, copyright
-        cdef bytes copyright_text
-        # cdef int chunkPosition
+        # chunkPosition
 
         while 1:
             # chunkPosition = reader.tell()
             newChunk = parent.new(Chunk, reader)
             if newChunk.id == LAST:
                 break
-            IF USE_TRANS:
-                if newChunk.id == 8750 and self.settings['build'] >= 284:
-                    # EditorFilename
-                    editor = newChunk.loader.value
-                    name = self.getId(8740).loader.value
-                    copyright = self.getId(8763)
-                    if copyright is None:
-                        copyright_text = b''
-                    else:
-                        copyright_text = copyright.loader.value
-                    trans = create_transform(editor, name, copyright_text,
-                                             not self.settings.get('unicode',
-                                                                   False))
-                    parent.settings['trans'] = trans
+            if newChunk.id == 8750 and self.settings['build'] >= 284:
+                # EditorFilename
+                editor = newChunk.loader.value
+                name = self.getId(8740).loader.value
+                copyright = self.getId(8763)
+                if copyright is None:
+                    copyright_text = b''
+                else:
+                    copyright_text = copyright.loader.value
+                trans = create_transform(editor, name, copyright_text,
+                                         not self.settings.get('unicode',
+                                                               False))
+                parent.settings['trans'] = trans
 
             # elif newChunk.id == APPTARGETFILENAME:
                 # checksumStart = chunkPosition
@@ -195,19 +180,17 @@ cdef class ChunkList(DataLoader):
         self.items.append(newChunk)
         return newChunk
     
-    cdef Chunk getId(self, unsigned int typ):
-        cdef Chunk chunk
-        cdef Chunk foundChunk = None
+    def getId(self, typ):
+        foundChunk = None
         for chunk in self.items:
             if chunk.id == typ:
                 return chunk
         return None
 
-    def popChunk(self, chunkType, bint returnNone = False):
-        cdef Chunk chunk
-        cdef Chunk foundChunk = None
+    def popChunk(self, chunkType, returnNone = False):
+        foundChunk = None
         for chunk in self.items:
-            if type(chunk.loader) is chunkType:
+            if chunk.loader.__class__ is chunkType:
                 foundChunk = chunk
                 break
         if foundChunk is not None:
@@ -229,7 +212,7 @@ cdef class ChunkList(DataLoader):
             return chunk.loader
         raise IndexError('chunkname %r not found' % chunkName)
                     
-    def write(self, ByteReader reader):
+    def write(self, reader):
         if 'LAST' not in [chunk.getName() for chunk in self.items]:
             raise Exception('Last chunk not found in ChunkList')
 
@@ -247,10 +230,10 @@ cdef class ChunkList(DataLoader):
             print 'writing', chunk.getName(), 'at', reader.tell()
             chunk.write(reader)
 
-cdef class PreservingLoader(DataLoader):
-    cdef public:
-        bytes realData
-    cpdef read(self, ByteReader reader):
+class PreservingLoader(DataLoader):
+    __slots__ = ['realData']
+
+    def read(self, reader):
         print '%s has not been implemented' % self.settings['chunk'].getName()
         # reader.openEditor()
         # import code
@@ -258,25 +241,23 @@ cdef class PreservingLoader(DataLoader):
         # raise NotImplementedError('%s has not been implemented' % self.parent.getName())
         self.realData = reader.read()
         
-    def write(self, ByteReader reader):
+    def write(self, reader):
         return reader.write(self.realData)
 
-cdef inline createPreservingLoader():
+def createPreservingLoader():
     return PreservingLoader
 
-cdef bint initialized = False
+initialized = False
 
-cdef dict chunkLoaders
-cdef dict chunkLoaderIds
-cdef dict oldLoadersReal
+chunkLoaders = None
 
-cdef inline void setup():
+def setup():
+    global chunkLoaders
     if chunkLoaders is not None:
         return
     from mmfparser.data.chunkloaders import all
     from mmfparser.data.chunkloaders.onepointfive import all as oldchunks
     
-    global chunkLoaders
     chunkLoaders = {
         # Vitalize chunks (0x11)
         4386 : all.VitalizePreview, # Preview
@@ -496,8 +477,8 @@ chunkIds = {}
 for id, name in chunkNames.iteritems():
     chunkIds[name] = id
 
-cdef int LAST = chunkIds['LAST']
-cdef int APPTARGETFILENAME = chunkIds['APPTARGETFILENAME']
-cdef int PROTECTION = chunkIds['PROTECTION']
+LAST = chunkIds['LAST']
+APPTARGETFILENAME = chunkIds['APPTARGETFILENAME']
+PROTECTION = chunkIds['PROTECTION']
 
 __all__ = ['Chunk', 'ChunkList', 'makeValueChunk']

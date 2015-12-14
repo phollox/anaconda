@@ -1,54 +1,5 @@
 #include "chowstring.h"
 
-template <bool ins>
-void replace_chowstring(chowstring & s, const chowstring & from, const chowstring & to)
-{
-    s.make_unique();
-    if (to_size == from_size) {
-        char * pos = ins ? s.findi_c(from) : s.find_c(from);
-        while (pos != NULL) {
-            for (unsigned int i = 0; i < to_size; i++) {
-                pos[i] = ReplacementText[i];
-            }
-
-            if (pos + from_size - **this < Len()) {
-                pos = ins ? findi_c(pos + from_size, from) : find_c(pos + from_size, from);
-            } else {
-                break;
-            }
-        }
-    } else {
-        FString Copy(*this);
-        Empty(Len());
-
-        // get a pointer into the character data
-        char* WritePosition = (char*)Copy.Data.GetData();
-        // look for From in the remaining string
-        char* SearchPosition = SearchCase == ESearchCase::IgnoreCase ?
-                                              FCString::Stristr(WritePosition, from) :
-                                              FCString::Strstr(WritePosition, from);
-        while (SearchPosition != NULL) {
-            // replace the first letter of the From with 0 so we can do a strcpy (FString +=)
-            *SearchPosition = 0;
-
-            // copy everything up to the SearchPosition
-            (*this) += WritePosition;
-
-            // copy over the ReplacementText
-            (*this) += ReplacementText;
-
-            // restore the letter, just so we don't have 0's in the string
-            *SearchPosition = *from;
-
-            WritePosition = SearchPosition + from_size;
-            SearchPosition = SearchCase == ESearchCase::IgnoreCase ? FCString::Stristr(WritePosition, from) : FCString::Strstr(WritePosition, from);
-        }
-
-        // copy anything left over
-        (*this) += WritePosition;
-    }
-}
-
 template <typename F>
 char * find_chowstring(F f, const chowstring & src, unsigned int start,
                        const chowstring & str)

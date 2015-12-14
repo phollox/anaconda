@@ -46,7 +46,7 @@ class CenterDisplay(Action):
             return
         self.player.set_center(x = x, y = y)
 
-cdef class _GroupAction(Action):
+class _GroupAction(Action):
     cdef public:
         Container container
 
@@ -60,43 +60,43 @@ cdef class _GroupAction(Action):
             container = eventPlayer.containerIds[groupPointer.id]
         self.container = container
     
-cdef class ActivateGroup(_GroupAction):
+class ActivateGroup(_GroupAction):
     cdef void execute(self):
         # print 'activating group', self.container.name
         self.container.enable()
 
-cdef class DeactivateGroup(_GroupAction):
+class DeactivateGroup(_GroupAction):
     cdef void execute(self):
         # print 'deactivating group', self.container.name
         self.container.disable()
 
-cdef class AddGlobalValue(Action):
+class AddGlobalValue(Action):
     cdef void execute(self):
         cdef int index = self.get_global_index(self.get_parameter(0))
         cdef object value = self.evaluate_index(1)
         cdef object original = self.player.globals.get_value(index)
         self.player.globals.set_value(index, original + value)
 
-cdef class SubtractGlobalValue(Action):
+class SubtractGlobalValue(Action):
     cdef void execute(self):
         cdef int index = self.get_global_index(self.get_parameter(0))
         cdef object value = self.evaluate_index(1)
         cdef object original = self.player.globals.get_value(index)
         self.player.globals.set_value(index, original - value)
 
-cdef class SetGlobalValue(Action):
+class SetGlobalValue(Action):
     cdef void execute(self):
         cdef int index = self.get_global_index(self.get_parameter(0))
         cdef object value = self.evaluate_index(1)
         self.player.globals.set_value(index, value)
 
-cdef class SetGlobalString(Action):
+class SetGlobalString(Action):
     cdef void execute(self):
         cdef int index = self.get_global_index(self.get_parameter(0))
         cdef object value = self.evaluate_index(1)
         self.player.globals.set_string(index, value)
 
-cdef class StartLoop(Action):
+class StartLoop(Action):
     cdef public:
         bint initialized
         list conditions
@@ -149,7 +149,7 @@ cdef class StartLoop(Action):
         loop.index = oldIndex
         loop.stopped = oldStopped
 
-cdef class StopLoop(Action):
+class StopLoop(Action):
     cdef public:
         bint initialized
         Loop loop
@@ -162,29 +162,29 @@ cdef class StopLoop(Action):
             self.initialized = True
         self.loop.stopped = True
 
-cdef class SetLoopIndex(Action):
+class SetLoopIndex(Action):
     cdef void execute(self):
         name = self.evaluate_index(0)
         index = self.evaluate_index(1)
         (<Loop>self.eventPlayer.loops[name.lower()]).index = index
 
-cdef class FullscreenMode(Action):
+class FullscreenMode(Action):
     cdef void execute(self):
         self.player.set_fullscreen(True)
 
-cdef class WindowedMode(Action):
+class WindowedMode(Action):
     cdef void execute(self):
         self.player.set_fullscreen(False)
 
-cdef class OpenDebugger(Action):
+class OpenDebugger(Action):
     cdef void execute(self):
         pass
 
-cdef class PauseDebugger(Action):
+class PauseDebugger(Action):
     cdef void execute(self):
         pass
 
-cdef class SetRandomSeed(Action):
+class SetRandomSeed(Action):
     cdef void execute(self):
         value = self.evaluate_index(0)
         random.seed(value)
