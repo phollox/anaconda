@@ -159,6 +159,7 @@ static void replaceSubStr ( char const * const aSource ,
 	char const * pOccurence ;
 	char const * p ;
 	char const * lNewSubStr = "" ;
+	int lOldSubLen = strlen ( aOldSubStr ) ;
 	
 	if ( ! aSource )
 	{
@@ -175,7 +176,7 @@ static void replaceSubStr ( char const * const aSource ,
 		lNewSubStr = aNewSubStr ;
 	}
 	p = aSource ;
-	int lOldSubLen = strlen ( aOldSubStr ) ;
+
 	* aoDestination = '\0' ;
 	while ( ( pOccurence = strstr ( p , aOldSubStr ) ) != NULL )
 	{
